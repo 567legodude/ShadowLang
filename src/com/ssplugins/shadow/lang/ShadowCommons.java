@@ -25,6 +25,7 @@ public class ShadowCommons {
 		keyUnsetG();
 		keyWait();
 		keyBreak();
+		keyBreakAll();
 		keyAssert();
 		keyCall();
 	}
@@ -105,17 +106,22 @@ public class ShadowCommons {
 		}));
 	}
 	
+	private void keyBreakAll() {
+		shadow.addKeyword(new Keyword("breakall", (args, scope, stepper) -> {
+			stepper.stepBreak();
+		}));
+	}
+	
 	private void keyAssert() {
 		shadow.addKeyword(new Keyword("assert", (args, scope, stepper) -> {
 			if (args.length < 2) return;
-			Block block = stepper.getBlock();
-			String arg1 = block.getMod(0);
-			String arg2 = block.getMod(1);
+			String arg1 = args[0];
+			String arg2 = args[1];
 			Object final1;
 			Object final2;
-			if (arg1.matches("o\\{.+}")) final1 = Evaluator.process(arg1.substring(2, arg1.length() - 1), scope, block.getShadow().getClassFinder());
+			if (arg1.matches("o\\{.+}")) final1 = Evaluator.process(arg1.substring(2, arg1.length() - 1), scope, stepper.getShadow().getClassFinder());
 			else final1 = arg1;
-			if (arg2.matches("o\\{.+}")) final2 = Evaluator.process(arg2.substring(2, arg2.length() - 1), scope, block.getShadow().getClassFinder());
+			if (arg2.matches("o\\{.+}")) final2 = Evaluator.process(arg2.substring(2, arg2.length() - 1), scope, stepper.getShadow().getClassFinder());
 			else final2 = arg2;
 			if (!final1.equals(final2)) {
 				stepper.stepBreak();

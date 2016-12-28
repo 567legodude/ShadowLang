@@ -19,6 +19,7 @@ public class Stepper {
 	private List<Section> sections;
 	private Iterator<Section> iterator;
 	private Block block;
+	private Stepper calling;
 	private Timer timer;
 	
 	private Stepper(Shadow shadow, List<Section> sections) {
@@ -29,11 +30,12 @@ public class Stepper {
 		timer = shadow.getTimer();
 	}
 	
-	Stepper(Block block) {
+	Stepper(Block block, Stepper calling) {
 		shadow = block.getShadow();
 		scope = new Scope(shadow.getGlobalVars());
 		this.sections = block.getSections();
 		this.block = block;
+		this.calling = calling;
 		timer = shadow.getTimer();
 	}
 	
@@ -91,6 +93,11 @@ public class Stepper {
 	
 	public void stepBreak() {
 		action = StepAction.BREAK;
+	}
+	
+	public void breakAll() {
+		if (calling != null) calling.breakAll();
+		stepBreak();
 	}
 	
 	public int currentIteration() {
@@ -170,7 +177,7 @@ public class Stepper {
 				run = event.trigger(block, scope);
 			}
 			if (!run) return;
-			Stepper stepper = new Stepper(block);
+			Stepper stepper = new Stepper(block, this);
 			stepper.setCallback(this::stepForward);
 			action = StepAction.WAIT;
 			stepper.start();

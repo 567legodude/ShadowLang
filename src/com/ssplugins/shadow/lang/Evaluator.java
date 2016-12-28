@@ -40,7 +40,7 @@ public class Evaluator {
 				Optional<Variable> op = scope.getVar(data);
 				if (op.isPresent()) {
 					current = op.get().getValue();
-					cClass = current.getClass();
+					cClass = unwrap(current.getClass());
 				}
 				else return null;
 				Debugger.log("starting as: " + (cClass == null ? "null" : cClass.getName()));
@@ -70,6 +70,10 @@ public class Evaluator {
 					for (String s : prms) params.add(parseParam(s));
 				}
 				construct(data, params.toArray(new Object[params.size()]));
+			}
+			else if (o.equals("-")) {
+				current = parseParam(data);
+				cClass = unwrap(current.getClass());
 			}
 			Debugger.log("currently: " + (current == null ? "null" : cClass.getName()));
 			if (current == null) return null;
@@ -117,13 +121,17 @@ public class Evaluator {
 		}
 	}
 	
+	private Class<?> unwrap(Class<?> clazz) {
+		if (clazz.equals(Integer.class)) return int.class;
+		else if (clazz.equals(Double.class)) return double.class;
+		else if (clazz.equals(Boolean.class)) return boolean.class;
+		return clazz;
+	}
+	
 	private Class<?>[] getClasses(Object[] params) {
 		List<Class<?>> classes = new ArrayList<>();
 		for (Object o : params) {
-			if (o.getClass().equals(Integer.class)) classes.add(int.class);
-			else if (o.getClass().equals(Double.class)) classes.add(double.class);
-			else if (o.getClass().equals(Boolean.class)) classes.add(boolean.class);
-			else classes.add(o.getClass());
+			classes.add(unwrap(o.getClass()));
 		}
 		return classes.toArray(new Class<?>[classes.size()]);
 	}

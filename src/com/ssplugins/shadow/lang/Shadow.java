@@ -178,7 +178,7 @@ public class Shadow {
 				run = event.trigger(block, null);
 			}
 			if (!run) return;
-			Stepper stepper = new Stepper(block);
+			Stepper stepper = new Stepper(block, null);
 			for (int i = 0; i < params.length; i++) {
 				stepper.setParam(i, params[i]);
 			}
