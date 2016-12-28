@@ -59,6 +59,10 @@ public class Stepper implements StepperInfo {
 		return prevRun;
 	}
 	
+	public boolean lastBlockIs(String type) {
+		return prevBlock != null && prevBlock.getName().equalsIgnoreCase(type);
+	}
+	
 	public BooleanValue is(String type) {
 		return new BooleanValue(block != null && block.getName().equalsIgnoreCase(type));
 	}
@@ -153,13 +157,13 @@ public class Stepper implements StepperInfo {
 	}
 	
 	private void stepForward() {
-		prevBlock = running;
 		if (!iterator.hasNext()) {
 			runCallback();
 			return;
 		}
 		boolean run = true;
 		while (run && iterator.hasNext()) {
+			prevBlock = running;
 			runStep(iterator.next());
 			if (action == StepAction.DELAY) {
 				run = false;

@@ -200,8 +200,7 @@ public class ShadowCommons {
 		shadow.setGlobalBlockAction("else", (block, scope, info) -> {
 			if (!block.verify(0, 0)) return false;
 			if (info == null) return false;
-			Block pBlock = info.getPrevBlock();
-			if (!pBlock.getName().equalsIgnoreCase("if")) return false;
+			if (!info.lastBlockIs("if")) return false;
 			if (info.lastBlockRan()) return false;
 			return true;
 		});

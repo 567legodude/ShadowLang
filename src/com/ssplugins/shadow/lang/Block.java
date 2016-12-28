@@ -27,6 +27,7 @@ public class Block extends ShadowComponent {
 	
 	void setParameters(String[] params) {
 		parameters.clear();
+		if (params == null) return;
 		for (String p : params) parameters.add(p);
 	}
 	

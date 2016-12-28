@@ -8,4 +8,6 @@ public interface StepperInfo {
 	
 	boolean lastBlockRan();
 	
+	boolean lastBlockIs(String type);
+	
 }
