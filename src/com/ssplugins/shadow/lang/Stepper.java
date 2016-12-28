@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class Stepper {
+public class Stepper implements StepperInfo {
 	
 	private StepAction action = StepAction.NORMAL;
 	private long actionVal = 0;
@@ -21,6 +21,10 @@ public class Stepper {
 	private Block block;
 	private Stepper calling;
 	private Timer timer;
+	
+	private Block prevBlock = null;
+	private Block running = null;
+	private boolean prevRun = false;
 	
 	private Stepper(Shadow shadow, List<Section> sections) {
 		this.shadow = shadow;
@@ -45,6 +49,14 @@ public class Stepper {
 	
 	public Block getBlock() {
 		return block;
+	}
+	
+	public Block getPrevBlock() {
+		return prevBlock;
+	}
+	
+	public boolean lastBlockRan() {
+		return prevRun;
 	}
 	
 	public BooleanValue is(String type) {
@@ -141,6 +153,7 @@ public class Stepper {
 	}
 	
 	private void stepForward() {
+		prevBlock = running;
 		if (!iterator.hasNext()) {
 			runCallback();
 			return;
@@ -166,17 +179,24 @@ public class Stepper {
 	private void runStep(Section section) {
 		normal();
 		if (section.isLine()) {
+			prevRun = true;
+			running = null;
 			currentLine = section.getLine();
 			section.getShadow().runLine(currentLine, scope, this);
 		}
 		else {
 			Block block = section.getBlock();
+			running = block;
 			BlockPreRunEvent event = block.getPreRunEvent();
 			boolean run = true;
 			if (event != null) {
-				run = event.trigger(block, scope);
+				run = event.trigger(block, scope, this);
 			}
-			if (!run) return;
+			if (!run) {
+				prevRun = false;
+				return;
+			}
+			prevRun = true;
 			Stepper stepper = new Stepper(block, this);
 			stepper.setCallback(this::stepForward);
 			action = StepAction.WAIT;

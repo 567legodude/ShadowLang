@@ -175,7 +175,7 @@ public class Shadow {
 			BlockPreRunEvent event = block.getPreRunEvent();
 			boolean run = true;
 			if (event != null) {
-				run = event.trigger(block, null);
+				run = event.trigger(block, null, null);
 			}
 			if (!run) return;
 			Stepper stepper = new Stepper(block, null);
