@@ -34,6 +34,7 @@ public class ShadowCommons {
 		blockRepeat();
 		blockFor();
 		blockIf();
+		blockElse();
 	}
 	
 	private void addReplacers() {
@@ -137,7 +138,7 @@ public class ShadowCommons {
 	}
 	
 	private void blockRepeat() {
-		shadow.setGlobalBlockAction("repeat", (block, scope) -> {
+		shadow.setGlobalBlockAction("repeat", (block, scope, info) -> {
 			if (!block.verify(1, 1)) return false;
 			if (block.getMod(0).replaceAll("[^0-9]", "").isEmpty()) return false;
 			return true;
@@ -155,7 +156,7 @@ public class ShadowCommons {
 	}
 	
 	private void blockFor() {
-		shadow.setGlobalBlockAction("for", (block, scope) -> {
+		shadow.setGlobalBlockAction("for", (block, scope, info) -> {
 			if (!block.verify(3, 1)) return false;
 			for (int i = 0; i < 3; i++) if (!block.getMod(i).matches("-?[0-9]+")) return false;
 			int start = Integer.valueOf(block.getMod(0));
@@ -181,7 +182,7 @@ public class ShadowCommons {
 	}
 	
 	private void blockIf() {
-		shadow.setGlobalBlockAction("if", (block, scope) -> {
+		shadow.setGlobalBlockAction("if", (block, scope, info) -> {
 			if (!block.verify(2, 0)) return false;
 			String arg1 = block.getMod(0);
 			String arg2 = block.getMod(1);
@@ -192,6 +193,16 @@ public class ShadowCommons {
 			if (arg2.matches("o\\{.+}")) final2 = Evaluator.process(arg2.substring(2, arg2.length() - 1), scope, block.getShadow().getClassFinder());
 			else final2 = arg2;
 			return final1.equals(final2);
+		});
+	}
+	
+	private void blockElse() {
+		shadow.setGlobalBlockAction("else", (block, scope, info) -> {
+			if (!block.verify(0, 0)) return false;
+			if (info == null) return false;
+			if (!info.lastBlockIs("if")) return false;
+			if (info.lastBlockRan()) return false;
+			return true;
 		});
 	}
 	

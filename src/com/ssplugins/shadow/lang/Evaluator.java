@@ -1,6 +1,7 @@
 package com.ssplugins.shadow.lang;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -71,6 +72,9 @@ public class Evaluator {
 				}
 				construct(data, params.toArray(new Object[params.size()]));
 			}
+			else if (o.equals("~")) {
+				field(data);
+			}
 			else if (o.equals("-")) {
 				current = parseParam(data);
 				cClass = unwrap(current.getClass());
@@ -102,9 +106,22 @@ public class Evaluator {
 		try {
 			Class<?> clazz = Class.forName(finder.findClass(type));
 			Constructor<?> con = clazz.getConstructor(getClasses(params));
+			con.setAccessible(true);
 			current = con.newInstance(params);
 			cClass = clazz;
 		} catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException ignored) {
+			current = null;
+		}
+	}
+	
+	private void field(String name) {
+		Debugger.log("getting field: " + name);
+		try {
+			Field field = cClass.getDeclaredField(name);
+			field.setAccessible(true);
+			current = field.get(current);
+			cClass = field.getType();
+		} catch (NoSuchFieldException | IllegalAccessException ignored) {
 			current = null;
 		}
 	}
@@ -113,6 +130,7 @@ public class Evaluator {
 		Debugger.log("calling method " + method + (params.length > 0 ? " with params " + ShadowUtil.combine(params, ", ") : ""));
 		try {
 			Method m = cClass.getDeclaredMethod(method, getClasses(params));
+			m.setAccessible(true);
 			current = m.invoke(current, params);
 			cClass = m.getReturnType();
 		} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {
