@@ -108,7 +108,7 @@ public class ShadowCommons {
 	
 	private void keyBreakAll() {
 		shadow.addKeyword(new Keyword("breakall", (args, scope, stepper) -> {
-			stepper.stepBreak();
+			stepper.breakAll();
 		}));
 	}
 	
