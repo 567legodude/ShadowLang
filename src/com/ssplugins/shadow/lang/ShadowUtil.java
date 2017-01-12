@@ -62,6 +62,10 @@ public class ShadowUtil {
 		return sections;
 	}
 	
+	static Section toSection(Shadow shadow, String line) {
+		return new Section(new Line(shadow, line, 1));
+	}
+	
 	public static String combine(String[] parts, int start, int end) {
 		StringBuilder builder = new StringBuilder();
 		for (int i = start; i < end; i++) {
@@ -115,40 +119,21 @@ public class ShadowUtil {
 		}
 	}
 	
-	static String getEvalParams(List<VariableType> list, Shadow shadow) {
-		StringBuilder builder = new StringBuilder();
-		Iterator<VariableType> it = list.iterator();
-		while (it.hasNext()) {
-			VariableType type = it.next();
-			builder.append(shadow.getClassFinder().findClass(type.getType())).append(" ").append(type.getName());
-			if (it.hasNext()) builder.append(", ");
-		}
-		return builder.toString();
-	}
-	
-	static Class<?>[] getEvalClasses(List<VariableType> list, Shadow shadow) {
-		List<Class<?>> out = new ArrayList<>();
-		out.add(Scope.class);
-		Iterator<VariableType> it = list.iterator();
-		while (it.hasNext()) {
-			VariableType type = it.next();
-			try {
-				out.add(Class.forName(shadow.getClassFinder().findClass(type.getType())));
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
+	public static Optional<Variable> getLeveledVar(String var, Scope scope) {
+		Matcher m = Pattern.compile("(\\^*)(.+)").matcher(var);
+		if (m.find()) {
+			int level = m.group(0).length();
+			String v = m.group(1);
+			while (level > 0) {
+				if (scope.levelUp() == null) {
+					level = 0;
+					break;
+				}
+				scope = scope.levelUp();
+				level--;
 			}
+			return scope.getVar(v);
 		}
-		return out.toArray(new Class[out.size()]);
-	}
-	
-	static Object[] getEvalObjects(List<VariableType> list, Scope scope) {
-		List<Object> l = new ArrayList<>();
-		l.add(scope);
-		list.forEach(variableType -> {
-			Optional<Variable> op = scope.getVar(variableType.getName());
-			if (!op.isPresent()) return;
-			l.add(op.get().getValue());
-		});
-		return l.toArray(new Object[l.size()]);
+		return Optional.empty();
 	}
 }

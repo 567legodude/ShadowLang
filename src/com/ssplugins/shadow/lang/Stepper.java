@@ -1,9 +1,6 @@
 package com.ssplugins.shadow.lang;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 public class Stepper implements StepperInfo {
 	
@@ -28,23 +25,36 @@ public class Stepper implements StepperInfo {
 	
 	private Stepper(Shadow shadow, List<Section> sections) {
 		this.shadow = shadow;
-		scope = new Scope(shadow.getGlobalVars());
+		scope = new Scope(shadow.getGlobalVars(), null);
 		this.sections = sections;
-		block = null;
 		timer = shadow.getTimer();
 	}
 	
 	Stepper(Block block, Stepper calling) {
 		shadow = block.getShadow();
-		scope = new Scope(shadow.getGlobalVars());
+		scope = new Scope(shadow.getGlobalVars(), (calling != null ? calling.scope : null));
 		this.sections = block.getSections();
 		this.block = block;
 		this.calling = calling;
 		timer = shadow.getTimer();
 	}
 	
+	public static Stepper prepare(Shadow shadow, String line) {
+		List<Section> sections = new ArrayList<>();
+		sections.add(ShadowUtil.toSection(shadow, line));
+		return new Stepper(shadow, sections);
+	}
+	
+	void inject(Variable variable) {
+		scope.setVar(variable.getName(), variable.getValue());
+	}
+	
 	private void setCallback(Runnable callback) {
 		this.callback = callback;
+	}
+	
+	void useMsgCallback(MsgCallback callback) {
+		scope.setMsgCallback(callback);
 	}
 	
 	public Block getBlock() {
@@ -126,12 +136,15 @@ public class Stepper implements StepperInfo {
 	
 	public void start() {
 		if (!started) {
-			if (block.getParameters().stream().anyMatch(s -> s.equals("$$"))) return;
 			started = true;
 			resetIterator();
 			if (block != null) {
 				BlockEnterEvent event = block.getEnterEvent();
-				if (event != null) event.trigger(block, scope);
+				if (event != null) event.trigger(block, scope, this);
+			}
+			if (action == StepAction.BREAK) {
+				runCallback();
+				return;
 			}
 			stepForward();
 		}

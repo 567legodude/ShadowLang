@@ -10,12 +10,13 @@ public class Block extends ShadowComponent {
 	private List<String> modifiers = new ArrayList<>();
 	private List<String> parameters = new ArrayList<>();
 	private List<Section> sections = new ArrayList<>();
+	private int line;
 	
 	private BlockPreRunEvent preRunEvent;
 	private BlockEnterEvent enterEvent;
 	private BlockEndEvent endEvent;
 	
-	Block(Shadow shadow, String name) {
+	Block(Shadow shadow, String name, int line) {
 		super(shadow);
 		this.name = name;
 	}
@@ -58,6 +59,10 @@ public class Block extends ShadowComponent {
 	
 	public String getName() {
 		return name;
+	}
+	
+	public int getLine() {
+		return line;
 	}
 	
 	public List<String> getModifiers() {

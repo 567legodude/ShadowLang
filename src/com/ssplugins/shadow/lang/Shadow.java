@@ -13,11 +13,14 @@ public class Shadow {
 	private List<Keyword> keywords = new ArrayList<>();
 	private Map<String, Replacer> replacers = new HashMap<>();
 	private Timer timer = new Timer();
+	private Scope liveScope;
 	
 	private ClassFinder defaultFinder = this::defaultFinder;
 	private ClassFinder finder = this::defaultFinder;
 	
-	private Shadow() {}
+	private Shadow() {
+		liveScope = new Scope(globalVars, null);
+	}
 	
 	public static Shadow parse(List<String> lines) {
 		Shadow shadow = new Shadow();
@@ -33,6 +36,10 @@ public class Shadow {
 		} catch (FileNotFoundException e) {
 			return new Shadow();
 		}
+	}
+	
+	public static Shadow empty() {
+		return new Shadow();
 	}
 	
 	Timer getTimer() {
@@ -66,6 +73,10 @@ public class Shadow {
 	
 	public void end() {
 		timer.cancel();
+	}
+	
+	public Scope getLiveScope() {
+		return liveScope;
 	}
 	
 	private void addSections(List<Section> sections) {
@@ -124,15 +135,15 @@ public class Shadow {
 		};
 	}
 	
-	public void setGlobalBlockAction(String type, BlockPreRunEvent event) {
+	public void setPreRunAction(String type, BlockPreRunEvent event) {
 		findAllBlocks(type).forEach(block -> block.listen(event));
 	}
 	
-	public void setGlobalBlockAction(String type, BlockEnterEvent event) {
+	public void setEnterAction(String type, BlockEnterEvent event) {
 		findAllBlocks(type).forEach(block -> block.listen(event));
 	}
 	
-	public void setGlobalBlockAction(String type, BlockEndEvent event) {
+	public void setEndAction(String type, BlockEndEvent event) {
 		findAllBlocks(type).forEach(block -> block.listen(event));
 	}
 	
@@ -184,6 +195,17 @@ public class Shadow {
 			}
 			stepper.start();
 		}
+	}
+	
+	public void parseLine(String line, MsgCallback callback, Variable... variables) {
+		Stepper stepper = Stepper.prepare(this, line);
+		for (Variable v : variables) stepper.inject(v);
+		stepper.useMsgCallback(callback);
+		stepper.start();
+	}
+	
+	public void parseLine(String line) {
+		parseLine(line, null);
 	}
 	
 	void runLine(Line line, Scope scope, Stepper stepper) {
