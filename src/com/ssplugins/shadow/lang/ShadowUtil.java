@@ -66,6 +66,23 @@ public class ShadowUtil {
 		return new Section(new Line(shadow, line, 1));
 	}
 	
+	static Optional<Variable> getVariable(String var, Scope scope) {
+		if (var.matches("p\\{.+}")) {
+			return scope.getPrivateVar(var.substring(2, var.length() - 1));
+		}
+		else if (var.startsWith("g-")) {
+			return scope.getGlobalVar(var.substring(2));
+		}
+		return scope.getVar(var);
+	}
+	
+	static Optional<Variable> getGlobalVariable(String var, Scope scope) {
+		if (var.startsWith("g-")) {
+			return scope.getGlobalVar(var.substring(2));
+		}
+		return scope.getGlobalVar(var);
+	}
+	
 	public static String combine(String[] parts, int start, int end) {
 		StringBuilder builder = new StringBuilder();
 		for (int i = start; i < end; i++) {

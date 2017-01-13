@@ -41,9 +41,8 @@ public class ShadowCommons {
 	}
 	
 	private void addReplacers() {
-		replacerString();
-		replacerStringG();
 		replacerEval();
+		replacerString();
 	}
 	
 	private void keyLog() {
@@ -291,48 +290,19 @@ public class ShadowCommons {
 				String varName = text.substring(0, text.lastIndexOf('['));
 				String d = text.substring(text.lastIndexOf('[') + 1, text.lastIndexOf(']'));
 				if (d.isEmpty()) {
-					Optional<Variable> opv = scope.getVar(varName);
+					Optional<Variable> opv = ShadowUtil.getVariable(varName, scope);
 					return opv.map(variable -> ShadowUtil.combine(variable.getValue())).orElse(null);
 				}
 				else if (d.endsWith("+")) {
-					Optional<Variable> opv = scope.getVar(varName);
+					Optional<Variable> opv = ShadowUtil.getVariable(varName, scope);
 					return opv.map(variable -> ShadowUtil.combine(variable.getValue(), Integer.valueOf(d.substring(0, d.length() - 1)))).orElse(null);
 				}
 				int digit = Integer.valueOf(d);
-				Optional<Variable> opv = scope.getVar(varName);
+				Optional<Variable> opv = ShadowUtil.getVariable(varName, scope);
 				return opv.map(variable -> ShadowUtil.getFromArray(variable.getValue(), digit)).orElse(null);
 			}
 			else {
-				// TODO clean up
-				Optional<Variable> opv = scope.getVar(text);
-				if (opv.isPresent()) {
-					Variable v = opv.get();
-					return v.getValue().toString();
-				}
-				return null;
-			}
-		});
-	}
-	
-	private void replacerStringG() {
-		shadow.addReplacer("g", (text, line, scope, stepper) -> {
-			if (text.matches(".+?\\[[0-9+]*?]")) {
-				String varName = text.substring(0, text.lastIndexOf('['));
-				String d = text.substring(text.lastIndexOf('[') + 1, text.lastIndexOf(']'));
-				if (d.isEmpty()) {
-					Optional<Variable> opv = scope.getGlobalVar(varName);
-					return opv.map(variable -> ShadowUtil.combine(variable.getValue())).orElse(null);
-				}
-				else if (d.endsWith("+")) {
-					Optional<Variable> opv = scope.getGlobalVar(varName);
-					return opv.map(variable -> ShadowUtil.combine(variable.getValue(), Integer.valueOf(d.substring(0, d.length() - 1)))).orElse(null);
-				}
-				int digit = Integer.valueOf(d);
-				Optional<Variable> opv = scope.getGlobalVar(varName);
-				return opv.map(variable -> ShadowUtil.getFromArray(variable.getValue(), digit)).orElse(null);
-			}
-			else {
-				Optional<Variable> opv = scope.getGlobalVar(text);
+				Optional<Variable> opv = ShadowUtil.getVariable(text, scope);
 				return opv.map(variable -> variable.getValue().toString()).orElse(null);
 			}
 		});

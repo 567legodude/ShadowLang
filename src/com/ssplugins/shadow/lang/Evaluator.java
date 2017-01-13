@@ -44,7 +44,7 @@ public class Evaluator {
 					op = scope.getGlobalVar(matcher.group().substring(2));
 				}
 				else {
-					op = scope.getVar(data);
+					op = ShadowUtil.getVariable(data, scope);
 				}
 				if (op.isPresent()) {
 					current = op.get().getValue();

@@ -160,7 +160,8 @@ public class Shadow {
 	
 	private void runReplacers(String[] args, Line line, Scope scope, Stepper stepper) {
 		replacers.forEach((s, replacer) -> {
-			Pattern pattern = Pattern.compile(Pattern.quote(s) + "\\{(.*?)}");
+			String q = Pattern.quote(s);
+			Pattern pattern = Pattern.compile(q + "\\{(.*?)}|" + q + "\\[(.*?)]");
 			for (int i = 0; i < args.length; i++) {
 				Matcher matcher = pattern.matcher(args[i]);
 				while (matcher.find()) {
