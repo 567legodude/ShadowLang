@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public class Evaluator {
 	
@@ -31,19 +32,28 @@ public class Evaluator {
 	
 	public Object process() {
 		Debugger.log("processing");
-		Pattern pattern = Pattern.compile("(\\W)?([\\w()\\s.]+)");
+		Pattern pattern = Pattern.compile("g-\\w+|(\\W)?(\\w+(\\([^)]*\\))?)");
 		Matcher matcher = pattern.matcher(instruction);
 		while (matcher.find()) {
 			String o = matcher.group(1);
 			String data = matcher.group(2);
 			if (o == null) {
 				Debugger.log("getting " + data + " from scope");
-				Optional<Variable> op = scope.getVar(data);
+				Optional<Variable> op;
+				if (data == null) {
+					op = scope.getGlobalVar(matcher.group().substring(2));
+				}
+				else {
+					op = ShadowUtil.getVariable(data, scope);
+				}
 				if (op.isPresent()) {
 					current = op.get().getValue();
 					cClass = unwrap(current.getClass());
 				}
-				else return null;
+				else {
+					scope.error("Unable to get variable from scope");
+					return null;
+				}
 				Debugger.log("starting as: " + (cClass == null ? "null" : cClass.getName()));
 				continue;
 			}
@@ -80,9 +90,18 @@ public class Evaluator {
 				cClass = unwrap(current.getClass());
 			}
 			Debugger.log("currently: " + (current == null ? "null" : cClass.getName()));
-			if (current == null) return null;
+			if (current == null && cClass == null) {
+				scope.info("Result is null");
+				return null;
+			}
 		}
+		scope.msg("Eval complete (" + (current == null ? "" : current.getClass().getSimpleName()) + ")");
 		return current;
+	}
+	
+	private void fail() {
+		current = null;
+		cClass = null;
 	}
 	
 	private void castTo(String type) {
@@ -90,14 +109,18 @@ public class Evaluator {
 		try {
 			Class<?> clazz = Class.forName(finder.findClass(type));
 			Debugger.log("found class: " + clazz.getName());
-			if (clazz.isAssignableFrom(cClass) || clazz.isInstance(current)) {
+			if (current == null) {
+				cClass = clazz;
+			}
+			else if (clazz.isAssignableFrom(cClass) || clazz.isInstance(current)) {
 				current = clazz.cast(current);
 				cClass = clazz;
 			}
-			else current = null;
+			else fail();
 		} catch (ClassNotFoundException ignored) {
 			Debugger.log("type not found");
-			current = null;
+			scope.error("Unable to find class: " + type);
+			fail();
 		}
 	}
 	
@@ -110,7 +133,8 @@ public class Evaluator {
 			current = con.newInstance(params);
 			cClass = clazz;
 		} catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException ignored) {
-			current = null;
+			scope.error("Unable to construct: " + type + (params.length > 0 ? " with params " + ShadowUtil.combine(params, ", ") : ""));
+			fail();
 		}
 	}
 	
@@ -122,21 +146,86 @@ public class Evaluator {
 			current = field.get(current);
 			cClass = field.getType();
 		} catch (NoSuchFieldException | IllegalAccessException ignored) {
-			current = null;
+			scope.error("Unable to get field: " + name);
+			fail();
 		}
 	}
 	
 	private void method(String method, Object[] params) {
 		Debugger.log("calling method " + method + (params.length > 0 ? " with params " + ShadowUtil.combine(params, ", ") : ""));
 		try {
-			Method m = cClass.getDeclaredMethod(method, getClasses(params));
+			Method m = null;
+			if (current != null) {
+				Class<?> type = current.getClass();
+				Class<?> sup = type.getSuperclass();
+				while (sup != null) {
+					m = methodSmartSearch(sup, method, params);
+					if (m == null) sup = sup.getSuperclass();
+					else break;
+//					try {
+//						m = sup.getDeclaredMethod(method, getClasses(params));
+//						break;
+//					} catch (NoSuchMethodException ignored) {
+//						sup = sup.getSuperclass();
+//					}
+				}
+				if (m == null) {
+					for (Class<?> i : type.getInterfaces()) {
+						m = methodSmartSearch(i, method, params);
+						if (m == null) continue;
+						break;
+//						try {
+//							m = i.getDeclaredMethod(method, getClasses(params));
+//							break;
+//						} catch (NoSuchMethodException ignored) {
+//						}
+					}
+					if (m == null) {
+						m = methodSmartSearch(cClass, method, params);
+//						m = cClass.getDeclaredMethod(method, getClasses(params));
+					}
+				}
+			}
+			else {
+				m = methodSmartSearch(cClass, method, params);
+//				m = cClass.getDeclaredMethod(method, getClasses(params));
+			}
+			if (m == null) throw new NoSuchMethodException();
+			if (m.isVarArgs()) {
+				params = ShadowUtil.trim(params, m.getParameterCount());
+			}
 			m.setAccessible(true);
 			current = m.invoke(current, params);
 			cClass = m.getReturnType();
 		} catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ignored) {
 			Debugger.log("method " + method + (params.length > 0 ? " with params " + ShadowUtil.combine(params, ", ") : "") + " not found in " + (cClass == null ? "null" : cClass.getName()));
-			current = null;
+			scope.error("Unable to find method: " + method + (params.length > 0 ? " with params " + ShadowUtil.combine(params, ", ") : "") + " in: " + (cClass == null ? "null" : cClass.getName()));
+			fail();
 		}
+	}
+	
+	private Method methodSmartSearch(Class<?> clazz, String method, Object[] params) {
+		Optional<Method> op = Stream.of(clazz.getDeclaredMethods()).filter(method1 -> method1.getName().equals(method)).filter(method1 -> {
+			Class<?>[] p = method1.getParameterTypes();
+			if (method1.isVarArgs()) {
+				if (params.length < p.length) return false;
+				for (int i = 0; i < p.length - 1; i++) {
+					if (!p[i].isAssignableFrom(unwrap(params[i].getClass()))) return false;
+				}
+				Class<?> arrayType = p[p.length - 1].getComponentType();
+				for (int i = p.length - 1; i < params.length; i++) {
+					if (!arrayType.isAssignableFrom(unwrap(params[i].getClass()))) return false;
+				}
+				ShadowUtil.toVarArgs(params, p.length - 1, arrayType);
+				return true;
+			}
+			if (p.length != params.length) return false;
+			for (int i = 0; i < p.length; i++) {
+				if (!p[i].isAssignableFrom(unwrap(params[i].getClass()))) return false;
+			}
+			return true;
+		}).findFirst();
+		return op.orElse(null);
 	}
 	
 	private Class<?> unwrap(Class<?> clazz) {
@@ -155,7 +244,10 @@ public class Evaluator {
 	}
 	
 	private Object parseParam(String value) {
-		if (value.matches("o\\{.+}")) return process(value.substring(2, value.length() - 1), scope, finder);
+		if (value.matches("p\\{.+}")) {
+			Optional<Variable> op = scope.getPrivateVar(value.substring(2, value.length() - 1));
+			return op.map(Variable::getValue).orElse(null);
+		};
 		return toObject(value);
 	}
 	
@@ -166,6 +258,9 @@ public class Evaluator {
 		}
 		else if (value.matches("true|false")) {
 			return Boolean.valueOf(value);
+		}
+		else if (value.equals("null")) {
+			return null;
 		}
 		return value;
 	}

@@ -1,8 +1,6 @@
 package com.ssplugins.shadow.lang;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class Scope {
 	
@@ -10,13 +8,35 @@ public class Scope {
 	private String blockName = null;
 	private List<Variable> globalVars;
 	private List<Variable> localVars = new ArrayList<>();
+	private List<Variable> privateVars = new ArrayList<>();
+	private UUID tempID;
+	private Scope upper;
+	private MsgCallback msgCallback;
 	
-	Scope(List<Variable> globalVars) {
+	Scope(List<Variable> globalVars, Scope upper) {
 		this.globalVars = globalVars;
+		this.upper = upper;
+		if (upper != null) msgCallback = upper.msgCallback;
 	}
 	
 	public void clean() {
 		localVars.clear();
+	}
+	
+	void setMsgCallback(MsgCallback callback) {
+		msgCallback = callback;
+	}
+	
+	public void msg(String msg) {
+		if (msgCallback != null) msgCallback.msg(msg);
+	}
+	
+	public void error(String msg) {
+		msg("Error: " + msg);
+	}
+	
+	public void info(String msg) {
+		msg("Info: " + msg);
 	}
 	
 	public boolean isBlock() {
@@ -25,6 +45,10 @@ public class Scope {
 	
 	public String getBlockName() {
 		return blockName;
+	}
+	
+	public Scope levelUp() {
+		return upper;
 	}
 	
 	public List<Variable> getAllLocalVars() {
@@ -37,6 +61,10 @@ public class Scope {
 	
 	public Optional<Variable> getVar(String name) {
 		return localVars.stream().filter(variable -> variable.getName().equals(name)).findFirst();
+	}
+	
+	public Optional<Variable> getPrivateVar(String key) {
+		return privateVars.stream().filter(variable -> variable.getName().equals(key)).findFirst();
 	}
 	
 	public void setGlobalVar(String name, Object value) {
@@ -55,6 +83,19 @@ public class Scope {
 			return;
 		}
 		op.get().setValue(value);
+	}
+	
+	public String newPrivateVar(Object value) {
+		tempID = UUID.randomUUID();
+		while (privateVars.stream().anyMatch(variable -> variable.getName().equals(tempID.toString()))) {
+			tempID = UUID.randomUUID();
+		}
+		privateVars.add(new Variable(tempID.toString(), value));
+		return tempID.toString();
+	}
+	
+	public void add(Variable variable) {
+		setVar(variable.getName(), variable.getValue());
 	}
 	
 	public void unset(String name) {

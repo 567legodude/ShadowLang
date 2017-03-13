@@ -1,9 +1,7 @@
 package com.ssplugins.shadow.lang;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.lang.reflect.Array;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -62,6 +60,27 @@ public class ShadowUtil {
 		return sections;
 	}
 	
+	static Section toSection(Shadow shadow, String line) {
+		return new Section(new Line(shadow, line, 1));
+	}
+	
+	static Optional<Variable> getVariable(String var, Scope scope) {
+		if (var.matches("p\\{.+}")) {
+			return scope.getPrivateVar(var.substring(2, var.length() - 1));
+		}
+		else if (var.startsWith("g-")) {
+			return scope.getGlobalVar(var.substring(2));
+		}
+		return scope.getVar(var);
+	}
+	
+	static Optional<Variable> getGlobalVariable(String var, Scope scope) {
+		if (var.startsWith("g-")) {
+			return scope.getGlobalVar(var.substring(2));
+		}
+		return scope.getGlobalVar(var);
+	}
+	
 	public static String combine(String[] parts, int start, int end) {
 		StringBuilder builder = new StringBuilder();
 		for (int i = start; i < end; i++) {
@@ -106,6 +125,23 @@ public class ShadowUtil {
 		return builder.toString().trim();
 	}
 	
+	static Object[] toVarArgs(Object[] params, int index, Class<?> baseType) {
+		List<Object> vars = new ArrayList<>();
+		for (int i = index; i < params.length; i++) {
+			vars.add(baseType.cast(params[i]));
+		}
+		Object arr = Array.newInstance(baseType, vars.size());
+		for (int i = 0; i < vars.size(); i++) {
+			Array.set(arr, i, vars.get(i));
+		}
+		params[index] = arr;
+		return params;
+	}
+	
+	static Object[] trim(Object[] params, int length) {
+		return Arrays.copyOf(params, length);
+	}
+	
 	static String getFromArray(Object array, int index) {
 		if (!array.getClass().isArray()) return "";
 		try {
@@ -115,40 +151,21 @@ public class ShadowUtil {
 		}
 	}
 	
-	static String getEvalParams(List<VariableType> list, Shadow shadow) {
-		StringBuilder builder = new StringBuilder();
-		Iterator<VariableType> it = list.iterator();
-		while (it.hasNext()) {
-			VariableType type = it.next();
-			builder.append(shadow.getClassFinder().findClass(type.getType())).append(" ").append(type.getName());
-			if (it.hasNext()) builder.append(", ");
-		}
-		return builder.toString();
-	}
-	
-	static Class<?>[] getEvalClasses(List<VariableType> list, Shadow shadow) {
-		List<Class<?>> out = new ArrayList<>();
-		out.add(Scope.class);
-		Iterator<VariableType> it = list.iterator();
-		while (it.hasNext()) {
-			VariableType type = it.next();
-			try {
-				out.add(Class.forName(shadow.getClassFinder().findClass(type.getType())));
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
+	public static Optional<Variable> getLeveledVar(String var, Scope scope) {
+		Matcher m = Pattern.compile("(\\^*)(.+)").matcher(var);
+		if (m.find()) {
+			int level = m.group(0).length();
+			String v = m.group(1);
+			while (level > 0) {
+				if (scope.levelUp() == null) {
+					level = 0;
+					break;
+				}
+				scope = scope.levelUp();
+				level--;
 			}
+			return scope.getVar(v);
 		}
-		return out.toArray(new Class[out.size()]);
-	}
-	
-	static Object[] getEvalObjects(List<VariableType> list, Scope scope) {
-		List<Object> l = new ArrayList<>();
-		l.add(scope);
-		list.forEach(variableType -> {
-			Optional<Variable> op = scope.getVar(variableType.getName());
-			if (!op.isPresent()) return;
-			l.add(op.get().getValue());
-		});
-		return l.toArray(new Object[l.size()]);
+		return Optional.empty();
 	}
 }

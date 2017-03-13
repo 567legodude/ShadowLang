@@ -10,6 +10,7 @@ public class BlockHeader {
 	private String name;
 	private String[] modifiers;
 	private String[] parameters;
+	private int line;
 	
 	private BlockHeader() {}
 	
@@ -64,7 +65,7 @@ public class BlockHeader {
 	}
 	
 	public Block toBlock(Shadow shadow) {
-		Block block = new Block(shadow, getName());
+		Block block = new Block(shadow, getName(), line);
 		block.setModifiers(getModifiers());
 		block.setParameters(getParameters());
 		return block;
