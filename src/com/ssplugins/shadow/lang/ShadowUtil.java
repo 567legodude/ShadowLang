@@ -1,9 +1,7 @@
 package com.ssplugins.shadow.lang;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.lang.reflect.Array;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -125,6 +123,23 @@ public class ShadowUtil {
 			builder.append(parts[i]).append(" ");
 		}
 		return builder.toString().trim();
+	}
+	
+	static Object[] toVarArgs(Object[] params, int index, Class<?> baseType) {
+		List<Object> vars = new ArrayList<>();
+		for (int i = index; i < params.length; i++) {
+			vars.add(baseType.cast(params[i]));
+		}
+		Object arr = Array.newInstance(baseType, vars.size());
+		for (int i = 0; i < vars.size(); i++) {
+			Array.set(arr, i, vars.get(i));
+		}
+		params[index] = arr;
+		return params;
+	}
+	
+	static Object[] trim(Object[] params, int length) {
+		return Arrays.copyOf(params, length);
 	}
 	
 	static String getFromArray(Object array, int index) {

@@ -191,6 +191,9 @@ public class Evaluator {
 //				m = cClass.getDeclaredMethod(method, getClasses(params));
 			}
 			if (m == null) throw new NoSuchMethodException();
+			if (m.isVarArgs()) {
+				params = ShadowUtil.trim(params, m.getParameterCount());
+			}
 			m.setAccessible(true);
 			current = m.invoke(current, params);
 			cClass = m.getReturnType();
@@ -204,6 +207,18 @@ public class Evaluator {
 	private Method methodSmartSearch(Class<?> clazz, String method, Object[] params) {
 		Optional<Method> op = Stream.of(clazz.getDeclaredMethods()).filter(method1 -> method1.getName().equals(method)).filter(method1 -> {
 			Class<?>[] p = method1.getParameterTypes();
+			if (method1.isVarArgs()) {
+				if (params.length < p.length) return false;
+				for (int i = 0; i < p.length - 1; i++) {
+					if (!p[i].isAssignableFrom(unwrap(params[i].getClass()))) return false;
+				}
+				Class<?> arrayType = p[p.length - 1].getComponentType();
+				for (int i = p.length - 1; i < params.length; i++) {
+					if (!arrayType.isAssignableFrom(unwrap(params[i].getClass()))) return false;
+				}
+				ShadowUtil.toVarArgs(params, p.length - 1, arrayType);
+				return true;
+			}
 			if (p.length != params.length) return false;
 			for (int i = 0; i < p.length; i++) {
 				if (!p[i].isAssignableFrom(unwrap(params[i].getClass()))) return false;

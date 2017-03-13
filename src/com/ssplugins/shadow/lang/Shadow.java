@@ -1,6 +1,9 @@
 package com.ssplugins.shadow.lang;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,6 +39,12 @@ public class Shadow {
 		} catch (FileNotFoundException e) {
 			return new Shadow();
 		}
+	}
+	
+	public static Shadow parseCommons(File file) {
+		Shadow shadow = Shadow.parse(file);
+		ShadowCommons.apply(shadow);
+		return shadow;
 	}
 	
 	public static Shadow empty() {
