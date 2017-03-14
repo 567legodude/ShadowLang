@@ -126,13 +126,10 @@ public class ShadowUtil {
 	}
 	
 	static Object[] toVarArgs(Object[] params, int index, Class<?> baseType) {
-		List<Object> vars = new ArrayList<>();
-		for (int i = index; i < params.length; i++) {
-			vars.add(baseType.cast(params[i]));
-		}
-		Object arr = Array.newInstance(baseType, vars.size());
-		for (int i = 0; i < vars.size(); i++) {
-			Array.set(arr, i, vars.get(i));
+		int length = params.length - index;
+		Object arr = Array.newInstance(baseType, length);
+		for (int i = 0; i < length; i++) {
+			Array.set(arr, i, params[i + index]);
 		}
 		params[index] = arr;
 		return params;
