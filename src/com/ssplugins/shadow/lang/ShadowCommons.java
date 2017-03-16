@@ -63,9 +63,6 @@ public class ShadowCommons {
 			}
 			String var = args[0];
 			String value = ShadowUtil.combine(args, 1);
-			if (value.matches(".+?\\[[0-9+]*?]")) {
-				
-			}
 			Object finalVal = Evaluator.process(value, scope, stepper.getShadow().getClassFinder());
 			if (finalVal == null) {
 				finalVal = value;
