@@ -63,16 +63,13 @@ public class ShadowCommons {
 			}
 			String var = args[0];
 			String value = ShadowUtil.combine(args, 1);
-			Object finalVal;
-			if (value.startsWith(">>")) {
-				value = value.substring(2);
-				finalVal = Evaluator.process(value, scope, stepper.getShadow().getClassFinder());
-				if (finalVal == null) {
-					scope.error("Resulting value is null");
-					return;
-				}
+			if (value.matches(".+?\\[[0-9+]*?]")) {
+				
 			}
-			else finalVal = value;
+			Object finalVal = Evaluator.process(value, scope, stepper.getShadow().getClassFinder());
+			if (finalVal == null) {
+				finalVal = value;
+			}
 			scope.setVar(var, finalVal);
 			scope.msg("Variable " + var + " set");
 		}));
@@ -86,16 +83,10 @@ public class ShadowCommons {
 			}
 			String var = args[0];
 			String value = ShadowUtil.combine(args, 1);
-			Object finalVal;
-			if (value.startsWith(">>")) {
-				value = value.substring(2);
-				finalVal = Evaluator.process(value, scope, stepper.getShadow().getClassFinder());
-				if (finalVal == null) {
-					scope.error("Resulting value is null");
-					return;
-				}
+			Object finalVal = Evaluator.process(value, scope, stepper.getShadow().getClassFinder());
+			if (finalVal == null) {
+				finalVal = value;
 			}
-			else finalVal = value;
 			scope.setGlobalVar(var, finalVal);
 			scope.msg("Global variable " + var + " set");
 		}));
@@ -267,22 +258,33 @@ public class ShadowCommons {
 	
 	private void blockIf() {
 		shadow.setPreRunAction("if", (block, scope, info) -> {
-			if (!block.verify(2, 0)) return false;
+			if (!block.verify(2, 0) && !block.verify(1, 0)) return false;
 			String arg1 = block.getMod(0);
-			String arg2 = block.getMod(1);
 			Object final1;
-			Object final2;
 			if (arg1.matches("e\\{.+}")) final1 = Evaluator.process(arg1.substring(2, arg1.length() - 1), scope, block.getShadow().getClassFinder());
+			else if (arg1.matches("true|false")) {
+				final1 = Boolean.parseBoolean(arg1);
+			}
 			else {
 				Optional<Variable> op = ShadowUtil.getVariable(arg1, scope);
 				final1 = op.orElse(Variable.temp(arg1)).getValue();
 			}
-			if (arg2.matches("e\\{.+}")) final2 = Evaluator.process(arg2.substring(2, arg2.length() - 1), scope, block.getShadow().getClassFinder());
-			else {
-				Optional<Variable> op = ShadowUtil.getVariable(arg2, scope);
-				final2 = op.orElse(Variable.temp(arg2)).getValue();
+			if (block.modLength() == 2) {
+				String arg2 = block.getMod(1);
+				Object final2;
+				if (arg2.matches("e\\{.+}")) final2 = Evaluator.process(arg2.substring(2, arg2.length() - 1), scope, block.getShadow().getClassFinder());
+				else if (arg2.matches("true|false")) {
+					final2 = Boolean.parseBoolean(arg2);
+				}
+				else {
+					Optional<Variable> op = ShadowUtil.getVariable(arg2, scope);
+					final2 = op.orElse(Variable.temp(arg2)).getValue();
+				}
+				return final1 == null ? final2 == null : final1.equals(final2);
 			}
-			return final1 == null ? final2 == null : final1.equals(final2);
+			else {
+				return (final1 instanceof Boolean && (Boolean) final1);
+			}
 		});
 	}
 	
