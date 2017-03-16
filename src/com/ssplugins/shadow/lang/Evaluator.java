@@ -57,7 +57,11 @@ public class Evaluator {
 				Debugger.log("starting as: " + (cClass == null ? "null" : cClass.getName()));
 				continue;
 			}
-			if (o.equals(">")) castTo(data);
+			if (o.equals("?")) {
+				Debugger.log("literal string: " + data);
+				return data;
+			}
+			else if (o.equals(">")) castTo(data);
 			else if (o.equals(":")) {
 				Debugger.log("preparing to call method: " + data);
 				Matcher m = Pattern.compile("(.+)\\((.+)\\)").matcher(data);
