@@ -174,9 +174,11 @@ public class ShadowCommons {
 	private void keyBring() {
 		shadow.addKeyword(new Keyword("bring", (args, scope, stepper) -> {
 			if (args.length < 1) return;
-			Optional<Variable> op = ShadowUtil.getLeveledVar(args[0], scope);
-			if (!op.isPresent()) return;
-			scope.add(op.get());
+			for (String arg : args) {
+				Optional<Variable> op = ShadowUtil.getLeveledVar(arg, scope);
+				if (!op.isPresent()) continue;
+				scope.add(op.get());
+			}
 		}));
 	}
 	
