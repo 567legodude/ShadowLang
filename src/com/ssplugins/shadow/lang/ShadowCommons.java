@@ -153,12 +153,18 @@ public class ShadowCommons {
 			String arg2 = args[1];
 			Object final1;
 			Object final2;
-			if (arg1.matches("o\\{.+}")) final1 = Evaluator.process(arg1.substring(2, arg1.length() - 1), scope, stepper.getShadow().getClassFinder());
-			else final1 = arg1;
-			if (arg2.matches("o\\{.+}")) final2 = Evaluator.process(arg2.substring(2, arg2.length() - 1), scope, stepper.getShadow().getClassFinder());
-			else final2 = arg2;
+			if (arg1.matches("e\\{.+}")) final1 = Evaluator.process(arg1.substring(2, arg1.length() - 1), scope, stepper.getShadow().getClassFinder());
+			else {
+				Optional<Variable> op = ShadowUtil.getVariable(arg1, scope);
+				final1 = op.orElse(Variable.temp(arg1)).getValue();
+			}
+			if (arg2.matches("e\\{.+}")) final2 = Evaluator.process(arg2.substring(2, arg2.length() - 1), scope, stepper.getShadow().getClassFinder());
+			else {
+				Optional<Variable> op = ShadowUtil.getVariable(arg2, scope);
+				final2 = op.orElse(Variable.temp(arg2)).getValue();
+			}
 			if (!final1.equals(final2)) {
-				stepper.stepBreak();
+				stepper.breakAll();
 			}
 			scope.msg("Asserts: " + final1.equals(final2));
 		}));
