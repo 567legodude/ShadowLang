@@ -10,6 +10,10 @@ public class Variable {
 		this.value = value;
 	}
 	
+	public static Variable temp(Object value) {
+		return new Variable(null, value);
+	}
+	
 	public Variable rename(String name) {
 		return new Variable(name, value);
 	}
