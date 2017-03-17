@@ -30,6 +30,7 @@ public class ShadowCommons {
 		keyAssert();
 		keyCall();
 		keyBring();
+		keyPush();
 	}
 	
 	private void addBlocks() {
@@ -175,6 +176,15 @@ public class ShadowCommons {
 				Optional<Variable> op = ShadowUtil.getLeveledVar(arg, scope);
 				if (!op.isPresent()) continue;
 				scope.add(op.get());
+			}
+		}));
+	}
+	
+	private void keyPush() {
+		shadow.addKeyword(new Keyword("push", (args, scope, stepper) -> {
+			if (args.length < 1) return;
+			for (String arg : args) {
+				ShadowUtil.pushLeveledVar(arg, scope);
 			}
 		}));
 	}

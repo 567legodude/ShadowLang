@@ -151,11 +151,10 @@ public class ShadowUtil {
 	public static Optional<Variable> getLeveledVar(String var, Scope scope) {
 		Matcher m = Pattern.compile("(\\^*)(.+)").matcher(var);
 		if (m.find()) {
-			int level = m.group(0).length();
-			String v = m.group(1);
+			int level = m.group(1).length();
+			String v = m.group(2);
 			while (level > 0) {
 				if (scope.levelUp() == null) {
-					level = 0;
 					break;
 				}
 				scope = scope.levelUp();
@@ -164,5 +163,23 @@ public class ShadowUtil {
 			return scope.getVar(v);
 		}
 		return Optional.empty();
+	}
+	
+	public static void pushLeveledVar(String var, Scope scope) {
+		Matcher m = Pattern.compile("(\\^*)(.+)").matcher(var);
+		if (m.find()) {
+			int level = m.group(1).length();
+			String v = m.group(2);
+			Optional<Variable> op = scope.getVar(v);
+			if (!op.isPresent()) return;
+			while (level > 0) {
+				if (scope.levelUp() == null) {
+					break;
+				}
+				scope = scope.levelUp();
+				level--;
+			}
+			scope.add(op.get());
+		}
 	}
 }
