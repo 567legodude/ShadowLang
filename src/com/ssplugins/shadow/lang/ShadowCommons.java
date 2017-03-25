@@ -313,25 +313,13 @@ public class ShadowCommons {
 			if (!block.verify(2, 0) && !block.verify(1, 0)) return false;
 			String arg1 = block.getMod(0);
 			Object final1;
-			if (arg1.matches("e\\{.+}")) final1 = Evaluator.process(arg1.substring(2, arg1.length() - 1), scope, block.getShadow().getClassFinder());
-			else if (arg1.matches("true|false")) {
-				final1 = Boolean.parseBoolean(arg1);
-			}
-			else {
-				Optional<Variable> op = ShadowUtil.getVariable(arg1, scope);
-				final1 = op.orElse(Variable.temp(arg1)).getValue();
-			}
+			if (arg1.matches("true|false")) final1 = Boolean.parseBoolean(arg1);
+			else final1 = Evaluator.process(arg1, scope, block.getShadow().getClassFinder());
 			if (block.modLength() == 2) {
 				String arg2 = block.getMod(1);
 				Object final2;
-				if (arg2.matches("e\\{.+}")) final2 = Evaluator.process(arg2.substring(2, arg2.length() - 1), scope, block.getShadow().getClassFinder());
-				else if (arg2.matches("true|false")) {
-					final2 = Boolean.parseBoolean(arg2);
-				}
-				else {
-					Optional<Variable> op = ShadowUtil.getVariable(arg2, scope);
-					final2 = op.orElse(Variable.temp(arg2)).getValue();
-				}
+				if (arg2.matches("true|false")) final2 = Boolean.parseBoolean(arg2);
+				else final2 = Evaluator.process(arg2, scope, block.getShadow().getClassFinder());
 				return final1 == null ? final2 == null : final1.equals(final2);
 			}
 			else {
