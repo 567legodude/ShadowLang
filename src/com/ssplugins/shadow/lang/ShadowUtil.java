@@ -9,7 +9,7 @@ public class ShadowUtil {
 	
 	static String[] getParts(String line) {
 		List<String> f = new ArrayList<>();
-		Matcher m = Pattern.compile("([^\"]\\S*|(?<!\\\\)\".+?(?<!\\\\)\")\\s*").matcher(line);
+		Matcher m = Pattern.compile("([^\\s]+?\\{.*?}|[^\"]\\S*|(?<!\\\\)\".+?(?<!\\\\)\"|\"\\S*)\\s*").matcher(line);
 		while (m.find()) f.add(removeQuotes(m.group(1)));
 		String[] out = new String[f.size()];
 		out = f.toArray(out);
@@ -102,7 +102,8 @@ public class ShadowUtil {
 	static String combine(Object[] parts, String del) {
 		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < parts.length; i++) {
-			builder.append(parts[i].getClass().getName() + ":" + parts[i].toString()).append(del);
+			if (parts[i] == null) builder.append("null");
+			else builder.append(parts[i].getClass().getName() + ":" + parts[i].toString()).append(del);
 		}
 		return builder.toString().substring(0, builder.length() - del.length());
 	}

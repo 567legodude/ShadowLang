@@ -384,7 +384,7 @@ public class ShadowCommons {
 	
 	private void replacerCompare() {
 		shadow.addReplacer("o", (text, line, scope, stepper) -> {
-			Matcher m = Pattern.compile("(.+?) (.+?) (.+?)").matcher(text);
+			Matcher m = Pattern.compile("(.+) (.+) (.+)").matcher(text);
 			StringBuilder builder = new StringBuilder();
 			if (m.find()) {
 				String op = m.group(2);
@@ -411,16 +411,20 @@ public class ShadowCommons {
 					default:
 						break;
 				}
-				if (method.isEmpty()) builder.append("null");
+				if (method.isEmpty()) builder.append("-null");
 				else {
-					Object result = Evaluator.process(">" + Operator.class.getSimpleName() + ":" + method + "(" + ShadowUtil.literal(m.group(1)) + ", " + ShadowUtil.literal(m.group(3)) + ")", scope, name -> Operator.class.getName());
+					Object a = Evaluator.process(ShadowUtil.literal(m.group(1)), scope, stepper.getShadow().getClassFinder());
+					Object b = Evaluator.process(ShadowUtil.literal(m.group(3)), scope, stepper.getShadow().getClassFinder());
+					String varA = "p{" + scope.newPrivateVar(a) + "}";
+					String varB = "p{" + scope.newPrivateVar(b) + "}";
+					Object result = Evaluator.process(">" + Operator.class.getSimpleName() + ":" + method + "(" + varA + "," + varB + ")", scope, name -> Operator.class.getName());
 					if (result instanceof String) builder.append("?");
 					else builder.append("-");
 					if (result != null) builder.append(result.toString());
 					else builder.append("null");
 				}
 			}
-			else builder.append("null");
+			else builder.append("-null");
 			return builder.toString();
 		});
 	}

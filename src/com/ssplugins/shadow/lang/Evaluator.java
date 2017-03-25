@@ -214,18 +214,19 @@ public class Evaluator {
 			if (method1.isVarArgs()) {
 				if (params.length < p.length) return false;
 				for (int i = 0; i < p.length - 1; i++) {
-					if (!p[i].isAssignableFrom(unwrap(params[i].getClass()))) return false;
+					if (!p[i].isAssignableFrom(unwrap(params[i].getClass())) && !p[i].isAssignableFrom(params[i].getClass())) return false;
 				}
 				Class<?> arrayType = p[p.length - 1].getComponentType();
 				for (int i = p.length - 1; i < params.length; i++) {
-					if (!arrayType.isAssignableFrom(unwrap(params[i].getClass()))) return false;
+					if (!arrayType.isAssignableFrom(unwrap(params[i].getClass())) && !arrayType.isAssignableFrom(params[i].getClass())) return false;
 				}
 				ShadowUtil.toVarArgs(params, p.length - 1, arrayType);
 				return true;
 			}
 			if (p.length != params.length) return false;
 			for (int i = 0; i < p.length; i++) {
-				if (!p[i].isAssignableFrom(unwrap(params[i].getClass()))) return false;
+				if (params[i] == null) continue;
+				if (!p[i].isAssignableFrom(unwrap(params[i].getClass())) && !p[i].isAssignableFrom(params[i].getClass())) return false;
 			}
 			return true;
 		}).findFirst();

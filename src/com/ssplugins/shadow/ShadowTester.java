@@ -2,7 +2,6 @@ package com.ssplugins.shadow;
 
 import com.ssplugins.shadow.lang.Debugger;
 import com.ssplugins.shadow.lang.Shadow;
-import com.ssplugins.shadow.lang.ShadowCommons;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.FileChooser;
@@ -11,7 +10,6 @@ import javafx.stage.Stage;
 
 import javax.swing.*;
 import java.io.File;
-import java.util.ArrayList;
 
 public class ShadowTester extends Application {
 	
