@@ -91,10 +91,10 @@ public class ShadowUtil {
 	
 	static String combine(Object parts) {
 		if (!parts.getClass().isArray()) return "";
-		String[] array = String[].class.cast(parts);
+		int l = Array.getLength(parts);
 		StringBuilder builder = new StringBuilder();
-		for (int i = 0; i < array.length; i++) {
-			builder.append(array[i]).append(" ");
+		for (int i = 0; i < l; i++) {
+			builder.append(Array.get(parts, i).toString()).append(" ");
 		}
 		return builder.toString().trim();
 	}
@@ -109,10 +109,10 @@ public class ShadowUtil {
 	
 	static String combine(Object parts, int start) {
 		if (!parts.getClass().isArray()) return "";
-		String[] array = String[].class.cast(parts);
+		int l = Array.getLength(parts);
 		StringBuilder builder = new StringBuilder();
-		for (int i = start; i < array.length; i++) {
-			builder.append(array[i]).append(" ");
+		for (int i = start; i < l; i++) {
+			builder.append(Array.get(parts, i).toString()).append(" ");
 		}
 		return builder.toString().trim();
 	}
@@ -183,5 +183,10 @@ public class ShadowUtil {
 			}
 			scope.add(op.get());
 		}
+	}
+	
+	public static String literal(String s) {
+		if (s.substring(0, 1).matches("\\W")) return s;
+		return "-" + s;
 	}
 }

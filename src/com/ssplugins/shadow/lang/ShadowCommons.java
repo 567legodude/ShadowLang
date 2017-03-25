@@ -2,6 +2,8 @@ package com.ssplugins.shadow.lang;
 
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ShadowCommons {
 	
@@ -31,6 +33,9 @@ public class ShadowCommons {
 		keyCall();
 		keyBring();
 		keyPush();
+		keyRepeatIf();
+		keyIf();
+		keyLevel();
 	}
 	
 	private void addBlocks() {
@@ -44,6 +49,7 @@ public class ShadowCommons {
 	private void addReplacers() {
 		replacerEval();
 		replacerString();
+		replacerCompare();
 	}
 	
 	private void keyLog() {
@@ -186,6 +192,43 @@ public class ShadowCommons {
 			for (String arg : args) {
 				ShadowUtil.pushLeveledVar(arg, scope);
 			}
+		}));
+	}
+	
+	private void keyRepeatIf() {
+		shadow.addKeyword(new Keyword("repeatif", (args, scope, stepper) -> {
+			if (args.length < 1) return;
+			String a = ShadowUtil.combine(args, 0);
+			Object result = Evaluator.process(a, scope, stepper.getShadow().getClassFinder());
+			if (result instanceof Boolean && (Boolean) result) {
+				stepper.stepRestart();
+			}
+		}));
+	}
+	
+	private void keyIf() {
+		shadow.addKeyword(new Keyword("if", (args, scope, stepper) -> {
+			if (args.length < 2) return;
+			Object result = Evaluator.process(args[0], scope, stepper.getShadow().getClassFinder());
+			if (result instanceof Boolean && (Boolean) result) {
+				Line line = new Line(stepper.getShadow(), ShadowUtil.combine(args, 1), 0);
+				stepper.getShadow().runLine(line, scope, stepper);
+			}
+		}));
+	}
+	
+	private void keyLevel() {
+		shadow.addKeyword(new Keyword("level", (args, scope, stepper) -> {
+			if (args.length < 2) return;
+			int levels = args[0].length();
+			Line line = new Line(stepper.getShadow(), ShadowUtil.combine(args, 1), 0);
+			while (levels > 0) {
+				if (stepper.getCalling() == null || scope.levelUp() == null) break;
+				stepper = stepper.getCalling();
+				scope = scope.levelUp();
+				levels--;
+			}
+			stepper.getShadow().runLine(line, scope, stepper);
 		}));
 	}
 	
@@ -336,6 +379,49 @@ public class ShadowCommons {
 			Object value = Evaluator.process(text, scope, stepper.getShadow().getClassFinder());
 			String key = scope.newPrivateVar(value);
 			return "p{" + key + "}";
+		});
+	}
+	
+	private void replacerCompare() {
+		shadow.addReplacer("o", (text, line, scope, stepper) -> {
+			Matcher m = Pattern.compile("(.+?) (.+?) (.+?)").matcher(text);
+			StringBuilder builder = new StringBuilder();
+			if (m.find()) {
+				String op = m.group(2);
+				String method = "";
+				switch (op) {
+					case "+":
+						method = "plus";
+						break;
+					case "-":
+						method = "minus";
+						break;
+					case "*":
+						method = "multiply";
+						break;
+					case "/":
+						method = "divide";
+						break;
+					case "==":
+						method = "equals";
+						break;
+					case "!=":
+						method = "nequals";
+						break;
+					default:
+						break;
+				}
+				if (method.isEmpty()) builder.append("null");
+				else {
+					Object result = Evaluator.process(">" + Operator.class.getSimpleName() + ":" + method + "(" + ShadowUtil.literal(m.group(1)) + ", " + ShadowUtil.literal(m.group(3)) + ")", scope, name -> Operator.class.getName());
+					if (result instanceof String) builder.append("?");
+					else builder.append("-");
+					if (result != null) builder.append(result.toString());
+					else builder.append("null");
+				}
+			}
+			else builder.append("null");
+			return builder.toString();
 		});
 	}
 	

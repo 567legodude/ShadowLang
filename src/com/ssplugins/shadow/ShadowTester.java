@@ -11,6 +11,7 @@ import javafx.stage.Stage;
 
 import javax.swing.*;
 import java.io.File;
+import java.util.ArrayList;
 
 public class ShadowTester extends Application {
 	
@@ -29,8 +30,7 @@ public class ShadowTester extends Application {
 			return;
 		}
 		
-		
-		//Debugger.setEnabled(true);
+		Debugger.setEnabled(true);
 		Shadow shadow = Shadow.parseCommons(file);
 		shadow.runBlocks("test", new String[] {"first", "second", "third"}, "testy");
 		shadow.end();

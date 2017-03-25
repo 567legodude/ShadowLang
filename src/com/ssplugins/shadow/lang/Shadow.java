@@ -221,7 +221,6 @@ public class Shadow {
 	void runLine(Line line, Scope scope, Stepper stepper) {
 		Optional<Keyword> op = getKeyword(line.keyword());
 		if (!op.isPresent()) {
-			// either throw error or ignore
 			return;
 		}
 		String[] args = line.getArguments();

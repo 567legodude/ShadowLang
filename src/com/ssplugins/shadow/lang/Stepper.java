@@ -49,6 +49,10 @@ public class Stepper implements StepperInfo {
 		scope.setVar(variable.getName(), variable.getValue());
 	}
 	
+	Stepper getCalling() {
+		return calling;
+	}
+	
 	private void setCallback(Runnable callback) {
 		this.callback = callback;
 	}

@@ -32,12 +32,12 @@ public class Evaluator {
 	
 	public Object process() {
 		Debugger.log("processing");
-		Pattern pattern = Pattern.compile("g-\\w+|(\\W)?(\\w+(\\([^)]*\\))?)");
+		Pattern pattern = Pattern.compile("g-\\w+|(\\W)?((?:\\W)?\\w+(\\$\\w+)?(\\([^)]*\\))?)");
 		Matcher matcher = pattern.matcher(instruction);
 		while (matcher.find()) {
 			String o = matcher.group(1);
 			String data = matcher.group(2);
-			if (o == null) {
+			if (o == null || o.equals("<")) {
 				Debugger.log("getting " + data + " from scope");
 				Optional<Variable> op;
 				if (data == null) {
