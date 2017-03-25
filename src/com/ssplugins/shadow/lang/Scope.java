@@ -55,6 +55,10 @@ public class Scope {
 		return new ArrayList<>(localVars);
 	}
 	
+	public boolean isVarSet(String var) {
+		return localVars.stream().anyMatch(variable -> variable.getName().equals(var));
+	}
+	
 	public Optional<Variable> getGlobalVar(String name) {
 		return globalVars.stream().filter(variable -> variable.getName().equals(name)).findFirst();
 	}

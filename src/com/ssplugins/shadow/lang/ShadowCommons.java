@@ -2,6 +2,8 @@ package com.ssplugins.shadow.lang;
 
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ShadowCommons {
 	
@@ -30,6 +32,10 @@ public class ShadowCommons {
 		keyAssert();
 		keyCall();
 		keyBring();
+		keyPush();
+		keyRepeatIf();
+		keyIf();
+		keyLevel();
 	}
 	
 	private void addBlocks() {
@@ -43,6 +49,7 @@ public class ShadowCommons {
 	private void addReplacers() {
 		replacerEval();
 		replacerString();
+		replacerCompare();
 	}
 	
 	private void keyLog() {
@@ -63,16 +70,10 @@ public class ShadowCommons {
 			}
 			String var = args[0];
 			String value = ShadowUtil.combine(args, 1);
-			Object finalVal;
-			if (value.startsWith(">>")) {
-				value = value.substring(2);
-				finalVal = Evaluator.process(value, scope, stepper.getShadow().getClassFinder());
-				if (finalVal == null) {
-					scope.error("Resulting value is null");
-					return;
-				}
+			Object finalVal = Evaluator.process(value, scope, stepper.getShadow().getClassFinder());
+			if (finalVal == null) {
+				finalVal = value;
 			}
-			else finalVal = value;
 			scope.setVar(var, finalVal);
 			scope.msg("Variable " + var + " set");
 		}));
@@ -86,16 +87,10 @@ public class ShadowCommons {
 			}
 			String var = args[0];
 			String value = ShadowUtil.combine(args, 1);
-			Object finalVal;
-			if (value.startsWith(">>")) {
-				value = value.substring(2);
-				finalVal = Evaluator.process(value, scope, stepper.getShadow().getClassFinder());
-				if (finalVal == null) {
-					scope.error("Resulting value is null");
-					return;
-				}
+			Object finalVal = Evaluator.process(value, scope, stepper.getShadow().getClassFinder());
+			if (finalVal == null) {
+				finalVal = value;
 			}
-			else finalVal = value;
 			scope.setGlobalVar(var, finalVal);
 			scope.msg("Global variable " + var + " set");
 		}));
@@ -151,14 +146,10 @@ public class ShadowCommons {
 			}
 			String arg1 = args[0];
 			String arg2 = args[1];
-			Object final1;
-			Object final2;
-			if (arg1.matches("o\\{.+}")) final1 = Evaluator.process(arg1.substring(2, arg1.length() - 1), scope, stepper.getShadow().getClassFinder());
-			else final1 = arg1;
-			if (arg2.matches("o\\{.+}")) final2 = Evaluator.process(arg2.substring(2, arg2.length() - 1), scope, stepper.getShadow().getClassFinder());
-			else final2 = arg2;
+			Object final1 = Evaluator.process(arg1, scope, stepper.getShadow().getClassFinder());
+			Object final2 = Evaluator.process(arg2, scope, stepper.getShadow().getClassFinder());
 			if (!final1.equals(final2)) {
-				stepper.stepBreak();
+				stepper.breakAll();
 			}
 			scope.msg("Asserts: " + final1.equals(final2));
 		}));
@@ -177,9 +168,57 @@ public class ShadowCommons {
 	private void keyBring() {
 		shadow.addKeyword(new Keyword("bring", (args, scope, stepper) -> {
 			if (args.length < 1) return;
-			Optional<Variable> op = ShadowUtil.getLeveledVar(args[0], scope);
-			if (!op.isPresent()) return;
-			scope.add(op.get());
+			for (String arg : args) {
+				Optional<Variable> op = ShadowUtil.getLeveledVar(arg, scope);
+				if (!op.isPresent()) continue;
+				scope.add(op.get());
+			}
+		}));
+	}
+	
+	private void keyPush() {
+		shadow.addKeyword(new Keyword("push", (args, scope, stepper) -> {
+			if (args.length < 1) return;
+			for (String arg : args) {
+				ShadowUtil.pushLeveledVar(arg, scope);
+			}
+		}));
+	}
+	
+	private void keyRepeatIf() {
+		shadow.addKeyword(new Keyword("repeatif", (args, scope, stepper) -> {
+			if (args.length < 1) return;
+			String a = ShadowUtil.combine(args, 0);
+			Object result = Evaluator.process(a, scope, stepper.getShadow().getClassFinder());
+			if (result instanceof Boolean && (Boolean) result) {
+				stepper.stepRestart();
+			}
+		}));
+	}
+	
+	private void keyIf() {
+		shadow.addKeyword(new Keyword("if", (args, scope, stepper) -> {
+			if (args.length < 2) return;
+			Object result = Evaluator.process(args[0], scope, stepper.getShadow().getClassFinder());
+			if (result instanceof Boolean && (Boolean) result) {
+				Line line = new Line(stepper.getShadow(), ShadowUtil.combine(args, 1), 0);
+				stepper.getShadow().runLine(line, scope, stepper);
+			}
+		}));
+	}
+	
+	private void keyLevel() {
+		shadow.addKeyword(new Keyword("level", (args, scope, stepper) -> {
+			if (args.length < 2) return;
+			int levels = args[0].length();
+			Line line = new Line(stepper.getShadow(), ShadowUtil.combine(args, 1), 0);
+			while (levels > 0) {
+				if (stepper.getCalling() == null || scope.levelUp() == null) break;
+				stepper = stepper.getCalling();
+				scope = scope.levelUp();
+				levels--;
+			}
+			stepper.getShadow().runLine(line, scope, stepper);
 		}));
 	}
 	
@@ -261,16 +300,21 @@ public class ShadowCommons {
 	
 	private void blockIf() {
 		shadow.setPreRunAction("if", (block, scope, info) -> {
-			if (!block.verify(2, 0)) return false;
+			if (!block.verify(2, 0) && !block.verify(1, 0)) return false;
 			String arg1 = block.getMod(0);
-			String arg2 = block.getMod(1);
 			Object final1;
-			Object final2;
-			if (arg1.matches("o\\{.+}")) final1 = Evaluator.process(arg1.substring(2, arg1.length() - 1), scope, block.getShadow().getClassFinder());
-			else final1 = arg1;
-			if (arg2.matches("o\\{.+}")) final2 = Evaluator.process(arg2.substring(2, arg2.length() - 1), scope, block.getShadow().getClassFinder());
-			else final2 = arg2;
-			return final1.equals(final2);
+			if (arg1.matches("true|false")) final1 = Boolean.parseBoolean(arg1);
+			else final1 = Evaluator.process(arg1, scope, block.getShadow().getClassFinder());
+			if (block.modLength() == 2) {
+				String arg2 = block.getMod(1);
+				Object final2;
+				if (arg2.matches("true|false")) final2 = Boolean.parseBoolean(arg2);
+				else final2 = Evaluator.process(arg2, scope, block.getShadow().getClassFinder());
+				return final1 == null ? final2 == null : final1.equals(final2);
+			}
+			else {
+				return (final1 instanceof Boolean && (Boolean) final1);
+			}
 		});
 	}
 	
@@ -313,6 +357,53 @@ public class ShadowCommons {
 			Object value = Evaluator.process(text, scope, stepper.getShadow().getClassFinder());
 			String key = scope.newPrivateVar(value);
 			return "p{" + key + "}";
+		});
+	}
+	
+	private void replacerCompare() {
+		shadow.addReplacer("o", (text, line, scope, stepper) -> {
+			Matcher m = Pattern.compile("(.+) (.+) (.+)").matcher(text);
+			StringBuilder builder = new StringBuilder();
+			if (m.find()) {
+				String op = m.group(2);
+				String method = "";
+				switch (op) {
+					case "+":
+						method = "plus";
+						break;
+					case "-":
+						method = "minus";
+						break;
+					case "*":
+						method = "multiply";
+						break;
+					case "/":
+						method = "divide";
+						break;
+					case "==":
+						method = "equals";
+						break;
+					case "!=":
+						method = "nequals";
+						break;
+					default:
+						break;
+				}
+				if (method.isEmpty()) builder.append("-null");
+				else {
+					Object a = Evaluator.process(ShadowUtil.literal(m.group(1)), scope, stepper.getShadow().getClassFinder());
+					Object b = Evaluator.process(ShadowUtil.literal(m.group(3)), scope, stepper.getShadow().getClassFinder());
+					String varA = "p{" + scope.newPrivateVar(a) + "}";
+					String varB = "p{" + scope.newPrivateVar(b) + "}";
+					Object result = Evaluator.process(">" + Operator.class.getSimpleName() + ":" + method + "(" + varA + "," + varB + ")", scope, name -> Operator.class.getName());
+					if (result instanceof String) builder.append("?");
+					else builder.append("-");
+					if (result != null) builder.append(result.toString());
+					else builder.append("null");
+				}
+			}
+			else builder.append("-null");
+			return builder.toString();
 		});
 	}
 	
