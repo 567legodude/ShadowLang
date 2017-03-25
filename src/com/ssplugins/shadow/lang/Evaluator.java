@@ -32,12 +32,12 @@ public class Evaluator {
 	
 	public Object process() {
 		Debugger.log("processing");
-		Pattern pattern = Pattern.compile("g-\\w+|(\\W)?(\\w+(\\([^)]*\\))?)");
+		Pattern pattern = Pattern.compile("g-\\w+|(\\W)?((?:\\W)?\\w+(\\$\\w+)?(\\([^)]*\\))?)");
 		Matcher matcher = pattern.matcher(instruction);
 		while (matcher.find()) {
 			String o = matcher.group(1);
 			String data = matcher.group(2);
-			if (o == null) {
+			if (o == null || o.equals("<")) {
 				Debugger.log("getting " + data + " from scope");
 				Optional<Variable> op;
 				if (data == null) {
@@ -57,7 +57,11 @@ public class Evaluator {
 				Debugger.log("starting as: " + (cClass == null ? "null" : cClass.getName()));
 				continue;
 			}
-			if (o.equals(">")) castTo(data);
+			if (o.equals("?")) {
+				Debugger.log("literal string: " + data);
+				return data;
+			}
+			else if (o.equals(">")) castTo(data);
 			else if (o.equals(":")) {
 				Debugger.log("preparing to call method: " + data);
 				Matcher m = Pattern.compile("(.+)\\((.+)\\)").matcher(data);
@@ -210,18 +214,19 @@ public class Evaluator {
 			if (method1.isVarArgs()) {
 				if (params.length < p.length) return false;
 				for (int i = 0; i < p.length - 1; i++) {
-					if (!p[i].isAssignableFrom(unwrap(params[i].getClass()))) return false;
+					if (!p[i].isAssignableFrom(unwrap(params[i].getClass())) && !p[i].isAssignableFrom(params[i].getClass())) return false;
 				}
 				Class<?> arrayType = p[p.length - 1].getComponentType();
 				for (int i = p.length - 1; i < params.length; i++) {
-					if (!arrayType.isAssignableFrom(unwrap(params[i].getClass()))) return false;
+					if (!arrayType.isAssignableFrom(unwrap(params[i].getClass())) && !arrayType.isAssignableFrom(params[i].getClass())) return false;
 				}
 				ShadowUtil.toVarArgs(params, p.length - 1, arrayType);
 				return true;
 			}
 			if (p.length != params.length) return false;
 			for (int i = 0; i < p.length; i++) {
-				if (!p[i].isAssignableFrom(unwrap(params[i].getClass()))) return false;
+				if (params[i] == null) continue;
+				if (!p[i].isAssignableFrom(unwrap(params[i].getClass())) && !p[i].isAssignableFrom(params[i].getClass())) return false;
 			}
 			return true;
 		}).findFirst();

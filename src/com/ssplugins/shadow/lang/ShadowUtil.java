@@ -9,7 +9,7 @@ public class ShadowUtil {
 	
 	static String[] getParts(String line) {
 		List<String> f = new ArrayList<>();
-		Matcher m = Pattern.compile("([^\"]\\S*|(?<!\\\\)\".+?(?<!\\\\)\")\\s*").matcher(line);
+		Matcher m = Pattern.compile("([^\\s]+?\\{.*?}|[^\"]\\S*|(?<!\\\\)\".+?(?<!\\\\)\"|\"\\S*)\\s*").matcher(line);
 		while (m.find()) f.add(removeQuotes(m.group(1)));
 		String[] out = new String[f.size()];
 		out = f.toArray(out);
@@ -91,10 +91,10 @@ public class ShadowUtil {
 	
 	static String combine(Object parts) {
 		if (!parts.getClass().isArray()) return "";
-		String[] array = String[].class.cast(parts);
+		int l = Array.getLength(parts);
 		StringBuilder builder = new StringBuilder();
-		for (int i = 0; i < array.length; i++) {
-			builder.append(array[i]).append(" ");
+		for (int i = 0; i < l; i++) {
+			builder.append(Array.get(parts, i).toString()).append(" ");
 		}
 		return builder.toString().trim();
 	}
@@ -102,17 +102,18 @@ public class ShadowUtil {
 	static String combine(Object[] parts, String del) {
 		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < parts.length; i++) {
-			builder.append(parts[i].getClass().getName() + ":" + parts[i].toString()).append(del);
+			if (parts[i] == null) builder.append("null");
+			else builder.append(parts[i].getClass().getName() + ":" + parts[i].toString()).append(del);
 		}
 		return builder.toString().substring(0, builder.length() - del.length());
 	}
 	
 	static String combine(Object parts, int start) {
 		if (!parts.getClass().isArray()) return "";
-		String[] array = String[].class.cast(parts);
+		int l = Array.getLength(parts);
 		StringBuilder builder = new StringBuilder();
-		for (int i = start; i < array.length; i++) {
-			builder.append(array[i]).append(" ");
+		for (int i = start; i < l; i++) {
+			builder.append(Array.get(parts, i).toString()).append(" ");
 		}
 		return builder.toString().trim();
 	}
@@ -151,11 +152,11 @@ public class ShadowUtil {
 	public static Optional<Variable> getLeveledVar(String var, Scope scope) {
 		Matcher m = Pattern.compile("(\\^*)(.+)").matcher(var);
 		if (m.find()) {
-			int level = m.group(0).length();
-			String v = m.group(1);
+			String arrows = m.group(1);
+			int level = arrows.isEmpty() ? 1 : arrows.length();
+			String v = m.group(2);
 			while (level > 0) {
 				if (scope.levelUp() == null) {
-					level = 0;
 					break;
 				}
 				scope = scope.levelUp();
@@ -164,5 +165,29 @@ public class ShadowUtil {
 			return scope.getVar(v);
 		}
 		return Optional.empty();
+	}
+	
+	public static void pushLeveledVar(String var, Scope scope) {
+		Matcher m = Pattern.compile("(\\^*)(.+)").matcher(var);
+		if (m.find()) {
+			String arrows = m.group(1);
+			int level = arrows.isEmpty() ? 1 : arrows.length();
+			String v = m.group(2);
+			Optional<Variable> op = scope.getVar(v);
+			if (!op.isPresent()) return;
+			while (level > 0) {
+				if (scope.levelUp() == null) {
+					break;
+				}
+				scope = scope.levelUp();
+				level--;
+			}
+			scope.add(op.get());
+		}
+	}
+	
+	public static String literal(String s) {
+		if (s.substring(0, 1).matches("\\W")) return s;
+		return "-" + s;
 	}
 }

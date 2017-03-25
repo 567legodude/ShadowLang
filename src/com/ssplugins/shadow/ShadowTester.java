@@ -2,7 +2,6 @@ package com.ssplugins.shadow;
 
 import com.ssplugins.shadow.lang.Debugger;
 import com.ssplugins.shadow.lang.Shadow;
-import com.ssplugins.shadow.lang.ShadowCommons;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.stage.FileChooser;
@@ -29,8 +28,7 @@ public class ShadowTester extends Application {
 			return;
 		}
 		
-		
-		//Debugger.setEnabled(true);
+		Debugger.setEnabled(true);
 		Shadow shadow = Shadow.parseCommons(file);
 		shadow.runBlocks("test", new String[] {"first", "second", "third"}, "testy");
 		shadow.end();

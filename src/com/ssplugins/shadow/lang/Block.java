@@ -50,7 +50,7 @@ public class Block extends ShadowComponent {
 	}
 	
 	public boolean verify(int mods, int params) {
-		return modLength() == mods && paramLength() == params;
+		return (mods == -1 || modLength() == mods) && (params == -1 || paramLength() == params);
 	}
 	
 	public void run(Object... params) {
