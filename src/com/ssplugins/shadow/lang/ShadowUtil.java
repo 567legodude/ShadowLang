@@ -9,7 +9,7 @@ public class ShadowUtil {
 	
 	static String[] getParts(String line) {
 		List<String> f = new ArrayList<>();
-		Matcher m = Pattern.compile("([^\\s]+?\\{.*?}|[^\"]\\S*|(?<!\\\\)\".+?(?<!\\\\)\"|\"\\S*)\\s*").matcher(line);
+		Matcher m = Pattern.compile("([^\\s]+?\\{.*?}[^.]?|[^\"]\\S*|(?<!\\\\)\".+?(?<!\\\\)\"|\"\\S*)\\s*").matcher(line);
 		while (m.find()) f.add(removeQuotes(m.group(1)));
 		String[] out = new String[f.size()];
 		out = f.toArray(out);
