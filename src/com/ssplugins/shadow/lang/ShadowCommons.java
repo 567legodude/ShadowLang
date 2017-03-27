@@ -1,9 +1,12 @@
 package com.ssplugins.shadow.lang;
 
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class ShadowCommons {
 	
@@ -36,6 +39,7 @@ public class ShadowCommons {
 		keyRepeatIf();
 		keyIf();
 		keyLevel();
+		keyRun();
 	}
 	
 	private void addBlocks() {
@@ -44,6 +48,7 @@ public class ShadowCommons {
 		blockLoop();
 		blockIf();
 		blockElse();
+		blockFunction();
 	}
 	
 	private void addReplacers() {
@@ -222,6 +227,22 @@ public class ShadowCommons {
 		}));
 	}
 	
+	private void keyRun() {
+		shadow.addKeyword(new Keyword("run", (args, scope, stepper) -> {
+			if (args.length < 1) return;
+			String function = args[0];
+			String[] p = args.length > 1 ? Arrays.copyOfRange(args, 1, args.length) : new String[0];
+			Object[] params = Evaluator.processEach(p, scope, stepper.getShadow().getClassFinder());
+			List<Block> functions = stepper.getShadow().getBlocks("function").stream().filter(block -> block.modLength() == 1 && block.getMod(0).equals(function)).filter(block -> block.paramLength() == params.length).collect(Collectors.toList());
+			if (functions.size() == 0) return;
+			if (functions.size() > 1) {
+				Debugger.log("More than one function matches. Name: " + function);
+				return;
+			}
+			functions.get(0).run(params);
+		}));
+	}
+	
 	private void blockRepeat() {
 		shadow.setPreRunAction("repeat", (block, scope, info) -> {
 			if (!block.verify(1, 1)) return false;
@@ -326,6 +347,11 @@ public class ShadowCommons {
 			if (info.lastBlockRan()) return false;
 			return true;
 		});
+	}
+	
+	
+	private void blockFunction() {
+		shadow.setPreRunAction("function", (block, scope, info) -> block.verify(1, -1));
 	}
 	
 	private void replacerString() {

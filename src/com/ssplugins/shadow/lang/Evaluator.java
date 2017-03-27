@@ -30,6 +30,14 @@ public class Evaluator {
 		return new Evaluator(instruction, scope, finder).process();
 	}
 	
+	public static Object[] processEach(String[] instructions, Scope scope, ClassFinder finder) {
+		List<Object> objects = new ArrayList<>();
+		for (String s : instructions) {
+			objects.add(process(s, scope, finder));
+		}
+		return objects.toArray();
+	}
+	
 	public Object process() {
 		Debugger.log("processing");
 		Pattern pattern = Pattern.compile("g-\\w+|(\\W)?((?:\\W)?\\w+(\\$\\w+)?(\\([^)]*\\))?)");
