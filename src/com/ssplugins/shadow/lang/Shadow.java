@@ -15,6 +15,7 @@ public class Shadow {
 	private List<Variable> globalVars = new ArrayList<>();
 	private List<Keyword> keywords = new ArrayList<>();
 	private Map<String, Replacer> replacers = new HashMap<>();
+	private Map<String, BlockEvents> events = new HashMap<>();
 	private Timer timer = new Timer();
 	private Scope liveScope;
 	
@@ -144,16 +145,20 @@ public class Shadow {
 		};
 	}
 	
+	public BlockEvents getBlockEvents(String type) {
+		return events.computeIfAbsent(type, s -> new BlockEvents());
+	}
+	
 	public void setPreRunAction(String type, BlockPreRunEvent event) {
-		findAllBlocks(type).forEach(block -> block.listen(event));
+		getBlockEvents(type).setPreRunEvent(event);
 	}
 	
 	public void setEnterAction(String type, BlockEnterEvent event) {
-		findAllBlocks(type).forEach(block -> block.listen(event));
+		getBlockEvents(type).setEnterEvent(event);
 	}
 	
 	public void setEndAction(String type, BlockEndEvent event) {
-		findAllBlocks(type).forEach(block -> block.listen(event));
+		getBlockEvents(type).setEndEvent(event);
 	}
 	
 	public boolean replacerExists(String pre) {

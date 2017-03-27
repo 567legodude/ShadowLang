@@ -2,7 +2,6 @@ package com.ssplugins.shadow.lang;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class Block extends ShadowComponent {
 	
@@ -11,10 +10,6 @@ public class Block extends ShadowComponent {
 	private List<String> parameters = new ArrayList<>();
 	private List<Section> sections = new ArrayList<>();
 	private int line;
-	
-	private BlockPreRunEvent preRunEvent;
-	private BlockEnterEvent enterEvent;
-	private BlockEndEvent endEvent;
 	
 	Block(Shadow shadow, String name, int line) {
 		super(shadow);
@@ -92,26 +87,14 @@ public class Block extends ShadowComponent {
 	}
 	
 	public BlockPreRunEvent getPreRunEvent() {
-		return preRunEvent;
+		return getShadow().getBlockEvents(name).getPreRunEvent();
 	}
 	
 	public BlockEnterEvent getEnterEvent() {
-		return enterEvent;
+		return getShadow().getBlockEvents(name).getEnterEvent();
 	}
 	
 	public BlockEndEvent getEndEvent() {
-		return endEvent;
-	}
-	
-	public void listen(BlockPreRunEvent event) {
-		preRunEvent = event;
-	}
-	
-	public void listen(BlockEnterEvent event) {
-		enterEvent = event;
-	}
-	
-	public void listen(BlockEndEvent event) {
-		endEvent = event;
+		return getShadow().getBlockEvents(name).getEndEvent();
 	}
 }
