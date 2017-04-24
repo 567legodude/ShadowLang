@@ -49,7 +49,11 @@ public class Block extends ShadowComponent {
 	}
 	
 	public void run(Object... params) {
-		getShadow().runBlock(this, params);
+		run(null, params);
+	}
+	
+	public void run(Runnable callback, Object... params) {
+		getShadow().runBlock(callback, this, params);
 	}
 	
 	public String getName() {

@@ -16,7 +16,7 @@ public class Shadow {
 	private List<Keyword> keywords = new ArrayList<>();
 	private Map<String, Replacer> replacers = new HashMap<>();
 	private Map<String, BlockEvents> events = new HashMap<>();
-	private Timer timer = new Timer();
+	private Timer timer = new Timer(false);
 	private Scope liveScope;
 	
 	private ClassFinder defaultFinder = this::defaultFinder;
@@ -192,24 +192,28 @@ public class Shadow {
 		getBlocks(type).forEach(block -> runBlock(block, params));
 	}
 	
+	public void runBlocks(Runnable callback, String type, Object... params) {
+		getBlocks(type).forEach(block -> runBlock(callback, block, params));
+	}
+	
 	public void runBlock(Block block, Object... params) {
-		if (block == null) {
-			// run global lines
+		runBlock(null, block, params);
+	}
+	
+	public void runBlock(Runnable callback, Block block, Object... params) {
+		if (params.length != block.paramLength()) return;
+		BlockPreRunEvent event = block.getPreRunEvent();
+		boolean run = true;
+		if (event != null) {
+			run = event.trigger(block, null, null);
 		}
-		else {
-			if (params.length != block.paramLength()) return;
-			BlockPreRunEvent event = block.getPreRunEvent();
-			boolean run = true;
-			if (event != null) {
-				run = event.trigger(block, null, null);
-			}
-			if (!run) return;
-			Stepper stepper = new Stepper(block, null);
-			for (int i = 0; i < params.length; i++) {
-				stepper.setParam(i, params[i]);
-			}
-			stepper.start();
+		if (!run) return;
+		Stepper stepper = new Stepper(block, null);
+		for (int i = 0; i < params.length; i++) {
+			stepper.setParam(i, params[i]);
 		}
+		stepper.setCallback(callback);
+		stepper.start();
 	}
 	
 	public void parseLine(String line, MsgCallback callback, Variable... variables) {

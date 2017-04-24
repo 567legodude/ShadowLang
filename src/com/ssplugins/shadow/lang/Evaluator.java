@@ -38,6 +38,17 @@ public class Evaluator {
 		return objects.toArray();
 	}
 	
+	/*
+	Eval operators:
+	< = get var from scope
+	? = literal string
+	> = cast to type
+	: = call method
+	= = construct type
+	~ = get field from object
+	- = parse number, boolean, null, or string (in that order)
+	 */
+	
 	public Object process() {
 		Debugger.log("processing");
 		Pattern pattern = Pattern.compile("g-\\w+|(\\W)?((?:\\W)?\\w+(\\$\\w+)?(\\([^)]*\\))?)");

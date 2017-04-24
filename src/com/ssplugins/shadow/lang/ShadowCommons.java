@@ -239,7 +239,12 @@ public class ShadowCommons {
 				Debugger.log("More than one function matches. Name: " + function);
 				return;
 			}
-			functions.get(0).run(params);
+			stepper.stepWait();
+			Runnable callback = () -> {
+				stepper.normal();
+				stepper.stepForward();
+			};
+			functions.get(0).run(callback, params);
 		}));
 	}
 	

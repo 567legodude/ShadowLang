@@ -53,7 +53,7 @@ public class Stepper implements StepperInfo {
 		return calling;
 	}
 	
-	private void setCallback(Runnable callback) {
+	void setCallback(Runnable callback) {
 		this.callback = callback;
 	}
 	
@@ -125,6 +125,10 @@ public class Stepper implements StepperInfo {
 		action = StepAction.BREAK;
 	}
 	
+	public void stepWait() {
+		action = StepAction.WAIT;
+	}
+	
 	public void breakAll() {
 		if (calling != null) calling.breakAll();
 		stepBreak();
@@ -173,7 +177,7 @@ public class Stepper implements StepperInfo {
 		if (callback != null) callback.run();
 	}
 	
-	private void stepForward() {
+	void stepForward() {
 		if (!iterator.hasNext()) {
 			runCallback();
 			return;
