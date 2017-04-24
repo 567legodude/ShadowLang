@@ -17,7 +17,6 @@ public class Stepper implements StepperInfo {
 	private Iterator<Section> iterator;
 	private Block block;
 	private Stepper calling;
-	private Timer timer;
 	
 	private Block prevBlock = null;
 	private Block running = null;
@@ -27,7 +26,6 @@ public class Stepper implements StepperInfo {
 		this.shadow = shadow;
 		scope = new Scope(shadow.getGlobalVars(), null);
 		this.sections = sections;
-		timer = shadow.getTimer();
 	}
 	
 	Stepper(Block block, Stepper calling) {
@@ -36,7 +34,6 @@ public class Stepper implements StepperInfo {
 		this.sections = block.getSections();
 		this.block = block;
 		this.calling = calling;
-		timer = shadow.getTimer();
 	}
 	
 	public static Stepper prepare(Shadow shadow, String line) {
@@ -188,7 +185,7 @@ public class Stepper implements StepperInfo {
 			runStep(iterator.next());
 			if (action == StepAction.DELAY) {
 				run = false;
-				timer.schedule(new TimerTask() {
+				shadow.getTimer().schedule(new TimerTask() {
 					@Override
 					public void run() {
 						stepForward();

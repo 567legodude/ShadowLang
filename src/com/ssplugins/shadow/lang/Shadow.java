@@ -16,7 +16,7 @@ public class Shadow {
 	private List<Keyword> keywords = new ArrayList<>();
 	private Map<String, Replacer> replacers = new HashMap<>();
 	private Map<String, BlockEvents> events = new HashMap<>();
-	private Timer timer = new Timer(false);
+	private Timer timer = null;
 	private Scope liveScope;
 	
 	private ClassFinder defaultFinder = this::defaultFinder;
@@ -53,7 +53,7 @@ public class Shadow {
 	}
 	
 	Timer getTimer() {
-		return timer;
+		return timer == null ? new Timer(false) : timer;
 	}
 	
 	List<Variable> getGlobalVars() {
@@ -82,7 +82,8 @@ public class Shadow {
 	}
 	
 	public void end() {
-		timer.cancel();
+		if (timer != null) timer.cancel();
+		timer = null;
 	}
 	
 	public Scope getLiveScope() {
