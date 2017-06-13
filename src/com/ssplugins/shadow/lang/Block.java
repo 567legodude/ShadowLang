@@ -14,6 +14,7 @@ public class Block extends ShadowComponent {
 	Block(Shadow shadow, String name, int line) {
 		super(shadow);
 		this.name = name;
+		this.line = line;
 	}
 	
 	void setModifiers(String[] mods) {

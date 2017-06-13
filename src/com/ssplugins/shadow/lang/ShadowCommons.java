@@ -172,7 +172,12 @@ public class ShadowCommons {
 	
 	private void keyBring() {
 		shadow.addKeyword(new Keyword("bring", (args, scope, stepper) -> {
-			if (args.length < 1) return;
+			if (args.length == 0) {
+				Scope upper = scope.levelUp();
+				if (upper == null) return;
+				upper.getAllLocalVars().forEach(scope::add);
+				return;
+			}
 			for (String arg : args) {
 				Optional<Variable> op = ShadowUtil.getLeveledVar(arg, scope);
 				if (!op.isPresent()) continue;
@@ -183,7 +188,12 @@ public class ShadowCommons {
 	
 	private void keyPush() {
 		shadow.addKeyword(new Keyword("push", (args, scope, stepper) -> {
-			if (args.length < 1) return;
+			if (args.length == 0) {
+				Scope upper = scope.levelUp();
+				if (upper == null) return;
+				scope.getAllLocalVars().forEach(upper::update);
+				return;
+			}
 			for (String arg : args) {
 				ShadowUtil.pushLeveledVar(arg, scope);
 			}
@@ -252,6 +262,7 @@ public class ShadowCommons {
 		shadow.setPreRunAction("repeat", (block, scope, info) -> {
 			if (!block.verify(1, 1)) return false;
 			if (block.getMod(0).replaceAll("[^0-9]", "").isEmpty()) return false;
+			if (Integer.valueOf(block.getMod(0)) < 1) return false;
 			return true;
 		});
 		shadow.setEnterAction("repeat", (block, scope, stepper) -> {
@@ -416,6 +427,18 @@ public class ShadowCommons {
 						break;
 					case "!=":
 						method = "nequals";
+						break;
+					case ">":
+						method = "gt";
+						break;
+					case "<":
+						method = "lt";
+						break;
+					case ">=":
+						method = "gte";
+						break;
+					case "<=":
+						method = "lte";
 						break;
 					default:
 						break;

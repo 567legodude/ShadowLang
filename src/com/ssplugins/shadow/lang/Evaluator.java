@@ -110,7 +110,9 @@ public class Evaluator {
 			}
 			else if (o.equals("-")) {
 				current = parseParam(data);
-				cClass = unwrap(current.getClass());
+				Debugger.log("param is: " + current.toString());
+				if (current != null) cClass = unwrap(current.getClass());
+				else cClass = Void.class;
 			}
 			Debugger.log("currently: " + (current == null ? "null" : cClass.getName()));
 			if (current == null && cClass == null) {
@@ -268,24 +270,31 @@ public class Evaluator {
 	}
 	
 	private Object parseParam(String value) {
+		Debugger.log("parsing param: " + value);
 		if (value.matches("p\\{.+}")) {
+			Debugger.log("getting private var");
 			Optional<Variable> op = scope.getPrivateVar(value.substring(2, value.length() - 1));
 			return op.map(Variable::getValue).orElse(null);
-		};
+		}
 		return toObject(value);
 	}
 	
 	public static Object toObject(String value) {
+		Debugger.log("converting to primitive");
 		if (value.matches("-?[0-9.]+")) {
+			Debugger.log("value is number");
 			if (value.contains(".")) return Double.valueOf(value);
 			return Integer.valueOf(value);
 		}
 		else if (value.matches("true|false")) {
+			Debugger.log("value is boolean");
 			return Boolean.valueOf(value);
 		}
 		else if (value.equals("null")) {
+			Debugger.log("value is null");
 			return null;
 		}
+		Debugger.log("returning value as string");
 		return value;
 	}
 }

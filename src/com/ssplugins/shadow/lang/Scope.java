@@ -102,6 +102,11 @@ public class Scope {
 		setVar(variable.getName(), variable.getValue());
 	}
 	
+	public void update(Variable variable) {
+		Optional<Variable> op = getVar(variable.getName());
+		op.ifPresent(variable1 -> variable1.setValue(variable.getValue()));
+	}
+	
 	public void unset(String name) {
 		localVars.removeIf(variable -> variable.getName().equalsIgnoreCase(name));
 	}

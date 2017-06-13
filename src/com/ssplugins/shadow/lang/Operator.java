@@ -55,4 +55,36 @@ public class Operator {
 		return !equals(a, b);
 	}
 	
+	public static boolean gt(int a, int b) {
+		return a > b;
+	}
+	
+	public static boolean gt(double a, double b) {
+		return a > b;
+	}
+	
+	public static boolean lt(int a, int b) {
+		return a < b;
+	}
+	
+	public static boolean lt(double a, double b) {
+		return a < b;
+	}
+	
+	public static boolean gte(int a, int b) {
+		return a >= b;
+	}
+	
+	public static boolean gte(double a, double b) {
+		return a >= b;
+	}
+	
+	public static boolean lte(int a, int b) {
+		return a <= b;
+	}
+	
+	public static boolean lte(double a, double b) {
+		return a <= b;
+	}
+	
 }
