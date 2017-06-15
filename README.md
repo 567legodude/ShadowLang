@@ -1,5 +1,5 @@
 # ShadowLang
-Custom programming language (Currently unfinished)
+Custom programming syntax (Currently unfinished)
 
 Below is the name for all parts of the language.
 
