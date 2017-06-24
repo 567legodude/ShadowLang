@@ -54,6 +54,7 @@ public class ShadowCommons {
 	private void addReplacers() {
 		replacerEval();
 		replacerString();
+		replacerEvalToString();
 		replacerCompare();
 	}
 	
@@ -394,6 +395,13 @@ public class ShadowCommons {
 		});
 	}
 	
+	private void replacerEvalToString() {
+		shadow.addReplacer("%", (text, line, scope, stepper) -> {
+			Object res = Evaluator.process(text, scope, stepper.getShadow().getClassFinder());
+			return res != null ? res.toString() : null;
+		});
+	}
+	
 	private void replacerEval() {
 		shadow.addReplacer("e", (text, line, scope, stepper) -> {
 			Object value = Evaluator.process(text, scope, stepper.getShadow().getClassFinder());
@@ -449,7 +457,7 @@ public class ShadowCommons {
 					Object b = Evaluator.process(ShadowUtil.literal(m.group(3)), scope, stepper.getShadow().getClassFinder());
 					String varA = "p{" + scope.newPrivateVar(a) + "}";
 					String varB = "p{" + scope.newPrivateVar(b) + "}";
-					Object result = Evaluator.process(">" + Operator.class.getSimpleName() + ":" + method + "(" + varA + "," + varB + ")", scope, name -> Operator.class.getName());
+					Object result = Evaluator.process(">" + Operator.class.getName() + ":" + method + "(" + varA + "," + varB + ")", scope, name -> Operator.class.getName());
 					if (result instanceof String) builder.append("?");
 					else builder.append("-");
 					if (result != null) builder.append(result.toString());

@@ -1,7 +1,10 @@
 package com.ssplugins.shadow.lang;
 
 import java.lang.reflect.Array;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,6 +52,7 @@ public class ShadowUtil {
 					BlockHeader header = BlockHeader.parseHeader(new GenericLine(sLine, currentSection.get(0)));
 					Block block = header.toBlock(shadow);
 					block.addSections(createSections(shadow, currentSection.subList(1, currentSection.size() - 1), sLine + 1));
+					if (block.getName().equalsIgnoreCase("box")) shadow.addBoxPattern(block);
 					sections.add(new Section(block));
 					currentSection.clear();
 					sLine = -1;

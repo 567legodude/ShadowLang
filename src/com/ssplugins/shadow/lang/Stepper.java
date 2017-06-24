@@ -1,6 +1,9 @@
 package com.ssplugins.shadow.lang;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.TimerTask;
 
 public class Stepper implements StepperInfo {
 	
@@ -24,13 +27,13 @@ public class Stepper implements StepperInfo {
 	
 	private Stepper(Shadow shadow, List<Section> sections) {
 		this.shadow = shadow;
-		scope = new Scope(shadow.getGlobalVars(), null);
+		scope = new Scope(shadow.getGlobalVars(), null, shadow);
 		this.sections = sections;
 	}
 	
 	Stepper(Block block, Stepper calling) {
 		shadow = block.getShadow();
-		scope = new Scope(shadow.getGlobalVars(), (calling != null ? calling.scope : null));
+		scope = new Scope(shadow.getGlobalVars(), (calling != null ? calling.scope : null), shadow);
 		this.sections = block.getSections();
 		this.block = block;
 		this.calling = calling;

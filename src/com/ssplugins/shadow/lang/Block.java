@@ -1,6 +1,7 @@
 package com.ssplugins.shadow.lang;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Block extends ShadowComponent {
@@ -19,13 +20,13 @@ public class Block extends ShadowComponent {
 	
 	void setModifiers(String[] mods) {
 		modifiers.clear();
-		for (String m : mods) modifiers.add(m);
+		modifiers.addAll(Arrays.asList(mods));
 	}
 	
 	void setParameters(String[] params) {
 		parameters.clear();
 		if (params == null) return;
-		for (String p : params) parameters.add(p);
+		parameters.addAll(Arrays.asList(params));
 	}
 	
 	void addSection(Section section) {

@@ -14,6 +14,7 @@ public class Shadow {
 	private List<Section> sections = new ArrayList<>();
 	private List<Variable> globalVars = new ArrayList<>();
 	private List<Keyword> keywords = new ArrayList<>();
+	private List<BoxPattern> patterns = new ArrayList<>();
 	private Map<String, Replacer> replacers = new HashMap<>();
 	private Map<String, BlockEvents> events = new HashMap<>();
 	private Timer timer = null;
@@ -23,7 +24,7 @@ public class Shadow {
 	private ClassFinder finder = this::defaultFinder;
 	
 	private Shadow() {
-		liveScope = new Scope(globalVars, null);
+		liveScope = new Scope(globalVars, null, this);
 	}
 	
 	public static Shadow parse(List<String> lines) {
@@ -68,9 +69,27 @@ public class Shadow {
 		return sections.stream().filter(Section::isLine).collect(Collectors.toList());
 	}
 	
+	Optional<BoxPattern> getBoxPattern(String name) {
+		return patterns.stream().filter(boxPattern -> boxPattern.getName().equals(name)).findFirst();
+	}
+	
+	void addBoxPattern(Block block) {
+		if (!block.verify(1, 0)) return;
+		String name = block.getMod(0);
+		if (getBoxPattern(name).isPresent()) return;
+		BoxPattern pattern = new BoxPattern(name, finder);
+		pattern.read(block);
+		patterns.add(pattern);
+	}
+	
 	private String defaultFinder(String input) {
 		boolean arr = input.endsWith("[]");
 		if (arr) input = input.substring(0, input.length() - 2);
+		try {
+			Class<?> clazz = Class.forName(input);
+			return clazz.getName();
+		} catch (ClassNotFoundException ignored) {
+		}
 		for (Package p : Package.getPackages()) {
 			try {
 				Class<?> clazz = Class.forName(arr ? "[L" + p.getName() + "." + input + ";" : p.getName() + "." + input);
