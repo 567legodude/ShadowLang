@@ -55,7 +55,7 @@ public class Evaluator {
 	
 	public Object process() {
 		Debugger.log("--- processing ---");
-		Pattern pattern = Pattern.compile("g-\\w+|([^\\w.])?((?:\\W)?[\\w.$ ]+(?:\\([^)]*\\))?)");
+		Pattern pattern = Pattern.compile("g-\\w+|([^\\w.])?((?:\\W)?[\\w.$_ ]+(?:\\([^)]*\\))?)");
 		Matcher matcher = pattern.matcher(instruction);
 		while (matcher.find()) {
 			String o = matcher.group(1);
