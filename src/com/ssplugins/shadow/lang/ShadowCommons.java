@@ -263,8 +263,7 @@ public class ShadowCommons {
 		shadow.setPreRunAction("repeat", (block, scope, info) -> {
 			if (!block.verify(1, 1)) return false;
 			if (block.getMod(0).replaceAll("[^0-9]", "").isEmpty()) return false;
-			if (Integer.valueOf(block.getMod(0)) < 1) return false;
-			return true;
+			return Integer.valueOf(block.getMod(0)) >= 1;
 		});
 		shadow.setEnterAction("repeat", (block, scope, stepper) -> {
 			scope.setVar(block.getParam(0), 1);

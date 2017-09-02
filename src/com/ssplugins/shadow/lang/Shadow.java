@@ -34,6 +34,7 @@ public class Shadow {
 		return shadow;
 	}
 	
+	@Deprecated
 	public static Shadow parse(File file) {
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -147,7 +148,7 @@ public class Shadow {
 	}
 	
 	public boolean renameKeyword(Keyword keyword, String name) {
-		if (keywordExists(name)) return false;
+		if (!keywordExists(name)) return false;
 		keyword.rename(name);
 		return true;
 	}
