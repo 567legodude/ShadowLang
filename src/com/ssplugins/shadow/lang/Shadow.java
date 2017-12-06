@@ -34,8 +34,7 @@ public class Shadow {
 		return shadow;
 	}
 	
-	@Deprecated
-	public static Shadow parse(File file) {
+	private static Shadow parse(File file) {
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(file));
 			return parse(reader.lines().collect(Collectors.toList()));
