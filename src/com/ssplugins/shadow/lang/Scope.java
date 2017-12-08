@@ -1,9 +1,13 @@
 package com.ssplugins.shadow.lang;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 public class Scope {
 	
+	private Shadow shadow;
 	private boolean block = false;
 	private String blockName = null;
 	private List<Variable> globalVars;
@@ -13,14 +17,19 @@ public class Scope {
 	private Scope upper;
 	private MsgCallback msgCallback;
 	
-	Scope(List<Variable> globalVars, Scope upper) {
+	Scope(List<Variable> globalVars, Scope upper, Shadow shadow) {
 		this.globalVars = globalVars;
 		this.upper = upper;
+		this.shadow = shadow;
 		if (upper != null) msgCallback = upper.msgCallback;
 	}
 	
 	public void clean() {
 		localVars.clear();
+	}
+	
+	public Shadow getShadow() {
+		return shadow;
 	}
 	
 	void setMsgCallback(MsgCallback callback) {
@@ -100,6 +109,11 @@ public class Scope {
 	
 	public void add(Variable variable) {
 		setVar(variable.getName(), variable.getValue());
+	}
+	
+	public void update(Variable variable) {
+		Optional<Variable> op = getVar(variable.getName());
+		op.ifPresent(variable1 -> variable1.setValue(variable.getValue()));
 	}
 	
 	public void unset(String name) {

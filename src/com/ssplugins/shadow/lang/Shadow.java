@@ -14,15 +14,17 @@ public class Shadow {
 	private List<Section> sections = new ArrayList<>();
 	private List<Variable> globalVars = new ArrayList<>();
 	private List<Keyword> keywords = new ArrayList<>();
+	private List<BoxPattern> patterns = new ArrayList<>();
 	private Map<String, Replacer> replacers = new HashMap<>();
-	private Timer timer = new Timer();
+	private Map<String, BlockEvents> events = new HashMap<>();
+	private Timer timer = null;
 	private Scope liveScope;
 	
 	private ClassFinder defaultFinder = this::defaultFinder;
 	private ClassFinder finder = this::defaultFinder;
 	
 	private Shadow() {
-		liveScope = new Scope(globalVars, null);
+		liveScope = new Scope(globalVars, null, this);
 	}
 	
 	public static Shadow parse(List<String> lines) {
@@ -32,7 +34,7 @@ public class Shadow {
 		return shadow;
 	}
 	
-	public static Shadow parse(File file) {
+	private static Shadow parse(File file) {
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(file));
 			return parse(reader.lines().collect(Collectors.toList()));
@@ -52,7 +54,7 @@ public class Shadow {
 	}
 	
 	Timer getTimer() {
-		return timer;
+		return timer == null ? new Timer(false) : timer;
 	}
 	
 	List<Variable> getGlobalVars() {
@@ -67,9 +69,27 @@ public class Shadow {
 		return sections.stream().filter(Section::isLine).collect(Collectors.toList());
 	}
 	
+	Optional<BoxPattern> getBoxPattern(String name) {
+		return patterns.stream().filter(boxPattern -> boxPattern.getName().equals(name)).findFirst();
+	}
+	
+	void addBoxPattern(Block block) {
+		if (!block.verify(1, 0)) return;
+		String name = block.getMod(0);
+		if (getBoxPattern(name).isPresent()) return;
+		BoxPattern pattern = new BoxPattern(name, finder);
+		pattern.read(block);
+		patterns.add(pattern);
+	}
+	
 	private String defaultFinder(String input) {
 		boolean arr = input.endsWith("[]");
 		if (arr) input = input.substring(0, input.length() - 2);
+		try {
+			Class<?> clazz = Class.forName(input);
+			return clazz.getName();
+		} catch (ClassNotFoundException ignored) {
+		}
 		for (Package p : Package.getPackages()) {
 			try {
 				Class<?> clazz = Class.forName(arr ? "[L" + p.getName() + "." + input + ";" : p.getName() + "." + input);
@@ -81,7 +101,8 @@ public class Shadow {
 	}
 	
 	public void end() {
-		timer.cancel();
+		if (timer != null) timer.cancel();
+		timer = null;
 	}
 	
 	public Scope getLiveScope() {
@@ -126,7 +147,7 @@ public class Shadow {
 	}
 	
 	public boolean renameKeyword(Keyword keyword, String name) {
-		if (keywordExists(name)) return false;
+		if (!keywordExists(name)) return false;
 		keyword.rename(name);
 		return true;
 	}
@@ -144,16 +165,20 @@ public class Shadow {
 		};
 	}
 	
+	public BlockEvents getBlockEvents(String type) {
+		return events.computeIfAbsent(type, s -> new BlockEvents());
+	}
+	
 	public void setPreRunAction(String type, BlockPreRunEvent event) {
-		findAllBlocks(type).forEach(block -> block.listen(event));
+		getBlockEvents(type).setPreRunEvent(event);
 	}
 	
 	public void setEnterAction(String type, BlockEnterEvent event) {
-		findAllBlocks(type).forEach(block -> block.listen(event));
+		getBlockEvents(type).setEnterEvent(event);
 	}
 	
 	public void setEndAction(String type, BlockEndEvent event) {
-		findAllBlocks(type).forEach(block -> block.listen(event));
+		getBlockEvents(type).setEndEvent(event);
 	}
 	
 	public boolean replacerExists(String pre) {
@@ -187,24 +212,28 @@ public class Shadow {
 		getBlocks(type).forEach(block -> runBlock(block, params));
 	}
 	
+	public void runBlocks(Runnable callback, String type, Object... params) {
+		getBlocks(type).forEach(block -> runBlock(callback, block, params));
+	}
+	
 	public void runBlock(Block block, Object... params) {
-		if (block == null) {
-			// run global lines
+		runBlock(null, block, params);
+	}
+	
+	public void runBlock(Runnable callback, Block block, Object... params) {
+		if (params.length != block.paramLength()) return;
+		BlockPreRunEvent event = block.getPreRunEvent();
+		boolean run = true;
+		if (event != null) {
+			run = event.trigger(block, null, null);
 		}
-		else {
-			if (params.length != block.paramLength()) return;
-			BlockPreRunEvent event = block.getPreRunEvent();
-			boolean run = true;
-			if (event != null) {
-				run = event.trigger(block, null, null);
-			}
-			if (!run) return;
-			Stepper stepper = new Stepper(block, null);
-			for (int i = 0; i < params.length; i++) {
-				stepper.setParam(i, params[i]);
-			}
-			stepper.start();
+		if (!run) return;
+		Stepper stepper = new Stepper(block, null);
+		for (int i = 0; i < params.length; i++) {
+			stepper.setParam(i, params[i]);
 		}
+		stepper.setCallback(callback);
+		stepper.start();
 	}
 	
 	public void parseLine(String line, MsgCallback callback, Variable... variables) {

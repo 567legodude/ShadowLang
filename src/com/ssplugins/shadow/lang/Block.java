@@ -1,8 +1,8 @@
 package com.ssplugins.shadow.lang;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Stream;
 
 public class Block extends ShadowComponent {
 	
@@ -12,24 +12,21 @@ public class Block extends ShadowComponent {
 	private List<Section> sections = new ArrayList<>();
 	private int line;
 	
-	private BlockPreRunEvent preRunEvent;
-	private BlockEnterEvent enterEvent;
-	private BlockEndEvent endEvent;
-	
 	Block(Shadow shadow, String name, int line) {
 		super(shadow);
 		this.name = name;
+		this.line = line;
 	}
 	
 	void setModifiers(String[] mods) {
 		modifiers.clear();
-		for (String m : mods) modifiers.add(m);
+		modifiers.addAll(Arrays.asList(mods));
 	}
 	
 	void setParameters(String[] params) {
 		parameters.clear();
 		if (params == null) return;
-		for (String p : params) parameters.add(p);
+		parameters.addAll(Arrays.asList(params));
 	}
 	
 	void addSection(Section section) {
@@ -54,7 +51,11 @@ public class Block extends ShadowComponent {
 	}
 	
 	public void run(Object... params) {
-		getShadow().runBlock(this, params);
+		run(null, params);
+	}
+	
+	public void run(Runnable callback, Object... params) {
+		getShadow().runBlock(callback, this, params);
 	}
 	
 	public String getName() {
@@ -92,26 +93,14 @@ public class Block extends ShadowComponent {
 	}
 	
 	public BlockPreRunEvent getPreRunEvent() {
-		return preRunEvent;
+		return getShadow().getBlockEvents(name).getPreRunEvent();
 	}
 	
 	public BlockEnterEvent getEnterEvent() {
-		return enterEvent;
+		return getShadow().getBlockEvents(name).getEnterEvent();
 	}
 	
 	public BlockEndEvent getEndEvent() {
-		return endEvent;
-	}
-	
-	public void listen(BlockPreRunEvent event) {
-		preRunEvent = event;
-	}
-	
-	public void listen(BlockEnterEvent event) {
-		enterEvent = event;
-	}
-	
-	public void listen(BlockEndEvent event) {
-		endEvent = event;
+		return getShadow().getBlockEvents(name).getEndEvent();
 	}
 }

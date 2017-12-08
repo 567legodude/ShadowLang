@@ -10,7 +10,8 @@ class BlockIterator {
 	public static boolean isIterable(Object o) {
 		Debugger.log("isarray: " + o.getClass().isArray());
 		Debugger.log("iterable: " + Iterable.class.isAssignableFrom(o.getClass()));
-		return o.getClass().isArray() || Iterable.class.isAssignableFrom(o.getClass());
+		Debugger.log("iterator: " + Iterator.class.isAssignableFrom(o.getClass()));
+		return o.getClass().isArray() || Iterable.class.isAssignableFrom(o.getClass()) || Iterator.class.isAssignableFrom(o.getClass());
 	}
 	
 	public static boolean hasIterator(Scope scope) {
@@ -37,6 +38,10 @@ class BlockIterator {
 		if (Iterable.class.isAssignableFrom(o.getClass())) {
 			Debugger.log("casting to iterable");
 			it = ((Iterable) o).iterator();
+		}
+		if (Iterator.class.isAssignableFrom(o.getClass())) {
+			Debugger.log("using direct iterator");
+			it = (Iterator) o;
 		}
 		if (it == null) return null;
 		Debugger.log("returning iterator");

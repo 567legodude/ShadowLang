@@ -22,6 +22,10 @@ public class Line extends ShadowComponent {
 		this.lineNum = lineNum;
 	}
 	
+	public String getLine() {
+		return line;
+	}
+	
 	public String keyword() {
 		return keyword;
 	}

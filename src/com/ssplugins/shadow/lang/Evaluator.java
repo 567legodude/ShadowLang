@@ -30,9 +30,32 @@ public class Evaluator {
 		return new Evaluator(instruction, scope, finder).process();
 	}
 	
+	public static Object[] processEach(String[] instructions, Scope scope, ClassFinder finder) {
+		List<Object> objects = new ArrayList<>();
+		for (String s : instructions) {
+			objects.add(process(s, scope, finder));
+		}
+		return objects.toArray();
+	}
+	
+	/*
+	Eval operators:
+	< = get var from scope
+	? = literal string
+	> = cast to type
+	: = call method
+	= = construct type
+	~ = get field from object
+	- = parse number, boolean, null, or string (in that order)
+	# = new box
+	[ = get box
+	] = get variable from box
+	+ = set box variable (method format)
+	 */
+	
 	public Object process() {
-		Debugger.log("processing");
-		Pattern pattern = Pattern.compile("g-\\w+|(\\W)?((?:\\W)?\\w+(\\$\\w+)?(\\([^)]*\\))?)");
+		Debugger.log("--- processing ---");
+		Pattern pattern = Pattern.compile("g-\\w+|([^\\w.])?((?:\\W)?[\\w.$_ ]+(?:\\([^)]*\\))?)");
 		Matcher matcher = pattern.matcher(instruction);
 		while (matcher.find()) {
 			String o = matcher.group(1);
@@ -91,9 +114,61 @@ public class Evaluator {
 			}
 			else if (o.equals("-")) {
 				current = parseParam(data);
-				cClass = unwrap(current.getClass());
+				Debugger.log("param is: " + current.toString());
+				if (current != null) cClass = unwrap(current.getClass());
+				else cClass = null;
 			}
-			Debugger.log("currently: " + (current == null ? "null" : cClass.getName()));
+			else if (o.equals("#")) {
+				Debugger.log("preparing to create box: " + data);
+				Matcher m = Pattern.compile("(.+)\\((.+)\\)").matcher(data);
+				List<Object> params = new ArrayList<>();
+				if (m.find()) {
+					data = m.group(1);
+					String[] prms = m.group(2).split("(?<!\\\\),\\s?");
+					for (String s : prms) params.add(Evaluator.process(s, scope, finder));
+				}
+				current = newBox(data, params);
+				cClass = current == null ? null : Box.class;
+			}
+			else if (o.equals("[")) {
+				Debugger.log("getting box: " + data);
+				boolean g = data.startsWith(":");
+				if (g) {
+					data = data.substring(1);
+					current = scope.getGlobalVar(data).map(Variable::getValue).orElse(null);
+				}
+				else {
+					current = scope.getVar(data).map(Variable::getValue).orElse(null);
+				}
+				if (!(current instanceof Box)) current = null;
+				cClass = current == null ? null : Box.class;
+			}
+			else if (o.equals("]")) {
+				Debugger.log("getting box variable: " + data);
+				if (!(current instanceof Box)) current = null;
+				if (current != null) {
+					Debugger.log("current is box, getting var");
+					current = ((Box) current).getVar(data).map(Variable::getValue).orElse(null);
+				}
+				cClass = current == null ? null : unwrap(current.getClass());
+			}
+			else if (o.equals("+")) {
+				Debugger.log("preparing to set box variable: " + data);
+				if (!(current instanceof Box)) current = null;
+				if (current != null) {
+					Matcher m = Pattern.compile("(.+)\\((.+)\\)").matcher(data);
+					Object val = null;
+					if (m.find()) {
+						data = m.group(1);
+						String[] prms = m.group(2).split("(?<!\\\\),\\s?");
+						if (prms.length > 0) val = Evaluator.process(prms[0], scope, finder);
+					}
+					Debugger.log("setting var " + data + " to " + (val != null ? val.toString() : "null"));
+					((Box) current).setVar(data, val);
+				}
+				cClass = current == null ? null : unwrap(current.getClass());
+			}
+			Debugger.log("currently: " + (current == null ? "null" : nameOf(cClass)));
 			if (current == null && cClass == null) {
 				scope.info("Result is null");
 				return null;
@@ -106,6 +181,10 @@ public class Evaluator {
 	private void fail() {
 		current = null;
 		cClass = null;
+	}
+	
+	private String nameOf(Class<?> clazz) {
+		return clazz != null ? clazz.getName() : "null";
 	}
 	
 	private void castTo(String type) {
@@ -233,6 +312,11 @@ public class Evaluator {
 		return op.orElse(null);
 	}
 	
+	private Box newBox(String name, List<Object> params) {
+		Optional<BoxPattern> op = scope.getShadow().getBoxPattern(name);
+		return op.map(boxPattern -> boxPattern.create(params)).orElse(null);
+	}
+	
 	private Class<?> unwrap(Class<?> clazz) {
 		if (clazz.equals(Integer.class)) return int.class;
 		else if (clazz.equals(Double.class)) return double.class;
@@ -249,24 +333,31 @@ public class Evaluator {
 	}
 	
 	private Object parseParam(String value) {
+		Debugger.log("parsing param: " + value);
 		if (value.matches("p\\{.+}")) {
+			Debugger.log("getting private var");
 			Optional<Variable> op = scope.getPrivateVar(value.substring(2, value.length() - 1));
 			return op.map(Variable::getValue).orElse(null);
-		};
+		}
 		return toObject(value);
 	}
 	
 	public static Object toObject(String value) {
+		Debugger.log("converting to primitive");
 		if (value.matches("-?[0-9.]+")) {
+			Debugger.log("value is number");
 			if (value.contains(".")) return Double.valueOf(value);
 			return Integer.valueOf(value);
 		}
 		else if (value.matches("true|false")) {
+			Debugger.log("value is boolean");
 			return Boolean.valueOf(value);
 		}
 		else if (value.equals("null")) {
+			Debugger.log("value is null");
 			return null;
 		}
+		Debugger.log("returning value as string");
 		return value;
 	}
 }

@@ -1,9 +1,12 @@
 package com.ssplugins.shadow.lang;
 
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class ShadowCommons {
 	
@@ -36,6 +39,7 @@ public class ShadowCommons {
 		keyRepeatIf();
 		keyIf();
 		keyLevel();
+		keyRun();
 	}
 	
 	private void addBlocks() {
@@ -44,11 +48,13 @@ public class ShadowCommons {
 		blockLoop();
 		blockIf();
 		blockElse();
+		blockFunction();
 	}
 	
 	private void addReplacers() {
 		replacerEval();
 		replacerString();
+		replacerEvalToString();
 		replacerCompare();
 	}
 	
@@ -167,7 +173,12 @@ public class ShadowCommons {
 	
 	private void keyBring() {
 		shadow.addKeyword(new Keyword("bring", (args, scope, stepper) -> {
-			if (args.length < 1) return;
+			if (args.length == 0) {
+				Scope upper = scope.levelUp();
+				if (upper == null) return;
+				upper.getAllLocalVars().forEach(scope::add);
+				return;
+			}
 			for (String arg : args) {
 				Optional<Variable> op = ShadowUtil.getLeveledVar(arg, scope);
 				if (!op.isPresent()) continue;
@@ -178,7 +189,12 @@ public class ShadowCommons {
 	
 	private void keyPush() {
 		shadow.addKeyword(new Keyword("push", (args, scope, stepper) -> {
-			if (args.length < 1) return;
+			if (args.length == 0) {
+				Scope upper = scope.levelUp();
+				if (upper == null) return;
+				scope.getAllLocalVars().forEach(upper::update);
+				return;
+			}
 			for (String arg : args) {
 				ShadowUtil.pushLeveledVar(arg, scope);
 			}
@@ -222,11 +238,32 @@ public class ShadowCommons {
 		}));
 	}
 	
+	private void keyRun() {
+		shadow.addKeyword(new Keyword("run", (args, scope, stepper) -> {
+			if (args.length < 1) return;
+			String function = args[0];
+			String[] p = args.length > 1 ? Arrays.copyOfRange(args, 1, args.length) : new String[0];
+			Object[] params = Evaluator.processEach(p, scope, stepper.getShadow().getClassFinder());
+			List<Block> functions = stepper.getShadow().getBlocks("function").stream().filter(block -> block.modLength() == 1 && block.getMod(0).equals(function)).filter(block -> block.paramLength() == params.length).collect(Collectors.toList());
+			if (functions.size() == 0) return;
+			if (functions.size() > 1) {
+				Debugger.log("More than one function matches. Name: " + function);
+				return;
+			}
+			stepper.stepWait();
+			Runnable callback = () -> {
+				stepper.normal();
+				stepper.stepForward();
+			};
+			functions.get(0).run(callback, params);
+		}));
+	}
+	
 	private void blockRepeat() {
 		shadow.setPreRunAction("repeat", (block, scope, info) -> {
 			if (!block.verify(1, 1)) return false;
 			if (block.getMod(0).replaceAll("[^0-9]", "").isEmpty()) return false;
-			return true;
+			return Integer.valueOf(block.getMod(0)) >= 1;
 		});
 		shadow.setEnterAction("repeat", (block, scope, stepper) -> {
 			scope.setVar(block.getParam(0), 1);
@@ -328,6 +365,11 @@ public class ShadowCommons {
 		});
 	}
 	
+	
+	private void blockFunction() {
+		shadow.setPreRunAction("function", (block, scope, info) -> block.verify(1, -1));
+	}
+	
 	private void replacerString() {
 		shadow.addReplacer("$", (text, line, scope, stepper) -> {
 			if (text.matches(".+?\\[[0-9+]*?]")) {
@@ -349,6 +391,13 @@ public class ShadowCommons {
 				Optional<Variable> opv = ShadowUtil.getVariable(text, scope);
 				return opv.map(variable -> variable.getValue().toString()).orElse(null);
 			}
+		});
+	}
+	
+	private void replacerEvalToString() {
+		shadow.addReplacer("%", (text, line, scope, stepper) -> {
+			Object res = Evaluator.process(text, scope, stepper.getShadow().getClassFinder());
+			return res != null ? res.toString() : null;
 		});
 	}
 	
@@ -386,6 +435,18 @@ public class ShadowCommons {
 					case "!=":
 						method = "nequals";
 						break;
+					case ">":
+						method = "gt";
+						break;
+					case "<":
+						method = "lt";
+						break;
+					case ">=":
+						method = "gte";
+						break;
+					case "<=":
+						method = "lte";
+						break;
 					default:
 						break;
 				}
@@ -395,7 +456,7 @@ public class ShadowCommons {
 					Object b = Evaluator.process(ShadowUtil.literal(m.group(3)), scope, stepper.getShadow().getClassFinder());
 					String varA = "p{" + scope.newPrivateVar(a) + "}";
 					String varB = "p{" + scope.newPrivateVar(b) + "}";
-					Object result = Evaluator.process(">" + Operator.class.getSimpleName() + ":" + method + "(" + varA + "," + varB + ")", scope, name -> Operator.class.getName());
+					Object result = Evaluator.process(">" + Operator.class.getName() + ":" + method + "(" + varA + "," + varB + ")", scope, name -> Operator.class.getName());
 					if (result instanceof String) builder.append("?");
 					else builder.append("-");
 					if (result != null) builder.append(result.toString());

@@ -28,11 +28,9 @@ public class ShadowTester extends Application {
 			return;
 		}
 		
-		Debugger.setEnabled(true);
+		//Debugger.setEnabled(true);
 		Shadow shadow = Shadow.parseCommons(file);
-		shadow.runBlocks("test", new String[] {"first", "second", "third"}, "testy");
-		shadow.end();
-		
+		shadow.runBlocks(shadow::end, "test", new String[] {"first", "second", "third"}, "testy");
 		
 		Platform.exit();
 	}

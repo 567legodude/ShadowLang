@@ -1,6 +1,9 @@
 package com.ssplugins.shadow.lang;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.TimerTask;
 
 public class Stepper implements StepperInfo {
 	
@@ -17,7 +20,6 @@ public class Stepper implements StepperInfo {
 	private Iterator<Section> iterator;
 	private Block block;
 	private Stepper calling;
-	private Timer timer;
 	
 	private Block prevBlock = null;
 	private Block running = null;
@@ -25,18 +27,16 @@ public class Stepper implements StepperInfo {
 	
 	private Stepper(Shadow shadow, List<Section> sections) {
 		this.shadow = shadow;
-		scope = new Scope(shadow.getGlobalVars(), null);
+		scope = new Scope(shadow.getGlobalVars(), null, shadow);
 		this.sections = sections;
-		timer = shadow.getTimer();
 	}
 	
 	Stepper(Block block, Stepper calling) {
 		shadow = block.getShadow();
-		scope = new Scope(shadow.getGlobalVars(), (calling != null ? calling.scope : null));
+		scope = new Scope(shadow.getGlobalVars(), (calling != null ? calling.scope : null), shadow);
 		this.sections = block.getSections();
 		this.block = block;
 		this.calling = calling;
-		timer = shadow.getTimer();
 	}
 	
 	public static Stepper prepare(Shadow shadow, String line) {
@@ -53,7 +53,7 @@ public class Stepper implements StepperInfo {
 		return calling;
 	}
 	
-	private void setCallback(Runnable callback) {
+	void setCallback(Runnable callback) {
 		this.callback = callback;
 	}
 	
@@ -125,6 +125,10 @@ public class Stepper implements StepperInfo {
 		action = StepAction.BREAK;
 	}
 	
+	public void stepWait() {
+		action = StepAction.WAIT;
+	}
+	
 	public void breakAll() {
 		if (calling != null) calling.breakAll();
 		stepBreak();
@@ -173,7 +177,7 @@ public class Stepper implements StepperInfo {
 		if (callback != null) callback.run();
 	}
 	
-	private void stepForward() {
+	void stepForward() {
 		if (!iterator.hasNext()) {
 			runCallback();
 			return;
@@ -184,7 +188,7 @@ public class Stepper implements StepperInfo {
 			runStep(iterator.next());
 			if (action == StepAction.DELAY) {
 				run = false;
-				timer.schedule(new TimerTask() {
+				shadow.getTimer().schedule(new TimerTask() {
 					@Override
 					public void run() {
 						stepForward();
