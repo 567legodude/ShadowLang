@@ -3,7 +3,7 @@ package com.ssplugins.shadow2.element;
 public abstract class ShadowElement {
 	
 	private String raw;
-	private int number;
+	private int line;
 	
 	public boolean isBlock() {
 		return this instanceof Block;
