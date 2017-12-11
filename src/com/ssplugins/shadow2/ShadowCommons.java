@@ -1,6 +1,5 @@
 package com.ssplugins.shadow2;
 
-import com.ssplugins.shadow2.common.Parser;
 import com.ssplugins.shadow2.def.BlockDef;
 import com.ssplugins.shadow2.def.EvalSymbolDef;
 import com.ssplugins.shadow2.def.KeywordDef;
@@ -8,28 +7,26 @@ import com.ssplugins.shadow2.def.ReplacerDef;
 
 import java.util.List;
 
-public abstract class ShadowAPI {
+public class ShadowCommons extends ShadowAPI {
 	
-	public void peekLines(List<String> lines) {}
-	
-	public List<Parser> registerLineParsers() {
-		return null;
-	}
-	
+	@Override
 	public List<KeywordDef> registerKeywords() {
-		return null;
+		return super.registerKeywords();
 	}
 	
+	@Override
 	public List<BlockDef> registerBlocks() {
-		return null;
+		return super.registerBlocks();
 	}
 	
+	@Override
 	public List<ReplacerDef> registerReplacers() {
-		return null;
+		return super.registerReplacers();
 	}
 	
+	@Override
 	public List<EvalSymbolDef> registerEvalSymbols() {
-		return null;
+		return super.registerEvalSymbols();
 	}
-
+	
 }
