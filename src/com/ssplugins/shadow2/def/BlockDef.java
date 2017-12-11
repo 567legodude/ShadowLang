@@ -1,11 +1,16 @@
 package com.ssplugins.shadow2.def;
 
+import com.ssplugins.shadow2.common.Range;
+
 public final class BlockDef implements MiniParser {
 	
 	private String name;
 	private BlockCondition entryCondition;
 	private BlockAction enterEvent;
 	private BlockAction endEvent;
+	private Range modifierCount;
+	private Range parameterCount;
+	
 	private SectionParser parser;
 	private Splitter splitter;
 	
@@ -39,6 +44,24 @@ public final class BlockDef implements MiniParser {
 	
 	public void setEndEvent(BlockAction endEvent) {
 		this.endEvent = endEvent;
+	}
+	
+	public Range getModifierCount() {
+		return modifierCount;
+	}
+	
+	public void setModifierCount(Range modifierCount) {
+		if (modifierCount == null) modifierCount = Range.any();
+		this.modifierCount = modifierCount;
+	}
+	
+	public Range getParameterCount() {
+		return parameterCount;
+	}
+	
+	public void setParameterCount(Range parameterCount) {
+		if (parameterCount == null) parameterCount = Range.any();
+		this.parameterCount = parameterCount;
 	}
 	
 	@Override

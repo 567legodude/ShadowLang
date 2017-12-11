@@ -6,4 +6,8 @@ public final class MultiPart extends ShadowSection {
 	
 	private List<ShadowSection> parts;
 	
+	public MultiPart(List<ShadowSection> parts) {
+		this.parts = parts;
+	}
+	
 }

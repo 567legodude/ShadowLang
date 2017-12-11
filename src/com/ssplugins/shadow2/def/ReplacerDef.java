@@ -6,10 +6,13 @@ import com.ssplugins.shadow2.element.ShadowSection;
 
 import java.util.function.BiFunction;
 
-public final class ReplacerDef implements SectionDefinition<MultiPart> {
+public final class ReplacerDef implements SectionDefinition<MultiPart>, MiniParser {
 	
 	private String token;
 	private BiFunction<MultiPart, Scope, ShadowSection> action;
+	
+	private SectionParser parser;
+	private Splitter splitter;
 	
 	public ReplacerDef(String token, BiFunction<MultiPart, Scope, ShadowSection> action) {
 		this.token = token;
@@ -23,6 +26,26 @@ public final class ReplacerDef implements SectionDefinition<MultiPart> {
 	
 	public String getToken() {
 		return token;
+	}
+	
+	@Override
+	public void setSectionParser(SectionParser parser) {
+		this.parser = parser;
+	}
+	
+	@Override
+	public SectionParser getSectionParser() {
+		return parser;
+	}
+	
+	@Override
+	public void setSplitter(Splitter splitter) {
+		this.splitter = splitter;
+	}
+	
+	@Override
+	public Splitter getSplitter() {
+		return splitter;
 	}
 	
 }

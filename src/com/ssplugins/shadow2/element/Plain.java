@@ -4,4 +4,8 @@ public final class Plain extends ShadowSection {
 	
 	private String value;
 	
+	public Plain(String value) {
+		this.value = value;
+	}
+	
 }

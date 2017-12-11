@@ -4,6 +4,7 @@ public final class KeywordDef implements MiniParser {
 	
 	private String keyword;
 	private KeywordAction action;
+	
 	private SectionParser parser;
 	private Splitter splitter;
 	
