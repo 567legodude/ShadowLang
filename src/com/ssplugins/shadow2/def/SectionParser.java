@@ -16,6 +16,12 @@ public interface SectionParser {
 	
 	List<ShadowSection> getSections(String[] sections, ParseContext context);
 	
+	static SectionParser evalParser() {
+		return (sections, context) -> {
+		
+		};
+	}
+	
 	static SectionParser replacerContents() {
 		return (sections, context) -> {
 			String data = ShadowTools.get(sections).filter(strings -> strings.length > 0).map(strings -> strings[0]).orElse("");
