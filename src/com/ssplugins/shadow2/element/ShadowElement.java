@@ -10,7 +10,7 @@ public abstract class ShadowElement {
 	}
 	
 	public boolean isLine() {
-		return this instanceof Line;
+		return this instanceof Keyword;
 	}
 	
 	public Block asBlock() {
@@ -20,9 +20,9 @@ public abstract class ShadowElement {
 		throw new IllegalStateException("Object is not Block.");
 	}
 	
-	public Line asLine() {
+	public Keyword asLine() {
 		if (isLine()) {
-			return (Line) this;
+			return (Keyword) this;
 		}
 		throw new IllegalStateException("Object is not Line.");
 	}

@@ -5,6 +5,7 @@ import com.ssplugins.shadow2.element.MultiPart;
 import com.ssplugins.shadow2.element.ShadowSection;
 
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 public final class ReplacerDef implements SectionDefinition<MultiPart>, MiniParser {
 	
@@ -17,6 +18,10 @@ public final class ReplacerDef implements SectionDefinition<MultiPart>, MiniPars
 	public ReplacerDef(String token, BiFunction<MultiPart, Scope, ShadowSection> action) {
 		this.token = token;
 		this.action = action;
+	}
+	
+	public static Predicate<ReplacerDef> is(String token) {
+		return replacerDef -> replacerDef.getToken().equalsIgnoreCase(token);
 	}
 	
 	@Override

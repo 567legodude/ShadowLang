@@ -26,6 +26,10 @@ public class Range {
 		return new Range(number, 0).type(Type.SINGLE);
 	}
 	
+	public static Range outside(int lower, int upper) {
+		return from(lower, upper).type(Type.OUTSIDE);
+	}
+	
 	public static Range any() {
 		return new Range(0, 0).type(Type.ANY);
 	}
@@ -41,19 +45,28 @@ public class Range {
 	public boolean inRange(int value) {
 		if (type == Type.ANY) return true;
 		if (type == Type.SINGLE) return value == lower;
-		return lower <= value && value <= upper;
+		if (type == Type.OUTSIDE) {
+			return value < lower || value > upper;
+		}
+		else return lower <= value && value <= upper;
 	}
 	
 	public boolean outsideRange(int value) {
-		if (type == Type.ANY) return true;
-		if (type == Type.SINGLE) return value == lower;
-		return value <= lower || value >= upper;
+		return !inRange(value);
 	}
 	
 	private enum Type {
 		DEFAULT,
 		SINGLE,
+		OUTSIDE,
 		ANY
 	}
 	
+	@Override
+	public String toString() {
+		if (type == Type.ANY) return "any";
+		if (type == Type.SINGLE) return String.valueOf(lower);
+		if (type == Type.OUTSIDE) return lower + ">n>" + upper;
+		else return lower + "-" + upper;
+	}
 }

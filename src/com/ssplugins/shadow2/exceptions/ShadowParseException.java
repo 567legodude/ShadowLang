@@ -6,4 +6,8 @@ public class ShadowParseException extends ShadowException {
 		super(message);
 	}
 	
+	public ShadowParseException(String message, int line) {
+		super(message + " (Line " + line + ")");
+	}
+	
 }

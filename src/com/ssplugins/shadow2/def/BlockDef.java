@@ -2,20 +2,26 @@ package com.ssplugins.shadow2.def;
 
 import com.ssplugins.shadow2.common.Range;
 
+import java.util.function.Predicate;
+
 public final class BlockDef implements MiniParser {
 	
 	private String name;
 	private BlockCondition entryCondition;
 	private BlockAction enterEvent;
 	private BlockAction endEvent;
-	private Range modifierCount;
-	private Range parameterCount;
+	private Range modifierCount = Range.any();
+	private Range parameterCount = Range.any();
 	
 	private SectionParser parser;
 	private Splitter splitter;
 	
 	public BlockDef(String name) {
 		this.name = name;
+	}
+	
+	public static Predicate<BlockDef> is(String name) {
+		return blockDef -> blockDef.getName().equalsIgnoreCase(name);
 	}
 	
 	public String getName() {

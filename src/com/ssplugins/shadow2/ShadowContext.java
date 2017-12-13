@@ -1,5 +1,6 @@
 package com.ssplugins.shadow2;
 
+import com.ssplugins.shadow2.common.ParseLevel;
 import com.ssplugins.shadow2.common.Parser;
 import com.ssplugins.shadow2.def.BlockDef;
 import com.ssplugins.shadow2.def.EvalSymbolDef;
@@ -17,6 +18,7 @@ public class ShadowContext implements ParseContext {
 	
 	private int line;
 	private String block;
+	private ParseLevel level;
 	
 	private List<Parser> lineParsers;
 	private List<KeywordDef> keywords;
@@ -24,7 +26,9 @@ public class ShadowContext implements ParseContext {
 	private List<ReplacerDef> replacers;
 	private List<EvalSymbolDef> evalSymbols;
 	
-	public ShadowContext(List<ShadowAPI> apis) {
+	public ShadowContext(List<ShadowAPI> apis, ParseLevel level) {
+		if (level == null) level = ParseLevel.NORMAL;
+		this.level = level;
 		lineParsers = new ArrayList<>();
 		KeyedList<KeywordDef> keywords = new KeyedList<>(KeywordDef::getKeyword);
 		KeyedList<BlockDef> blocks = new KeyedList<>(BlockDef::getName);
@@ -77,6 +81,11 @@ public class ShadowContext implements ParseContext {
 	@Override
 	public String parentBlock() {
 		return block;
+	}
+	
+	@Override
+	public ParseLevel getParseLevel() {
+		return level;
 	}
 	
 	@Override

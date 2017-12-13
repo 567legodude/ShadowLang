@@ -1,9 +1,9 @@
 package com.ssplugins.shadow2.def;
 
-import java.util.concurrent.atomic.AtomicReference;
+import com.ssplugins.shadow2.common.TypeReference;
 
 public interface EvalAction {
 	
-	AtomicReference<Object> execute(AtomicReference<Object> current);
+	TypeReference execute(TypeReference reference);
 	
 }

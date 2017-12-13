@@ -1,11 +1,13 @@
 package com.ssplugins.shadow2.element;
 
+import java.util.List;
+
 public final class Replacer extends ShadowSection {
 	
-	private Plain token;
-	private MultiPart content;
+	private String token;
+	private List<ShadowSection> content;
 	
-	public Replacer(Plain token, MultiPart content) {
+	public Replacer(String token, List<ShadowSection> content) {
 		this.token = token;
 		this.content = content;
 	}

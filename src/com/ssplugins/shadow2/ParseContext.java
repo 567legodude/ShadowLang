@@ -1,5 +1,6 @@
 package com.ssplugins.shadow2;
 
+import com.ssplugins.shadow2.common.ParseLevel;
 import com.ssplugins.shadow2.common.Parser;
 import com.ssplugins.shadow2.def.BlockDef;
 import com.ssplugins.shadow2.def.EvalSymbolDef;
@@ -13,6 +14,8 @@ public interface ParseContext {
 	int getLine();
 	
 	String parentBlock();
+	
+	ParseLevel getParseLevel();
 	
 	List<Parser> getLineParsers();
 	

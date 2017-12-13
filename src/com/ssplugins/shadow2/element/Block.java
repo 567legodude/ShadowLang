@@ -4,12 +4,16 @@ import java.util.List;
 
 public final class Block extends ShadowElement {
 	
-	private Plain name;
+	private String name;
 	private List<ShadowSection> modifiers;
+	private List<Plain> parameters;
+	private List<ShadowElement> content;
 	
-	public Block(Plain name, List<ShadowSection> modifiers) {
+	public Block(String name, List<ShadowSection> modifiers, List<Plain> parameters, List<ShadowElement> content) {
 		this.name = name;
 		this.modifiers = modifiers;
+		this.parameters = parameters;
+		this.content = content;
 	}
 	
 }

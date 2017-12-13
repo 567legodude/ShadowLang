@@ -2,8 +2,6 @@ package com.ssplugins.shadow2.element;
 
 public abstract class ShadowSection {
 	
-	private String raw;
-
 	public boolean isPlain() {
 		return this instanceof Plain;
 	}
@@ -14,6 +12,14 @@ public abstract class ShadowSection {
 	
 	public boolean isMultiPart() {
 		return this instanceof MultiPart;
+	}
+	
+	public boolean isEvalSection() {
+		return this instanceof EvalSection;
+	}
+	
+	public boolean isLazyReplacer() {
+		return this instanceof LazyReplacers;
 	}
 	
 	public Plain asPlain() {
@@ -35,6 +41,20 @@ public abstract class ShadowSection {
 			return (MultiPart) this;
 		}
 		throw new IllegalStateException("Object is not MultiPart.");
+	}
+	
+	public EvalSection asEvalSection() {
+		if (isEvalSection()) {
+			return (EvalSection) this;
+		}
+		throw new IllegalStateException("Object is not EvalSection");
+	}
+	
+	public LazyReplacers asLazyReplacer() {
+		if (isLazyReplacer()) {
+			return (LazyReplacers) this;
+		}
+		throw new IllegalStateException("Object is not LazyReplacers");
 	}
 
 }
