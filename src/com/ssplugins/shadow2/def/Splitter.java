@@ -2,6 +2,10 @@ package com.ssplugins.shadow2.def;
 
 import com.ssplugins.shadow2.ParseContext;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+
 public interface Splitter {
 	
 	String[] split(String content, ParseContext context);
@@ -10,8 +14,15 @@ public interface Splitter {
 		return (content, context) -> new String[] {content};
 	}
 	
-	static Splitter modSplit() {
-		return (content, context) -> content.split(" +");
+	static Splitter evalSplit() {
+		return (content, context) -> {
+			List<String> list = new ArrayList<>();
+			Matcher m = EvalSymbolDef.PATTERN.matcher(content);
+			while (m.find()) {
+				list.add(m.group());
+			}
+			return list.toArray(new String[list.size()]);
+		};
 	}
 	
 }

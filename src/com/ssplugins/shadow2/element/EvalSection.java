@@ -1,5 +1,7 @@
 package com.ssplugins.shadow2.element;
 
+import com.ssplugins.shadow2.ShadowTools;
+
 import java.util.List;
 
 public class EvalSection extends ShadowSection {
@@ -12,6 +14,11 @@ public class EvalSection extends ShadowSection {
 		this.token = token;
 		this.name = name;
 		this.params = params;
+	}
+	
+	@Override
+	public String toString() {
+		return token + name + ShadowTools.asString(params);
 	}
 	
 }

@@ -27,7 +27,15 @@ public class ShadowParser {
 	private List<ShadowAPI> apis = new ArrayList<>();
 	private ParseLevel level = ParseLevel.NORMAL;
 	
-	public ShadowParser() {}
+	public ShadowParser() {
+		this.addApi(new ShadowCommons());
+	}
+	
+	public static ShadowParser empty() {
+		ShadowParser parser = new ShadowParser();
+		parser.apis.clear();
+		return parser;
+	}
 	
 	public void addApi(ShadowAPI api) {
 		if (api != null) apis.add(api);
@@ -38,17 +46,16 @@ public class ShadowParser {
 		Optional<KeywordDef> op = context.getKeywords().stream().filter(KeywordDef.is(keyword)).findFirst();
 		if (!op.isPresent()) {
 			if (context.getParseLevel().strictKeywords()) {
-				throw new ShadowParseException("Unknown keyword: " + keyword, context.getLine());
+				throw new ShadowParseException("Unknown keyword: " + keyword, context);
 			}
-			return null;
 		}
-		KeywordDef def = op.get();
+		KeywordDef def = op.orElse(KeywordDef.temporary(keyword));
 		String[] args = ShadowTools.get(def.getSplitter()).map(splitter -> splitter.split(data.getArgs(), context)).orElse(data.getSplitArgs());
 		if (def.getArgumentCount().outsideRange(args.length)) {
-			throw new ShadowParseException("Keyword " + keyword + " expects " + def.getArgumentCount().toString() + " arguments, counted " + args.length + ".", context.getLine());
+			throw new ShadowParseException("Keyword " + keyword + " expects " + def.getArgumentCount().toString() + " arguments, counted " + args.length + ".", context);
 		}
 		SectionParser parser = ShadowTools.get(def.getSectionParser()).orElse(SectionParser.standard());
-		return new Keyword(keyword, parser.getSections(args, context));
+		return new Keyword(context, keyword, parser.getSections(args, context));
 	}
 	
 	private Block parseBlock(LineData data, List<ShadowElement> content, ParseContext context) {
@@ -56,24 +63,24 @@ public class ShadowParser {
 		Optional<BlockDef> op = context.getBlocks().stream().filter(BlockDef.is(name)).findFirst();
 		if (!op.isPresent()) {
 			if (context.getParseLevel().strictBlocks()) {
-				throw new ShadowParseException("Unkown block: " + name, context.getLine());
+				throw new ShadowParseException("Unkown block: " + name, context);
 			}
-			return null;
 		}
-		BlockDef def = op.get();
+		BlockDef def = op.orElse(BlockDef.temporary(name));
 		String[] mods = ShadowTools.get(def.getSplitter()).map(splitter -> splitter.split(data.getMods(), context)).orElse(data.getSplitMods());
 		String[] params = data.getParams();
 		if (def.getModifierCount().outsideRange(mods.length)) {
-			throw new ShadowParseException("Block " + name + " expects " + def.getModifierCount().toString() + " modifiers, counted " + mods.length + ".", context.getLine());
+			throw new ShadowParseException("Block " + name + " expects " + def.getModifierCount().toString() + " modifiers, counted " + mods.length + ".", context);
 		}
 		if (def.getParameterCount().outsideRange(params.length)) {
-			throw new ShadowParseException("Block " + name + " expects " + def.getModifierCount().toString() + " parameters, counted " + params.length + ".", context.getLine());
+			throw new ShadowParseException("Block " + name + " expects " + def.getModifierCount().toString() + " parameters, counted " + params.length + ".", context);
 		}
 		SectionParser parser = ShadowTools.get(def.getSectionParser()).orElse(SectionParser.standard());
-		return new Block(name, parser.getSections(mods, context), Stream.of(params).map(Plain::new).collect(Collectors.toList()), content);
+		return new Block(context, name, parser.getSections(mods, context), Stream.of(params).map(Plain::new).collect(Collectors.toList()), content);
 	}
 	
 	private List<ShadowElement> parseElements(List<String> content, ShadowContext context) {
+		Debug.log("Parsing elements");
 		if (context == null) context = new ShadowContext(apis, level);
 		List<String> lines = new ArrayList<>(content);
 		context.getLineParsers().forEach(parser -> lines.replaceAll(parser::parse));
@@ -83,17 +90,21 @@ public class ShadowParser {
 		while (reader.hasNextLine()) {
 			context.nextLine();
 			LineData data = reader.readNextLine();
+			context.setRaw(data.getRaw());
+			Debug.log(context.toString());
+			Debug.log(data.getType().name());
 			if (data.isEmpty()) continue;
-			if (data.isInvalid()) throw new ShadowParseException("Invalid syntax on line " + context.getLine() + ".");
+			if (data.isInvalid()) throw new ShadowParseException("Invalid syntax.", context);
 			else if (data.isKeyword()) {
 				elements.add(parseKeyword(data, context));
 			}
 			else if (data.isBlockHeader()) {
 				List<String> blockLines = reader.readToEndBracket();
 				elements.add(parseBlock(data, parseElements(blockLines, context), context));
+				context.nextLine();
 			}
 			else if (data.isBlockClose()) {
-				throw new ShadowParseException("Too many closing brackets.", context.getLine());
+				throw new ShadowParseException("Too many closing brackets.", context);
 			}
 		}
 		return elements;

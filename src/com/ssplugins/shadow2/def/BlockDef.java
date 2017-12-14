@@ -20,6 +20,10 @@ public final class BlockDef implements MiniParser {
 		this.name = name;
 	}
 	
+	public static BlockDef temporary(String name) {
+		return new BlockDef(name);
+	}
+	
 	public static Predicate<BlockDef> is(String name) {
 		return blockDef -> blockDef.getName().equalsIgnoreCase(name);
 	}

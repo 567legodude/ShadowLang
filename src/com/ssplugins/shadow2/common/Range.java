@@ -30,6 +30,14 @@ public class Range {
 		return from(lower, upper).type(Type.OUTSIDE);
 	}
 	
+	public static Range lowerBound(int bound) {
+		return new Range(bound, 0).type(Type.LOWER_BOUND);
+	}
+	
+	public static Range upperBound(int bound) {
+		return new Range(0, bound).type(Type.UPPER_BOUND);
+	}
+	
 	public static Range any() {
 		return new Range(0, 0).type(Type.ANY);
 	}
@@ -48,6 +56,8 @@ public class Range {
 		if (type == Type.OUTSIDE) {
 			return value < lower || value > upper;
 		}
+		if (type == Type.LOWER_BOUND) return value >= lower;
+		if (type == Type.UPPER_BOUND) return value <= upper;
 		else return lower <= value && value <= upper;
 	}
 	
@@ -59,6 +69,8 @@ public class Range {
 		DEFAULT,
 		SINGLE,
 		OUTSIDE,
+		LOWER_BOUND,
+		UPPER_BOUND,
 		ANY
 	}
 	
@@ -67,6 +79,8 @@ public class Range {
 		if (type == Type.ANY) return "any";
 		if (type == Type.SINGLE) return String.valueOf(lower);
 		if (type == Type.OUTSIDE) return lower + ">n>" + upper;
+		if (type == Type.LOWER_BOUND) return ">=" + lower;
+		if (type == Type.UPPER_BOUND) return "<=" + upper;
 		else return lower + "-" + upper;
 	}
 }

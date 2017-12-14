@@ -1,0 +1,7 @@
+enable {
+    test
+}
+
+event PlayerBoiEvent (e) {
+    log e{:e:getPlayer:getName}
+}

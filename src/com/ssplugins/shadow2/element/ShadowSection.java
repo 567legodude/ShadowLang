@@ -14,8 +14,8 @@ public abstract class ShadowSection {
 		return this instanceof MultiPart;
 	}
 	
-	public boolean isEvalSection() {
-		return this instanceof EvalSection;
+	public boolean isEvalGroup() {
+		return this instanceof EvalGroup;
 	}
 	
 	public boolean isLazyReplacer() {
@@ -43,11 +43,11 @@ public abstract class ShadowSection {
 		throw new IllegalStateException("Object is not MultiPart.");
 	}
 	
-	public EvalSection asEvalSection() {
-		if (isEvalSection()) {
-			return (EvalSection) this;
+	public EvalGroup asEvalGroup() {
+		if (isEvalGroup()) {
+			return (EvalGroup) this;
 		}
-		throw new IllegalStateException("Object is not EvalSection");
+		throw new IllegalStateException("Object is not EvalGroup.");
 	}
 	
 	public LazyReplacers asLazyReplacer() {

@@ -18,6 +18,10 @@ public class Shadow {
 		return new Shadow(Collections.emptyList());
 	}
 	
+	public List<ShadowElement> getElements() {
+		return elements;
+	}
+	
 	public static class ShadowBuilder {
 		
 		private List<ShadowElement> elements;

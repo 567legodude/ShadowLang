@@ -13,6 +13,8 @@ public interface ParseContext {
 	
 	int getLine();
 	
+	String raw();
+	
 	String parentBlock();
 	
 	ParseLevel getParseLevel();

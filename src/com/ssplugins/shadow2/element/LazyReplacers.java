@@ -8,4 +8,9 @@ public class LazyReplacers extends ShadowSection {
 		this.content = content;
 	}
 	
+	@Override
+	public String toString() {
+		return content;
+	}
+	
 }

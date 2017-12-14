@@ -1,5 +1,7 @@
 package com.ssplugins.shadow2.element;
 
+import com.ssplugins.shadow2.ParseContext;
+
 import java.util.List;
 
 public final class Block extends ShadowElement {
@@ -9,7 +11,8 @@ public final class Block extends ShadowElement {
 	private List<Plain> parameters;
 	private List<ShadowElement> content;
 	
-	public Block(String name, List<ShadowSection> modifiers, List<Plain> parameters, List<ShadowElement> content) {
+	public Block(ParseContext context, String name, List<ShadowSection> modifiers, List<Plain> parameters, List<ShadowElement> content) {
+		super(context);
 		this.name = name;
 		this.modifiers = modifiers;
 		this.parameters = parameters;

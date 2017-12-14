@@ -17,6 +17,7 @@ import java.util.function.UnaryOperator;
 public class ShadowContext implements ParseContext {
 	
 	private int line;
+	private String raw;
 	private String block;
 	private ParseLevel level;
 	
@@ -69,6 +70,10 @@ public class ShadowContext implements ParseContext {
 		line++;
 	}
 	
+	public void setRaw(String raw) {
+		this.raw = raw;
+	}
+	
 	public void setBlock(String block) {
 		this.block = block;
 	}
@@ -76,6 +81,11 @@ public class ShadowContext implements ParseContext {
 	@Override
 	public int getLine() {
 		return line;
+	}
+	
+	@Override
+	public String raw() {
+		return raw;
 	}
 	
 	@Override
@@ -113,4 +123,8 @@ public class ShadowContext implements ParseContext {
 		return evalSymbols;
 	}
 	
+	@Override
+	public String toString() {
+		return "Line " + line + ": \"" + raw + "\"";
+	}
 }

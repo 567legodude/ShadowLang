@@ -41,7 +41,7 @@ public class LineReader {
 			}
 		}
 		if (bracket > 0) throw new ShadowParseException("No ending bracket found.", start - 1);
-		return list.subList(start, iterator.previousIndex() + 1);
+		return list.subList(start, iterator.previousIndex());
 	}
 	
 	public enum LineType {
@@ -69,8 +69,8 @@ public class LineReader {
 		private String[] params;
 		
 		private LineData(String raw) {
-			this.raw = raw;
 			raw = raw.replace("\t", "").trim();
+			this.raw = raw;
 			if (raw.isEmpty()) {
 				type = LineType.EMPTY;
 				return;
@@ -88,9 +88,16 @@ public class LineReader {
 					LineData.this.mods = mods;
 					LineData.this.splitMods = split(mods, ARG_SPLITTER);
 				}
+				else {
+					LineData.this.mods = "";
+					LineData.this.splitMods = new String[0];
+				}
 				String params = matcher.group(3);
 				if (params != null) {
 					LineData.this.params = params.split(", *");
+				}
+				else {
+					LineData.this.params = new String[0];
 				}
 			});
 			if (!success) {
@@ -101,6 +108,10 @@ public class LineReader {
 					if (args != null) {
 						LineData.this.args = args;
 						LineData.this.splitArgs = split(args, ARG_SPLITTER);
+					}
+					else {
+						LineData.this.args = "";
+						LineData.this.splitArgs = new String[0];
 					}
 				});
 			}

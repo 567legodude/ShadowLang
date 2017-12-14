@@ -18,6 +18,10 @@ public final class KeywordDef implements MiniParser {
 		this.action = action;
 	}
 	
+	public static KeywordDef temporary(String keyword) {
+		return new KeywordDef(keyword, null);
+	}
+	
 	public static Predicate<KeywordDef> is(String keyword) {
 		return keywordDef -> keywordDef.getKeyword().equalsIgnoreCase(keyword);
 	}

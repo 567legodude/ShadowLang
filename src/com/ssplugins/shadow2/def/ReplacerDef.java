@@ -1,21 +1,21 @@
 package com.ssplugins.shadow2.def;
 
 import com.ssplugins.shadow2.Scope;
-import com.ssplugins.shadow2.element.MultiPart;
 import com.ssplugins.shadow2.element.ShadowSection;
 
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
-public final class ReplacerDef implements SectionDefinition<MultiPart>, MiniParser {
+public final class ReplacerDef implements MiniParser {
 	
 	private String token;
-	private BiFunction<MultiPart, Scope, ShadowSection> action;
+	private BiFunction<List<ShadowSection>, Scope, ShadowSection> action;
 	
 	private SectionParser parser;
 	private Splitter splitter;
 	
-	public ReplacerDef(String token, BiFunction<MultiPart, Scope, ShadowSection> action) {
+	public ReplacerDef(String token, BiFunction<List<ShadowSection>, Scope, ShadowSection> action) {
 		this.token = token;
 		this.action = action;
 	}
@@ -24,13 +24,12 @@ public final class ReplacerDef implements SectionDefinition<MultiPart>, MiniPars
 		return replacerDef -> replacerDef.getToken().equalsIgnoreCase(token);
 	}
 	
-	@Override
-	public ShadowSection getValue(MultiPart content, Scope scope) {
-		return action.apply(content, scope);
-	}
-	
 	public String getToken() {
 		return token;
+	}
+	
+	public BiFunction<List<ShadowSection>, Scope, ShadowSection> getAction() {
+		return action;
 	}
 	
 	@Override
