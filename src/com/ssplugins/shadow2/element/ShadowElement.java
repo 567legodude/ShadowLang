@@ -12,6 +12,14 @@ public abstract class ShadowElement {
 		line = context.getLine();
 	}
 	
+	public String getRaw() {
+		return raw;
+	}
+	
+	public int getLine() {
+		return line;
+	}
+	
 	public boolean isBlock() {
 		return this instanceof Block;
 	}

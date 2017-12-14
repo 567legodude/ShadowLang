@@ -11,7 +11,15 @@ public final class Replacer extends ShadowSection {
 	
 	public Replacer(String token, List<ShadowSection> content) {
 		this.token = token;
-		this.content = content;
+		this.content = ShadowTools.lockList(content);
+	}
+	
+	public String getToken() {
+		return token;
+	}
+	
+	public List<ShadowSection> getContent() {
+		return content;
 	}
 	
 	@Override

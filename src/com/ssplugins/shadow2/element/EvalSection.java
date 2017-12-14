@@ -13,7 +13,19 @@ public class EvalSection extends ShadowSection {
 	public EvalSection(String token, String name, List<ShadowSection> params) {
 		this.token = token;
 		this.name = name;
-		this.params = params;
+		this.params = ShadowTools.lockList(params);
+	}
+	
+	public String getToken() {
+		return token;
+	}
+	
+	public String getName() {
+		return name;
+	}
+	
+	public List<ShadowSection> getParams() {
+		return params;
 	}
 	
 	@Override

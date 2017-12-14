@@ -40,7 +40,7 @@ public class LineReader {
 				break;
 			}
 		}
-		if (bracket > 0) throw new ShadowParseException("No ending bracket found.", start - 1);
+		if (bracket > 0) throw new ShadowParseException("No ending bracket found.", start);
 		return list.subList(start, iterator.previousIndex());
 	}
 	

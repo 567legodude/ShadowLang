@@ -9,7 +9,11 @@ public final class MultiPart extends ShadowSection {
 	private List<ShadowSection> parts;
 	
 	public MultiPart(List<ShadowSection> parts) {
-		this.parts = parts;
+		this.parts = ShadowTools.lockList(parts);
+	}
+	
+	public List<ShadowSection> getParts() {
+		return parts;
 	}
 	
 	@Override
