@@ -13,12 +13,9 @@ import java.util.Optional;
 
 public class Executor {
 	
-	private Shadow shadow;
-	
 	private Scope scope;
 	
 	public Executor(Shadow shadow) {
-		this.shadow = shadow;
 		this.scope = new Scope(shadow.getContext());
 	}
 	

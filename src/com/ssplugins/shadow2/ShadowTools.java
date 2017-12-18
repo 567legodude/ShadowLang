@@ -7,7 +7,6 @@ import com.ssplugins.shadow2.element.*;
 import com.ssplugins.shadow2.exceptions.ShadowExecutionException;
 
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;

@@ -3,11 +3,9 @@ package com.ssplugins.shadow2;
 import com.ssplugins.shadow2.LineReader.LineData;
 import com.ssplugins.shadow2.Shadow.ShadowBuilder;
 import com.ssplugins.shadow2.common.ParseLevel;
-import com.ssplugins.shadow2.common.Range;
 import com.ssplugins.shadow2.def.*;
 import com.ssplugins.shadow2.element.Block;
 import com.ssplugins.shadow2.element.Keyword;
-import com.ssplugins.shadow2.element.Plain;
 import com.ssplugins.shadow2.element.ShadowElement;
 import com.ssplugins.shadow2.exceptions.ShadowParseException;
 
@@ -19,8 +17,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ShadowParser {
 	

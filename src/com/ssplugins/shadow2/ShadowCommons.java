@@ -52,7 +52,7 @@ public class ShadowCommons extends ShadowAPI {
 	}
 	
 	private EvalSymbolDef evalMethod() {
-		EvalSymbolDef def = new EvalSymbolDef(":", reference -> reference);
+		EvalSymbolDef def = new EvalSymbolDef(":", (reference, section) -> reference);
 		return def;
 	}
 	

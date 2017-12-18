@@ -8,6 +8,8 @@ public class Reference extends ShadowSection {
 		this.value = value;
 	}
 	
-	
+	public Object getValue() {
+		return value;
+	}
 	
 }

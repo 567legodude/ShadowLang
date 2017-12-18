@@ -39,7 +39,7 @@ public class Shadow {
 	}
 	
 	public void run(Block block, Object... params) {
-	
+		//
 	}
 	
 	public static class ShadowBuilder {
