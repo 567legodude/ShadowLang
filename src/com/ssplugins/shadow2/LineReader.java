@@ -79,9 +79,6 @@ public class LineReader {
 				type = LineType.BLOCK_CLOSE;
 				return;
 			}
-			else if (raw.contains("\u00a7")) {
-				throw new ShadowParseException("Illegal character (\u00a7) in code.");
-			}
 			boolean success;
 			success = testLine(BLOCK_PATTERN, matcher -> {
 				type = LineType.BLOCK_HEADER;
