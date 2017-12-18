@@ -1,5 +1,6 @@
 package com.ssplugins.shadow2;
 
+import com.ssplugins.shadow2.common.ClassFinder;
 import com.ssplugins.shadow2.common.Parser;
 import com.ssplugins.shadow2.def.BlockDef;
 import com.ssplugins.shadow2.def.EvalSymbolDef;
@@ -13,6 +14,10 @@ public abstract class ShadowAPI {
 	public void peekLines(List<String> lines) {}
 	
 	public List<Parser> registerLineParsers() {
+		return null;
+	}
+	
+	public List<ClassFinder> registerClassFinders() {
 		return null;
 	}
 	

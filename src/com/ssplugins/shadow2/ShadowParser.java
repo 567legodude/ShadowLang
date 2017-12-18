@@ -41,6 +41,10 @@ public class ShadowParser {
 		if (api != null) apis.add(api);
 	}
 	
+	public void insertApiFirst(ShadowAPI api) {
+		apis.add(0, api);
+	}
+	
 	private Keyword parseKeyword(LineData data, ParseContext context) {
 		String keyword = data.getName();
 		Optional<KeywordDef> op = context.getKeywords().stream().filter(KeywordDef.is(keyword)).findFirst();
@@ -76,7 +80,7 @@ public class ShadowParser {
 			throw new ShadowParseException("Block " + name + " expects " + def.getModifierCount().toString() + " parameters, counted " + params.length + ".", context);
 		}
 		SectionParser parser = ShadowTools.get(def.getSectionParser()).orElse(SectionParser.standard());
-		return new Block(context, name, parser.getSections(mods, context), Stream.of(params).map(Plain::new).collect(Collectors.toList()), content);
+		return new Block(context, name, parser.getSections(mods, context), Arrays.asList(params), content);
 	}
 	
 	private List<ShadowElement> parseElements(List<String> content, ShadowContext context) {

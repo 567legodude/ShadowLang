@@ -22,6 +22,14 @@ public abstract class ShadowSection {
 		return this instanceof LazyReplacers;
 	}
 	
+	public boolean isReference() {
+		return this instanceof Reference;
+	}
+	
+	public boolean isEmpty() {
+		return this instanceof Empty;
+	}
+	
 	public Plain asPlain() {
 		if (isPlain()) {
 			return (Plain) this;
@@ -54,7 +62,14 @@ public abstract class ShadowSection {
 		if (isLazyReplacer()) {
 			return (LazyReplacers) this;
 		}
-		throw new IllegalStateException("Object is not LazyReplacers");
+		throw new IllegalStateException("Object is not LazyReplacers.");
+	}
+	
+	public Reference asReference() {
+		if (isReference()) {
+			return (Reference) this;
+		}
+		throw new IllegalStateException("Object is not Reference.");
 	}
 
 }

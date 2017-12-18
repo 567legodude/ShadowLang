@@ -9,10 +9,10 @@ public final class Block extends ShadowElement {
 	
 	private String name;
 	private List<ShadowSection> modifiers;
-	private List<Plain> parameters;
+	private List<String> parameters;
 	private List<ShadowElement> content;
 	
-	public Block(ParseContext context, String name, List<ShadowSection> modifiers, List<Plain> parameters, List<ShadowElement> content) {
+	public Block(ParseContext context, String name, List<ShadowSection> modifiers, List<String> parameters, List<ShadowElement> content) {
 		super(context);
 		this.name = name;
 		this.modifiers = ShadowTools.lockList(modifiers);
@@ -28,7 +28,7 @@ public final class Block extends ShadowElement {
 		return modifiers;
 	}
 	
-	public List<Plain> getParameters() {
+	public List<String> getParameters() {
 		return parameters;
 	}
 	

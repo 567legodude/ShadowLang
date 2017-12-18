@@ -54,9 +54,9 @@ public class LineReader {
 	
 	public class LineData {
 		
-		private final Pattern BLOCK_PATTERN = Pattern.compile("^(\\w+)(?: ((?:\\S+(?:\\{[^}]*})? ??)+))?(?: \\(([^)]+)\\))? ?\\{$");
-		private final Pattern KEYWORD_PATTERN = Pattern.compile("^(\\w+)(?: ((?:\\S+(?:\\{[^}]*})? ?)+))?$");
-		private final Pattern ARG_SPLITTER = Pattern.compile("(\\w+)(?:\\{([^}]+)})? ?");
+		private final Pattern BLOCK_PATTERN = Pattern.compile("^(\\w+)(?: ((?:\\S+(?:\\{.*})? ??)+))?(?: \\(([^)]+)\\))? ?\\{$");
+		private final Pattern KEYWORD_PATTERN = Pattern.compile("^(\\w+)(?: ((?:\\S+(?:\\{.*})? ?)+))?$");
+		private final Pattern ARG_SPLITTER = Pattern.compile("(\\w+)(?:\\{(.+)})? ?");
 		
 		private String raw;
 		private LineType type;
@@ -78,6 +78,9 @@ public class LineReader {
 			else if (raw.equals("}")) {
 				type = LineType.BLOCK_CLOSE;
 				return;
+			}
+			else if (raw.contains("\u00a7")) {
+				throw new ShadowParseException("Illegal character (\u00a7) in code.");
 			}
 			boolean success;
 			success = testLine(BLOCK_PATTERN, matcher -> {

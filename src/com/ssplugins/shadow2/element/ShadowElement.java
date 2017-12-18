@@ -24,7 +24,7 @@ public abstract class ShadowElement {
 		return this instanceof Block;
 	}
 	
-	public boolean isLine() {
+	public boolean isKeyword() {
 		return this instanceof Keyword;
 	}
 	
@@ -35,8 +35,8 @@ public abstract class ShadowElement {
 		throw new IllegalStateException("Object is not Block.");
 	}
 	
-	public Keyword asLine() {
-		if (isLine()) {
+	public Keyword asKeyword() {
+		if (isKeyword()) {
 			return (Keyword) this;
 		}
 		throw new IllegalStateException("Object is not Line.");

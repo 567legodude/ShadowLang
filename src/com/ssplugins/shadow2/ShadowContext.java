@@ -1,5 +1,6 @@
 package com.ssplugins.shadow2;
 
+import com.ssplugins.shadow2.common.ClassFinder;
 import com.ssplugins.shadow2.common.ParseLevel;
 import com.ssplugins.shadow2.common.Parser;
 import com.ssplugins.shadow2.def.BlockDef;
@@ -11,6 +12,7 @@ import com.ssplugins.shadow2.exceptions.ShadowAPIException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
@@ -22,6 +24,7 @@ public class ShadowContext implements ParseContext {
 	private ParseLevel level;
 	
 	private List<Parser> lineParsers;
+	private List<ClassFinder> classFinders;
 	private List<KeywordDef> keywords;
 	private List<BlockDef> blocks;
 	private List<ReplacerDef> replacers;
@@ -31,12 +34,14 @@ public class ShadowContext implements ParseContext {
 		if (level == null) level = ParseLevel.NORMAL;
 		this.level = level;
 		lineParsers = new ArrayList<>();
+		classFinders = new ArrayList<>();
 		KeyedList<KeywordDef> keywords = new KeyedList<>(KeywordDef::getKeyword);
 		KeyedList<BlockDef> blocks = new KeyedList<>(BlockDef::getName);
 		KeyedList<ReplacerDef> replacers = new KeyedList<>(ReplacerDef::getToken);
 		KeyedList<EvalSymbolDef> evalSymbols = new KeyedList<>(EvalSymbolDef::getToken);
 		for (ShadowAPI api : apis) {
 			ternary(api.registerLineParsers(), lineParsers::addAll);
+			ternary(api.registerClassFinders(), classFinders::addAll);
 			ternary(api.registerKeywords(), keywords::addAll);
 			ternary(api.registerBlocks(), blocks::addAll);
 			ternary(api.registerReplacers(), replacers::addAll);
@@ -47,6 +52,7 @@ public class ShadowContext implements ParseContext {
 		checkDuplicates(replacers, s -> "Duplicate replacers registered: " + s);
 		checkDuplicates(evalSymbols, s -> "Duplicate eval symbols registered: " + s);
 		lineParsers = lockList(lineParsers);
+		classFinders = lockList(classFinders);
 		this.keywords = lockList(keywords);
 		this.blocks = lockList(blocks);
 		this.replacers = lockList(replacers);
@@ -104,6 +110,11 @@ public class ShadowContext implements ParseContext {
 	}
 	
 	@Override
+	public List<ClassFinder> getClassFinders() {
+		return classFinders;
+	}
+	
+	@Override
 	public List<KeywordDef> getKeywords() {
 		return keywords;
 	}
@@ -124,7 +135,37 @@ public class ShadowContext implements ParseContext {
 	}
 	
 	@Override
+	public Optional<Class<?>> findClass(String input) {
+		Optional<Class<?>> op = Optional.empty();
+		for (ClassFinder finder : getClassFinders()) {
+			if ((op = finder.findClass(input)).isPresent()) break;
+		}
+		return op;
+	}
+	
+	@Override
+	public Optional<KeywordDef> findKeyword(String keyword) {
+		return getKeywords().stream().filter(KeywordDef.is(keyword)).findFirst();
+	}
+	
+	@Override
+	public Optional<BlockDef> findBlock(String name) {
+		return getBlocks().stream().filter(BlockDef.is(name)).findFirst();
+	}
+	
+	@Override
+	public Optional<ReplacerDef> findReplacer(String token) {
+		return getReplacers().stream().filter(ReplacerDef.is(token)).findFirst();
+	}
+	
+	@Override
+	public Optional<EvalSymbolDef> findEvalSymbol(String token) {
+		return getEvalSymbols().stream().filter(EvalSymbolDef.is(token)).findFirst();
+	}
+	
+	@Override
 	public String toString() {
 		return "Line " + line + ": \"" + raw + "\"";
 	}
+	
 }

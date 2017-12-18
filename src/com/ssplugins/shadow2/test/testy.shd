@@ -2,6 +2,8 @@ enable {
     test
 }
 
-event PlayerBoiEvent (e) {
-    log e{:e:getPlayer:getName}
+event PlayerBoiEvent (e,e2) {
+    if true {
+        thing
+    }
 }
