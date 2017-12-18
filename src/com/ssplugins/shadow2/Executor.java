@@ -51,7 +51,7 @@ public class Executor {
 	}
 	
 	public void execute(Block block, Object... params) {
-		execute(block, null, params);
+		execute(scope, block, null, params);
 	}
 	
 	private void run(Stepper stepper, Scope scope, ShadowElement element) {
