@@ -16,4 +16,8 @@ public class ShadowExecutionException extends ShadowException {
 		super(message + " (Line " + context.getLine() + ": \"" + context.raw() + "\")");
 	}
 	
+	public ShadowExecutionException(Throwable cause) {
+		super(cause);
+	}
+	
 }

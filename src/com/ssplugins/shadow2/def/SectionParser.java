@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public interface SectionParser {
 	
@@ -51,6 +53,12 @@ public interface SectionParser {
 			List<ShadowSection> out = new ArrayList<>();
 			if (!data.isEmpty()) out.add(new LazyReplacers(sections[0]));
 			return out;
+		};
+	}
+	
+	static SectionParser allPlain() {
+		return (sections, context) -> {
+			return Stream.of(sections).map(Plain::new).collect(Collectors.toList());
 		};
 	}
 	

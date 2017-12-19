@@ -6,4 +6,8 @@ public abstract class ShadowException extends RuntimeException {
 		super(message);
 	}
 	
+	public ShadowException(Throwable cause) {
+		super(cause);
+	}
+	
 }

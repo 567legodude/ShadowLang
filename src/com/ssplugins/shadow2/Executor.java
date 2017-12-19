@@ -24,12 +24,14 @@ public class Executor {
 	}
 	
 	public void execute(Scope parentScope, Block block, Runnable onFinish, Object... params) {
+		Debug.log("Executing block: " + block.getName());
 		List<ShadowElement> list = block.getContent();
 		Scope scope = parentScope.newChild();
 		Stepper stepper = new Stepper(list, scope);
 		Optional<BlockDef> op = scope.getContext().findBlock(block.getName());
 		if (!op.isPresent()) {
 			if (scope.getContext().getParseLevel().strictBlocks()) throw new ShadowExecutionException("Unknown block: " + block.getName(), block.getLine());
+			Debug.log("Block not found, ignoring.");
 			return;
 		}
 		BlockDef def = op.get();
@@ -45,10 +47,15 @@ public class Executor {
 			ShadowTools.get(def.getEndEvent()).ifPresent(blockAction -> blockAction.trigger(def, block.getModifiers(), scope, stepper));
 			if (!stepper.willRestart() && onFinish != null) onFinish.run();
 		});
+		stepper.start();
 	}
 	
-	public void execute(Block block, Object... params) {
-		execute(scope, block, null, params);
+	public void execute(Block block, Runnable onFinish, Object... params) {
+		try {
+			execute(scope, block, onFinish, params);
+		} catch (Throwable throwable) {
+			throw new ShadowExecutionException(throwable);
+		}
 	}
 	
 	private void run(Stepper stepper, Scope scope, ShadowElement element) {
@@ -58,9 +65,11 @@ public class Executor {
 		}
 		else if (element.isKeyword()) {
 			Keyword keyword = element.asKeyword();
+			Debug.log("Executing keyword: " + keyword.getKeyword());
 			Optional<KeywordDef> op = scope.getContext().findKeyword(keyword.getKeyword());
 			if (!op.isPresent()) {
 				if (scope.getContext().getParseLevel().strictKeywords()) throw new ShadowExecutionException("Unknown keyword: " + keyword.getKeyword(), keyword.getLine());
+				Debug.log("Keyword not found, ignoring.");
 				return;
 			}
 			KeywordDef def = op.get();

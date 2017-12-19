@@ -27,9 +27,13 @@ public class TEST {
 		
 		ShadowParser parser = new ShadowParser();
 		Shadow shadow = parser.parse(lines);
-		List<ShadowElement> elements = shadow.getElements();
-		elements.forEach(shadowElement -> {
-			Debug.log(shadowElement.getClass().getSimpleName());
+		Debug.separator();
+		shadow.getElements().forEach(element -> {
+			Debug.log(element.getClass().getSimpleName());
+		});
+		Debug.separator();
+		shadow.getBlocks("test").forEach(block -> {
+			shadow.run(block, null);
 		});
 	}
 	

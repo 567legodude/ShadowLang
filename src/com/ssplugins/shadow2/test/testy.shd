@@ -1,5 +1,8 @@
-enable {
-    test
+test {
+    log layer 1
+    test {
+        log layer2 rand{}
+    }
 }
 
 event PlayerBoiEvent (e,e2) {

@@ -47,4 +47,5 @@ public class Scope {
 	public ParseContext getContext() {
 		return context;
 	}
+	
 }

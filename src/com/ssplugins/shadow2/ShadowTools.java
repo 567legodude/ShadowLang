@@ -44,6 +44,38 @@ public final class ShadowTools {
 		}
 	}
 	
+	public static Optional<Number> asNumber(Plain plain) {
+		String s = plain.toString();
+		try {
+			if (s.contains(".")) {
+				return Optional.of(Double.valueOf(s));
+			}
+			else {
+				return Optional.of(Integer.valueOf(s));
+			}
+		} catch (NumberFormatException e) {
+			return Optional.empty();
+		}
+	}
+	
+	public static String sectionsToString(List<ShadowSection> list, Scope scope) {
+		StringBuilder builder = new StringBuilder();
+		list.forEach(section -> {
+			if (section.isReplacer()) {
+				builder.append(getReplacerValue(section.asReplacer(), scope).toString());
+			}
+			else if (section.isMultiPart()) {
+				builder.append(sectionsToString(section.asMultiPart().getParts(), scope));
+			}
+			else if (section.isLazyReplacer()) {
+				builder.append(sectionsToString(evalLazyReplacer(section.asLazyReplacer(), scope), scope));
+			}
+			else builder.append(section.toString());
+			builder.append(" ");
+		});
+		return builder.substring(0, builder.length() - 1);
+	}
+	
 	public static ShadowSection getReplacerValue(Replacer replacer, Scope scope) {
 		Optional<ReplacerDef> op = scope.getContext().findReplacer(replacer.getToken());
 		if (!op.isPresent()) throw new ShadowExecutionException("Replacer not found: " + replacer.getToken());
@@ -54,7 +86,7 @@ public final class ShadowTools {
 			if (section.isLazyReplacer()) {
 				List<ShadowSection> parsedValues = evalLazyReplacer(section.asLazyReplacer(), scope);
 				editList(parsedValues, ShadowSection::isReplacer, shadowSection -> getReplacerValue(shadowSection.asReplacer(), scope));
-				return op.get().getAction().apply(parsedValues, scope);
+				return get(op.get().getAction()).map(action -> action.apply(parsedValues, scope)).orElse(new Empty());
 			}
 			else if (section.isEvalGroup()) {
 				return executeEval(section.asEvalGroup(), scope);
@@ -63,7 +95,7 @@ public final class ShadowTools {
 				return getReplacerValue(section.asReplacer(), scope);
 			}
 			else {
-				return op.get().getAction().apply(content, scope);
+				return get(op.get().getAction()).map(action -> action.apply(content, scope)).orElse(new Empty());
 			}
 		}
 	}

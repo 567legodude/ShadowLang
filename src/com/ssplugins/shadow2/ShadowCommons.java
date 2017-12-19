@@ -3,9 +3,13 @@ package com.ssplugins.shadow2;
 import com.ssplugins.shadow2.common.Range;
 import com.ssplugins.shadow2.def.*;
 import com.ssplugins.shadow2.element.Plain;
+import com.ssplugins.shadow2.element.Reference;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ShadowCommons extends ShadowAPI {
 	
@@ -19,40 +23,31 @@ public class ShadowCommons extends ShadowAPI {
 	@Override
 	public List<BlockDef> registerBlocks() {
 		List<BlockDef> out = new ArrayList<>();
+		out.add(blockTest());
 		return out;
 	}
 	
 	@Override
 	public List<ReplacerDef> registerReplacers() {
 		List<ReplacerDef> out = new ArrayList<>();
-		out.add(replacerEval());
 		return out;
 	}
 	
 	@Override
 	public List<EvalSymbolDef> registerEvalSymbols() {
 		List<EvalSymbolDef> out = new ArrayList<>();
-		out.add(evalMethod());
 		return out;
 	}
 	
 	private KeywordDef keywordLog() {
 		KeywordDef def = new KeywordDef("log", (def1, args, scope, stepper) -> {
-			System.out.println(ShadowTools.asString(args));
+			System.out.println(ShadowTools.sectionsToString(args, scope));
 		});
-		def.setArgumentCount(Range.lowerBound(1));
 		return def;
 	}
 	
-	private ReplacerDef replacerEval() {
-		ReplacerDef def = new ReplacerDef("e", (sections, scope) -> new Plain(""));
-		def.setSplitter(Splitter.evalSplit());
-		def.setSectionParser(SectionParser.evalParser());
-		return def;
-	}
-	
-	private EvalSymbolDef evalMethod() {
-		EvalSymbolDef def = new EvalSymbolDef(":", (reference, section) -> reference);
+	private BlockDef blockTest() {
+		BlockDef def = new BlockDef("test");
 		return def;
 	}
 	

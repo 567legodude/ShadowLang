@@ -8,6 +8,10 @@ public final class Debug {
 		if (enabled) System.out.println(msg);
 	}
 	
+	public static void separator() {
+		log("-------------------");
+	}
+	
 	public static void setEnabled(boolean enabled) {
 		Debug.enabled = enabled;
 	}

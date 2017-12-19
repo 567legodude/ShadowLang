@@ -11,7 +11,7 @@ public interface Splitter {
 	String[] split(String content, ParseContext context);
 	
 	static Splitter replacerSplit() {
-		return (content, context) -> new String[] {content};
+		return singleArg();
 	}
 	
 	static Splitter evalSplit() {
@@ -23,6 +23,10 @@ public interface Splitter {
 			}
 			return list.toArray(new String[list.size()]);
 		};
+	}
+	
+	static Splitter singleArg() {
+		return (content, context) -> new String[] {content};
 	}
 	
 }

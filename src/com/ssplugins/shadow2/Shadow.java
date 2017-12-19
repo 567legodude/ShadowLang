@@ -13,13 +13,14 @@ public class Shadow {
 	private ParseContext context;
 	private Executor executor;
 	
-	private Shadow(List<ShadowElement> elements) {
+	private Shadow(List<ShadowElement> elements, ParseContext context) {
 		this.elements = Collections.unmodifiableList(elements);
+		this.context = context;
 		this.executor = new Executor(this);
 	}
 	
 	public static Shadow empty() {
-		return new Shadow(Collections.emptyList());
+		return new Shadow(Collections.emptyList(), ParseContext.empty());
 	}
 	
 	public ParseContext getContext() {
@@ -38,8 +39,8 @@ public class Shadow {
 		return getBlocks().stream().filter(block -> block.getName().equalsIgnoreCase(name)).collect(Collectors.toList());
 	}
 	
-	public void run(Block block, Object... params) {
-		//
+	public void run(Block block, Runnable onFinish, Object... params) {
+		executor.execute(block, onFinish, params);
 	}
 	
 	public static class ShadowBuilder {
@@ -60,9 +61,7 @@ public class Shadow {
 		}
 		
 		public Shadow build() {
-			Shadow shadow = new Shadow(elements);
-			shadow.context = context;
-			return shadow;
+			return new Shadow(elements, context);
 		}
 		
 	}

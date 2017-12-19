@@ -34,8 +34,7 @@ public class Stepper {
 		if (onFinish != null) onFinish.run();
 		if (action == StepAction.RESTART) {
 			resetIterator();
-			action = StepAction.NORMAL;
-			nextStep();
+			start();
 		}
 	}
 	
@@ -48,6 +47,7 @@ public class Stepper {
 	}
 	
 	public void start() {
+		action = StepAction.NORMAL;
 		nextStep();
 	}
 	
@@ -65,6 +65,7 @@ public class Stepper {
 			return;
 		}
 		while (iterator.hasNext()) {
+			Debug.log("stepping: " + action.name());
 			if (action == StepAction.NORMAL) {
 				onStep(iterator.next());
 			}
