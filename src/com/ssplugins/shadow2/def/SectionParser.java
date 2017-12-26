@@ -98,6 +98,9 @@ public interface SectionParser {
 			return new Replacer(token, parser.getSections(splitter.split(content, context), context));
 		}
 		else {
+			if (section.equalsIgnoreCase("true")) return new Reference(true);
+			else if (section.equalsIgnoreCase("false")) return new Reference(false);
+			else if (section.equalsIgnoreCase("null")) return new Reference(null);
 			Plain p = new Plain(section);
 			Optional<Number> nop = ShadowTools.asNumber(p);
 			return nop.<ShadowSection>map(Reference::new).orElse(p);
