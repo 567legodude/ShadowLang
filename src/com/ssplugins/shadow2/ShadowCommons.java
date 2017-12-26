@@ -46,13 +46,51 @@ public class ShadowCommons extends ShadowAPI {
 	}
 	
 	private ExpressionDef expAdd() {
-		ExpressionDef def = new ExpressionDef("+", Expressions::add);
-		return def;
+		return new ExpressionDef("+", Expressions::add);
 	}
 	
 	private ExpressionDef expSubtract() {
-		ExpressionDef def = new ExpressionDef("-", Expressions::subtract);
-		return def;
+		return new ExpressionDef("-", Expressions::subtract);
+	}
+	
+	private ExpressionDef expMultiply() {
+		return new ExpressionDef("*", Expressions::multiply);
+	}
+	
+	private ExpressionDef expDivide() {
+		return new ExpressionDef("/", Expressions::divide);
+	}
+	
+	private ExpressionDef expMod() {
+		return new ExpressionDef("%", Expressions::mod);
+	}
+	
+	private ExpressionDef expLessThan() {
+		return new ExpressionDef("<", Expressions::lessThan);
+	}
+	
+	private ExpressionDef expLessThanEqual() {
+		return new ExpressionDef("<=", Expressions::lessThanEqual);
+	}
+	
+	private ExpressionDef expGreaterThan() {
+		return new ExpressionDef(">", Expressions::greaterThan);
+	}
+	
+	private ExpressionDef expGreaterThanEqual() {
+		return new ExpressionDef(">=", Expressions::greaterThanEqual);
+	}
+	
+	private ExpressionDef expEquals() {
+		return new ExpressionDef("==", Expressions::equals);
+	}
+	
+	private ExpressionDef expNotEquals() {
+		return new ExpressionDef("!=", Expressions::notEquals);
+	}
+	
+	private ExpressionDef expOr() {
+		return new ExpressionDef("||", Expressions::or);
 	}
 	
 	private KeywordDef keywordLog() {
