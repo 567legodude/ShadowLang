@@ -9,15 +9,17 @@ import java.util.ListIterator;
 public class Stepper {
 	
 	private Scope scope;
+	private Stepper parent;
 	
 	private ListIterator<ShadowElement> iterator;
 	private StepperAction stepperAction;
 	private Runnable onFinish;
 	private StepAction action = StepAction.NORMAL;
 	
-	public Stepper(List<ShadowElement> list, Scope scope) {
+	public Stepper(List<ShadowElement> list, Scope scope, Stepper parent) {
 		this.iterator = Collections.unmodifiableList(list).listIterator();
 		this.scope = scope;
+		this.parent = parent;
 	}
 	
 	private void resetIterator() {
@@ -27,6 +29,10 @@ public class Stepper {
 	}
 	
 	private void onStep(ShadowElement element) {
+		if (action == StepAction.BREAK_BLOCK_CHAIN) {
+			if (element.isBlock()) return;
+			else next(StepAction.NORMAL);
+		}
 		if (stepperAction != null) stepperAction.onAction(this, scope, element);
 	}
 	
@@ -36,6 +42,11 @@ public class Stepper {
 			resetIterator();
 			start();
 		}
+	}
+	
+	private void breakAll() {
+		next(StepAction.BREAK_ALL);
+		if (parent != null) parent.breakAll();
 	}
 	
 	public void setOnStep(StepperAction stepperAction) {
@@ -66,7 +77,7 @@ public class Stepper {
 		}
 		while (iterator.hasNext()) {
 			Debug.log("stepping: " + action.name());
-			if (action == StepAction.NORMAL) {
+			if (action == StepAction.NORMAL || action == StepAction.BREAK_BLOCK_CHAIN) {
 				onStep(iterator.next());
 			}
 			else if (action == StepAction.RESTART) {
@@ -75,10 +86,13 @@ public class Stepper {
 			}
 			else if (action == StepAction.PAUSE) break;
 			else if (action == StepAction.BREAK) break;
-			else if (action == StepAction.BREAK_ALL) break;
+			else if (action == StepAction.BREAK_ALL) {
+				breakAll();
+				break;
+			}
 		}
 		if (action != StepAction.PAUSE) {
-			if (action != StepAction.BREAK_ALL) onFinish();
+			onFinish();
 		}
 	}
 	
@@ -87,7 +101,8 @@ public class Stepper {
 		RESTART,
 		PAUSE,
 		BREAK,
-		BREAK_ALL
+		BREAK_ALL,
+		BREAK_BLOCK_CHAIN
 	}
 	
 }
