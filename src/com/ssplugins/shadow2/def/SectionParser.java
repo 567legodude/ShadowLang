@@ -1,5 +1,6 @@
 package com.ssplugins.shadow2.def;
 
+import com.ssplugins.shadow2.Debug;
 import com.ssplugins.shadow2.ParseContext;
 import com.ssplugins.shadow2.ShadowTools;
 import com.ssplugins.shadow2.element.*;
@@ -64,25 +65,32 @@ public interface SectionParser {
 	
 	static SectionParser standard() {
 		return (sections, context) -> {
+			Debug.log("~Parsing with standard parser");
 			List<ShadowSection> out = new ArrayList<>();
 			for (int i = 0; i < sections.length; i++) {
 				String s = sections[i];
+				Debug.log("section: \"" + s + "\"");
 				Optional<ExpressionDef> op = context.findExpression(s);
 				if (op.isPresent()) {
+					Debug.log("found expression");
 					if (i == 0 || out.get(out.size() - 1) instanceof Expression) throw new ShadowParseException("Expression has no lefthand element.", context);
 					if (i + 1 == sections.length) throw new ShadowParseException("Expression has no righthand element.", context);
 					ShadowSection left = out.remove(out.size() - 1);
 					ShadowSection right = getSection(sections[i + 1], context);
+					Debug.log("left type: " + left.getClass().getSimpleName());
+					Debug.log("right type: " + right.getClass().getSimpleName());
 					i++;
 					out.add(new Expression(left, s, right));
 				}
 				else out.add(getSection(s, context));
 			}
+			Debug.log("~end");
 			return out;
 		};
 	}
 	
 	static ShadowSection getSection(String section, ParseContext context) {
+		Debug.log("parsing as section");
 		if (section.startsWith("\"") && section.endsWith("\"")) {
 			return new Plain(section.substring(1, section.length() - 1).replace("\\\"", "\""));
 		}

@@ -15,6 +15,7 @@ public class ShadowCommons extends ShadowAPI {
 	public List<ExpressionDef> registerExpressions() {
 		List<ExpressionDef> out = new ArrayList<>();
 		out.add(expAdd());
+		out.add(expSubtract());
 		return out;
 	}
 	
@@ -46,6 +47,11 @@ public class ShadowCommons extends ShadowAPI {
 	
 	private ExpressionDef expAdd() {
 		ExpressionDef def = new ExpressionDef("+", Expressions::add);
+		return def;
+	}
+	
+	private ExpressionDef expSubtract() {
+		ExpressionDef def = new ExpressionDef("-", Expressions::subtract);
 		return def;
 	}
 	

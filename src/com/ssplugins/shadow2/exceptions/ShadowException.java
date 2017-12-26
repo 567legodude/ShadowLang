@@ -20,4 +20,8 @@ public abstract class ShadowException extends RuntimeException {
 		return () -> new ShadowExecutionException(msg);
 	}
 	
+	public static Supplier<ShadowException> sectionConvert() {
+		return err("Section could not be converted to object.");
+	}
+	
 }

@@ -4,13 +4,14 @@ import com.ssplugins.shadow2.Scope;
 import com.ssplugins.shadow2.ShadowTools;
 import com.ssplugins.shadow2.element.Reference;
 import com.ssplugins.shadow2.element.ShadowSection;
+import com.ssplugins.shadow2.exceptions.ShadowException;
 import com.ssplugins.shadow2.exceptions.ShadowExecutionException;
 
 public final class Expressions {
 	
 	public static ShadowSection add(ShadowSection left, ShadowSection right, Scope scope) {
-		Object l = ShadowTools.asObject(left, scope);
-		Object r = ShadowTools.asObject(right, scope);
+		Object l = ShadowTools.asObject(left, scope).orElseThrow(ShadowException.sectionConvert());
+		Object r = ShadowTools.asObject(right, scope).orElseThrow(ShadowException.sectionConvert());
 		return addIntern(l, r);
 	}
 	
@@ -27,8 +28,8 @@ public final class Expressions {
 	}
 	
 	public static ShadowSection subtract(ShadowSection left, ShadowSection right, Scope scope) {
-		Object l = ShadowTools.asObject(left, scope);
-		Object r = ShadowTools.asObject(right, scope);
+		Object l = ShadowTools.asObject(left, scope).orElseThrow(ShadowException.sectionConvert());
+		Object r = ShadowTools.asObject(right, scope).orElseThrow(ShadowException.sectionConvert());
 		return subtractIntern(l, r);
 	}
 	
