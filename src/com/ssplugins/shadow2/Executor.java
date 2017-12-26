@@ -23,20 +23,20 @@ public class Executor {
 		return scope;
 	}
 	
-	public void execute(Scope parentScope, Block block, Runnable onFinish, Object... params) {
+	public boolean execute(Scope parentScope, Stepper parentStepper, Block block, Runnable onFinish, Object... params) {
 		Debug.log("Executing block: " + block.getName());
 		List<ShadowElement> list = block.getContent();
 		Scope scope = parentScope.newChild();
-		Stepper stepper = new Stepper(list, scope);
+		Stepper stepper = new Stepper(list, scope, parentStepper);
 		Optional<BlockDef> op = scope.getContext().findBlock(block.getName());
 		if (!op.isPresent()) {
 			if (scope.getContext().getParseLevel().strictBlocks()) throw new ShadowExecutionException("Unknown block: " + block.getName(), block.getLine());
 			Debug.log("Block not found, ignoring.");
-			return;
+			return false;
 		}
 		BlockDef def = op.get();
 		boolean enter = ShadowTools.get(def.getEntryCondition()).map(condition -> condition.trigger(def, block.getModifiers(), scope, stepper)).orElse(true);
-		if (!enter) return;
+		if (!enter) return false;
 		if (params.length != block.getParameters().size()) throw new ShadowExecutionException("Block " + block.getName() + " expected " + block.getParameters().size() + " parameters, received " + params.length + ".");
 		for (int i = 0; i < params.length; i++) {
 			scope.setVar(block.getParameters().get(i), params[i]);
@@ -48,11 +48,12 @@ public class Executor {
 			if (!stepper.willRestart() && onFinish != null) onFinish.run();
 		});
 		stepper.start();
+		return true;
 	}
 	
 	public void execute(Block block, Runnable onFinish, Object... params) {
 		try {
-			execute(scope, block, onFinish, params);
+			execute(scope, null, block, onFinish, params);
 		} catch (Throwable throwable) {
 			throw new ShadowExecutionException(throwable);
 		}
@@ -61,7 +62,8 @@ public class Executor {
 	private void run(Stepper stepper, Scope scope, ShadowElement element) {
 		if (element.isBlock()) {
 			stepper.next(StepAction.PAUSE);
-			execute(scope, element.asBlock(), stepper::start);
+			boolean run = execute(scope, stepper, element.asBlock(), stepper::start);
+			//
 		}
 		else if (element.isKeyword()) {
 			Keyword keyword = element.asKeyword();
