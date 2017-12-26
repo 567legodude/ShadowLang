@@ -26,6 +26,10 @@ public abstract class ShadowSection {
 		return this instanceof Reference;
 	}
 	
+	public boolean isExpression() {
+		return this instanceof Expression;
+	}
+	
 	public boolean isEmpty() {
 		return this instanceof Empty;
 	}
@@ -70,6 +74,13 @@ public abstract class ShadowSection {
 			return (Reference) this;
 		}
 		throw new IllegalStateException("Object is not Reference.");
+	}
+	
+	public Expression asExpression() {
+		if (isExpression()) {
+			return (Expression) this;
+		}
+		throw new IllegalStateException("Object is not Expression.");
 	}
 
 }

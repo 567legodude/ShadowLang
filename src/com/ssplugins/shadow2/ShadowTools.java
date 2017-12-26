@@ -2,13 +2,17 @@ package com.ssplugins.shadow2;
 
 import com.ssplugins.shadow2.common.TypeReference;
 import com.ssplugins.shadow2.def.EvalSymbolDef;
+import com.ssplugins.shadow2.def.ExpressionDef;
 import com.ssplugins.shadow2.def.ReplacerDef;
 import com.ssplugins.shadow2.element.*;
+import com.ssplugins.shadow2.exceptions.ShadowException;
 import com.ssplugins.shadow2.exceptions.ShadowExecutionException;
+import com.ssplugins.shadow2.exceptions.ShadowParseException;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,6 +48,14 @@ public final class ShadowTools {
 		}
 	}
 	
+	public static void verify(boolean b, String msg, ParseContext context) {
+		if (!b) throw new ShadowParseException(msg, context);
+	}
+	
+	public static void verifyArgs(String[] args, int len, ParseContext context) {
+		verify(args.length >= len, "Invalid argument count.", context);
+	}
+	
 	public static Optional<Number> asNumber(Plain plain) {
 		String s = plain.toString();
 		try {
@@ -58,6 +70,39 @@ public final class ShadowTools {
 		}
 	}
 	
+	public static Optional<Boolean> asBoolean(ShadowSection section, Scope scope) {
+		if (section.isReplacer()) {
+			return asBoolean(getReplacerValue(section.asReplacer(), scope), scope);
+		}
+		else if (section.isEvalGroup()) {
+			return asBoolean(executeEval(section.asEvalGroup(), scope), scope);
+		}
+		else if (section.isReference()) {
+			Object o = section.asReference().getValue();
+			if (o instanceof Boolean) {
+				return Optional.of((Boolean) o);
+			}
+			else if (o instanceof String) {
+				return asBoolean(new Plain((String) o), scope);
+			}
+		}
+		else if (section.isPlain()) {
+			String s = section.asPlain().getValue();
+			if (s.equalsIgnoreCase("true")) return Optional.of(true);
+			else if (s.equalsIgnoreCase("false")) return Optional.of(false);
+		}
+		return Optional.empty();
+	}
+	
+	public static Optional<Object> asObject(ShadowSection section, Scope scope) {
+		if (section.isPlain()) return Optional.ofNullable(section.asPlain().getValue());
+		else if (section.isReference()) return Optional.ofNullable(section.asReference().getValue());
+		else if (section.isReplacer()) return asObject(getReplacerValue(section.asReplacer(), scope), scope);
+		else if (section.isExpression()) return asObject(getExpressionValue(section.asExpression(), scope), scope);
+		else if (section.isEvalGroup()) return asObject(executeEval(section.asEvalGroup(), scope), scope);
+		return Optional.empty();
+	}
+	
 	public static String sectionsToString(List<ShadowSection> list, Scope scope) {
 		StringBuilder builder = new StringBuilder();
 		list.forEach(section -> {
@@ -70,10 +115,20 @@ public final class ShadowTools {
 			else if (section.isLazyReplacer()) {
 				builder.append(sectionsToString(evalLazyReplacer(section.asLazyReplacer(), scope), scope));
 			}
+			else if (section.isExpression()) {
+				builder.append(getExpressionValue(section.asExpression(), scope));
+			}
 			else builder.append(section.toString());
 			builder.append(" ");
 		});
 		return builder.substring(0, builder.length() - 1);
+	}
+	
+	public static ShadowSection getExpressionValue(Expression exp, Scope scope) {
+		Optional<ExpressionDef> op = scope.getContext().findExpression(exp.getOperator());
+		if (!op.isPresent()) throw new ShadowExecutionException("Expression not found: " + exp.getOperator());
+		ExpressionDef def = op.get();
+		return get(def.getAction()).map(action -> action.execute(exp.getLeft(), exp.getRight(), scope)).orElseThrow(ShadowException.err("Expression (" + exp.getOperator() + ") has no action defined."));
 	}
 	
 	public static ShadowSection getReplacerValue(Replacer replacer, Scope scope) {

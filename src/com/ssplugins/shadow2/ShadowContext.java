@@ -3,10 +3,7 @@ package com.ssplugins.shadow2;
 import com.ssplugins.shadow2.common.ClassFinder;
 import com.ssplugins.shadow2.common.ParseLevel;
 import com.ssplugins.shadow2.common.Parser;
-import com.ssplugins.shadow2.def.BlockDef;
-import com.ssplugins.shadow2.def.EvalSymbolDef;
-import com.ssplugins.shadow2.def.KeywordDef;
-import com.ssplugins.shadow2.def.ReplacerDef;
+import com.ssplugins.shadow2.def.*;
 import com.ssplugins.shadow2.exceptions.ShadowAPIException;
 
 import java.util.ArrayList;
@@ -25,6 +22,7 @@ public class ShadowContext implements ParseContext {
 	
 	private List<Parser> lineParsers;
 	private List<ClassFinder> classFinders;
+	private List<ExpressionDef> expressions;
 	private List<KeywordDef> keywords;
 	private List<BlockDef> blocks;
 	private List<ReplacerDef> replacers;
@@ -35,6 +33,7 @@ public class ShadowContext implements ParseContext {
 		this.level = level;
 		lineParsers = new ArrayList<>();
 		classFinders = new ArrayList<>();
+		KeyedList<ExpressionDef> expressions = new KeyedList<>(ExpressionDef::getToken);
 		KeyedList<KeywordDef> keywords = new KeyedList<>(KeywordDef::getKeyword);
 		KeyedList<BlockDef> blocks = new KeyedList<>(BlockDef::getName);
 		KeyedList<ReplacerDef> replacers = new KeyedList<>(ReplacerDef::getToken);
@@ -42,17 +41,20 @@ public class ShadowContext implements ParseContext {
 		for (ShadowAPI api : apis) {
 			ternary(api.registerLineParsers(), lineParsers::addAll);
 			ternary(api.registerClassFinders(), classFinders::addAll);
+			ternary(api.registerExpressions(), expressions::addAll);
 			ternary(api.registerKeywords(), keywords::addAll);
 			ternary(api.registerBlocks(), blocks::addAll);
 			ternary(api.registerReplacers(), replacers::addAll);
 			ternary(api.registerEvalSymbols(), evalSymbols::addAll);
 		}
+		checkDuplicates(expressions, s -> "Duplicate expressions registered: " + s);
 		checkDuplicates(keywords, s -> "Duplicate keywords registered: " + s);
 		checkDuplicates(blocks, s -> "Duplicate blocks registered: " + s);
 		checkDuplicates(replacers, s -> "Duplicate replacers registered: " + s);
 		checkDuplicates(evalSymbols, s -> "Duplicate eval symbols registered: " + s);
 		lineParsers = lockList(lineParsers);
 		classFinders = lockList(classFinders);
+		this.expressions = lockList(expressions);
 		this.keywords = lockList(keywords);
 		this.blocks = lockList(blocks);
 		this.replacers = lockList(replacers);
@@ -115,6 +117,11 @@ public class ShadowContext implements ParseContext {
 	}
 	
 	@Override
+	public List<ExpressionDef> getExpressions() {
+		return expressions;
+	}
+	
+	@Override
 	public List<KeywordDef> getKeywords() {
 		return keywords;
 	}
@@ -141,6 +148,11 @@ public class ShadowContext implements ParseContext {
 			if ((op = finder.findClass(input)).isPresent()) break;
 		}
 		return op;
+	}
+	
+	@Override
+	public Optional<ExpressionDef> findExpression(String token) {
+		return getExpressions().stream().filter(ExpressionDef.is(token)).findFirst();
 	}
 	
 	@Override

@@ -3,7 +3,6 @@ package com.ssplugins.shadow2.test;
 import com.ssplugins.shadow2.Debug;
 import com.ssplugins.shadow2.Shadow;
 import com.ssplugins.shadow2.ShadowParser;
-import com.ssplugins.shadow2.element.ShadowElement;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,6 +23,8 @@ public class TEST {
 		while ((line = reader.readLine()) != null) {
 			lines.add(line);
 		}
+		
+		String s = "";
 		
 		ShadowParser parser = new ShadowParser();
 		Shadow shadow = parser.parse(lines);

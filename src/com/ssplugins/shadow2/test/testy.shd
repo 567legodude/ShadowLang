@@ -1,8 +1,5 @@
 test {
-    log layer 1
-    test {
-        log layer2 rand{}
-    }
+    log It works
 }
 
 event PlayerBoiEvent (e,e2) {

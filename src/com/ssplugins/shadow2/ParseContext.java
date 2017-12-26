@@ -3,10 +3,7 @@ package com.ssplugins.shadow2;
 import com.ssplugins.shadow2.common.ClassFinder;
 import com.ssplugins.shadow2.common.ParseLevel;
 import com.ssplugins.shadow2.common.Parser;
-import com.ssplugins.shadow2.def.BlockDef;
-import com.ssplugins.shadow2.def.EvalSymbolDef;
-import com.ssplugins.shadow2.def.KeywordDef;
-import com.ssplugins.shadow2.def.ReplacerDef;
+import com.ssplugins.shadow2.def.*;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +23,10 @@ public interface ParseContext {
 	List<ClassFinder> getClassFinders();
 	
 	Optional<Class<?>> findClass(String input);
+	
+	List<ExpressionDef> getExpressions();
+	
+	Optional<ExpressionDef> findExpression(String token);
 	
 	List<KeywordDef> getKeywords();
 	
@@ -77,6 +78,16 @@ public interface ParseContext {
 			
 			@Override
 			public Optional<Class<?>> findClass(String input) {
+				return Optional.empty();
+			}
+			
+			@Override
+			public List<ExpressionDef> getExpressions() {
+				return null;
+			}
+			
+			@Override
+			public Optional<ExpressionDef> findExpression(String token) {
 				return Optional.empty();
 			}
 			

@@ -65,25 +65,43 @@ public interface SectionParser {
 	static SectionParser standard() {
 		return (sections, context) -> {
 			List<ShadowSection> out = new ArrayList<>();
-			for (String s : sections) {
-				if (s.contains("{")) {
-					int b = s.indexOf('{');
-					String token = s.substring(0, b);
-					String content = s.substring(b + 1, s.lastIndexOf('}'));
-					Optional<ReplacerDef> op = context.getReplacers().stream().filter(ReplacerDef.is(token)).findFirst();
-					if (!op.isPresent()) throw new ShadowParseException("Unknown replacer: " + token, context);
-					ReplacerDef rDef = op.get();
-					Splitter splitter = ShadowTools.get(rDef.getSplitter()).orElse(Splitter.replacerSplit());
-					SectionParser parser = ShadowTools.get(rDef.getSectionParser()).orElse(SectionParser.replacerContents());
-					Replacer replacer = new Replacer(token, parser.getSections(splitter.split(content, context), context));
-					out.add(replacer);
+			for (int i = 0; i < sections.length; i++) {
+				String s = sections[i];
+				Optional<ExpressionDef> op = context.findExpression(s);
+				if (op.isPresent()) {
+					if (i == 0 || out.get(out.size() - 1) instanceof Expression) throw new ShadowParseException("Expression has no lefthand element.", context);
+					if (i + 1 == sections.length) throw new ShadowParseException("Expression has no righthand element.", context);
+					ShadowSection left = out.remove(out.size() - 1);
+					ShadowSection right = getSection(sections[i + 1], context);
+					i++;
+					out.add(new Expression(left, s, right));
 				}
-				else {
-					out.add(new Plain(s));
-				}
+				else out.add(getSection(s, context));
 			}
 			return out;
 		};
+	}
+	
+	static ShadowSection getSection(String section, ParseContext context) {
+		if (section.startsWith("\"") && section.endsWith("\"")) {
+			return new Plain(section.substring(1, section.length() - 1).replace("\\\"", "\""));
+		}
+		else if (section.contains("{")) {
+			int b = section.indexOf('{');
+			String token = section.substring(0, b);
+			String content = section.substring(b + 1, section.lastIndexOf('}'));
+			Optional<ReplacerDef> op = context.getReplacers().stream().filter(ReplacerDef.is(token)).findFirst();
+			if (!op.isPresent()) throw new ShadowParseException("Unknown replacer: " + token, context);
+			ReplacerDef rDef = op.get();
+			Splitter splitter = ShadowTools.get(rDef.getSplitter()).orElse(Splitter.replacerSplit());
+			SectionParser parser = ShadowTools.get(rDef.getSectionParser()).orElse(SectionParser.replacerContents());
+			return new Replacer(token, parser.getSections(splitter.split(content, context), context));
+		}
+		else {
+			Plain p = new Plain(section);
+			Optional<Number> nop = ShadowTools.asNumber(p);
+			return nop.<ShadowSection>map(Reference::new).orElse(p);
+		}
 	}
 	
 }

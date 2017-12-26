@@ -44,6 +44,10 @@ public class Scope {
 		}
 	}
 	
+	public void unset(String name) {
+		getVar(name).ifPresent(vars::remove);
+	}
+	
 	public ParseContext getContext() {
 		return context;
 	}

@@ -1,17 +1,22 @@
 package com.ssplugins.shadow2;
 
+import com.ssplugins.shadow2.Stepper.StepAction;
 import com.ssplugins.shadow2.common.Range;
 import com.ssplugins.shadow2.def.*;
 import com.ssplugins.shadow2.element.Plain;
-import com.ssplugins.shadow2.element.Reference;
+import com.ssplugins.shadow2.element.ShadowSection;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class ShadowCommons extends ShadowAPI {
+	
+	@Override
+	public List<ExpressionDef> registerExpressions() {
+		List<ExpressionDef> out = new ArrayList<>();
+		out.add(expAdd());
+		return out;
+	}
 	
 	@Override
 	public List<KeywordDef> registerKeywords() {
@@ -39,10 +44,77 @@ public class ShadowCommons extends ShadowAPI {
 		return out;
 	}
 	
+	private ExpressionDef expAdd() {
+		ExpressionDef def = new ExpressionDef("+", Expressions::add);
+		return def;
+	}
+	
 	private KeywordDef keywordLog() {
 		KeywordDef def = new KeywordDef("log", (def1, args, scope, stepper) -> {
 			System.out.println(ShadowTools.sectionsToString(args, scope));
 		});
+		return def;
+	}
+	
+	private KeywordDef keywordSet() {
+		KeywordDef def = new KeywordDef("set", (def1, args, scope, stepper) -> {
+			String name = args.get(0).asPlain().getValue();
+			scope.setVar(name, ShadowTools.executeEval(args.get(1).asEvalGroup(), scope).asReference().getValue());
+		});
+		def.setArgumentCount(Range.lowerBound(2));
+		def.setSplitter((content, context) -> {
+			int i = content.indexOf(' ');
+			if (i == -1) return new String[0];
+			return new String[] {content.substring(0, i), content.substring(i + 1)};
+		});
+		def.setSectionParser((sections, context) -> {
+			ShadowTools.verifyArgs(sections, 2, context);
+			List<ShadowSection> out = new ArrayList<>();
+			out.add(new Plain(sections[0]));
+			out.add(SectionParser.parseAsEval(sections[1], context));
+			return out;
+		});
+		return def;
+	}
+	
+	private KeywordDef keywordUnset() {
+		KeywordDef def = new KeywordDef("unset", (def1, args, scope, stepper) -> {
+			args.forEach(section -> scope.unset(section.asPlain().getValue()));
+		});
+		def.setArgumentCount(Range.lowerBound(1));
+		def.setSectionParser(SectionParser.allPlain());
+		return def;
+	}
+	
+	private KeywordDef keywordBreak() {
+		KeywordDef def = new KeywordDef("break", (def1, args, scope, stepper) -> {
+			stepper.next(StepAction.BREAK);
+		});
+		return def;
+	}
+	
+	private KeywordDef keywordBreakAll() {
+		KeywordDef def = new KeywordDef("breakall", (def1, args, scope, stepper) -> {
+			stepper.next(StepAction.BREAK_ALL);
+		});
+		return def;
+	}
+	
+	private KeywordDef keywordCall() {
+		KeywordDef def = new KeywordDef("call", (def1, args, scope, stepper) -> {
+			ShadowTools.executeEval(args.get(0).asEvalGroup(), scope);
+		});
+		def.setArgumentCount(Range.lowerBound(1));
+		def.setSplitter(Splitter.evalSplit());
+		def.setSectionParser(SectionParser.evalParser());
+		return def;
+	}
+	
+	private KeywordDef keywordRepeatIf() {
+		KeywordDef def = new KeywordDef("repeatif", (def1, args, scope, stepper) -> {
+			//
+		});
+		// TODO
 		return def;
 	}
 	

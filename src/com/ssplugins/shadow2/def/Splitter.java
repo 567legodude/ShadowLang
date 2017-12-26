@@ -26,7 +26,10 @@ public interface Splitter {
 	}
 	
 	static Splitter singleArg() {
-		return (content, context) -> new String[] {content};
+		return (content, context) -> {
+			if (content.isEmpty()) return new String[0];
+			return new String[] {content};
+		};
 	}
 	
 }

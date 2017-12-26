@@ -2,10 +2,7 @@ package com.ssplugins.shadow2;
 
 import com.ssplugins.shadow2.common.ClassFinder;
 import com.ssplugins.shadow2.common.Parser;
-import com.ssplugins.shadow2.def.BlockDef;
-import com.ssplugins.shadow2.def.EvalSymbolDef;
-import com.ssplugins.shadow2.def.KeywordDef;
-import com.ssplugins.shadow2.def.ReplacerDef;
+import com.ssplugins.shadow2.def.*;
 
 import java.util.List;
 
@@ -18,6 +15,10 @@ public abstract class ShadowAPI {
 	}
 	
 	public List<ClassFinder> registerClassFinders() {
+		return null;
+	}
+	
+	public List<ExpressionDef> registerExpressions() {
 		return null;
 	}
 	
