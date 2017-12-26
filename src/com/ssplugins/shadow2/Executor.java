@@ -6,6 +6,7 @@ import com.ssplugins.shadow2.def.KeywordDef;
 import com.ssplugins.shadow2.element.Block;
 import com.ssplugins.shadow2.element.Keyword;
 import com.ssplugins.shadow2.element.ShadowElement;
+import com.ssplugins.shadow2.exceptions.ShadowException;
 import com.ssplugins.shadow2.exceptions.ShadowExecutionException;
 
 import java.util.List;
@@ -55,6 +56,7 @@ public class Executor {
 		try {
 			execute(scope, null, block, onFinish, params);
 		} catch (Throwable throwable) {
+			if (throwable instanceof ShadowException) throw throwable;
 			throw new ShadowExecutionException(throwable);
 		}
 	}
