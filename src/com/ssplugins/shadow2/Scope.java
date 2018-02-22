@@ -10,6 +10,7 @@ public class Scope {
 	
 	private Scope parent;
 	private SectionList<NamedReference<Object>> vars = SectionList.create(NamedReference::getName);
+	private SectionList<NamedReference<Object>> pVars = SectionList.create(NamedReference::getName);
 	
 	private Scope(SectionList<NamedReference<Object>> vars) {
 		this.vars = vars;
@@ -33,6 +34,10 @@ public class Scope {
 		return i;
 	}
 	
+	public void clearScope() {
+		vars.clearSection();
+	}
+	
 	public Scope newChild() {
 		Scope scope = new Scope(vars.subsection());
 		scope.parent = this;
@@ -41,6 +46,8 @@ public class Scope {
 	}
 	
 	public Optional<NamedReference<Object>> getVar(String name) {
+		Optional<NamedReference<Object>> pop = pVars.getFirst(name);
+		if (pop.isPresent()) return pop;
 		return vars.getFirst(name);
 	}
 	
@@ -54,8 +61,21 @@ public class Scope {
 		}
 	}
 	
+	public void setParamVar(String name, Object value) {
+		Optional<NamedReference<Object>> op = getVar(name);
+		if (op.isPresent()) {
+			op.get().set(value);
+		}
+		else {
+			pVars.add(new NamedReference<>(name, value));
+		}
+	}
+	
 	public void unset(String name) {
-		getVar(name).ifPresent(vars::remove);
+		getVar(name).ifPresent(ref -> {
+			vars.remove(ref);
+			pVars.remove(ref);
+		});
 	}
 	
 	public ParseContext getContext() {

@@ -98,6 +98,7 @@ public class Stepper {
 			}
 			else if (action == StepAction.RESTART) {
 				resetIterator();
+				scope.clearScope();
 				action = StepAction.NORMAL;
 			}
 			else if (action == StepAction.PAUSE) break;

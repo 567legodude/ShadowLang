@@ -44,7 +44,7 @@ public class ShadowParser {
 	
 	private Keyword parseKeyword(LineData data, ParseContext context) {
 		String keyword = data.getName();
-		Optional<KeywordDef> op = context.getKeywords().stream().filter(KeywordDef.is(keyword)).findFirst();
+		Optional<KeywordDef> op = context.findKeyword(keyword);
 		if (!op.isPresent()) {
 			if (context.getParseLevel().strictKeywords()) {
 				throw new ShadowParseException("Unknown keyword: " + keyword, context);

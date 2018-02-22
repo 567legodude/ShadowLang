@@ -267,7 +267,7 @@ public class ShadowCommons extends ShadowAPI {
 			throw new ShadowExecutionException("All parameters must be numbers.");
 		});
 		def.setEnterEvent((def1, mods, parameters, scope, stepper) -> {
-			scope.setVar(parameters.get(0), ShadowTools.asNumber(mods.get(0).asPlain()).map(Number::intValue).orElse(0));
+			scope.setParamVar(parameters.get(0), ShadowTools.asNumber(mods.get(0).asPlain()).map(Number::intValue).orElse(0));
 		});
 		def.setEndEvent((def1, mods, parameters, scope, stepper) -> {
 			Optional<NamedReference<Object>> var = scope.getVar(parameters.get(0));
