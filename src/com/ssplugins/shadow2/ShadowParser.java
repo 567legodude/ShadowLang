@@ -61,7 +61,7 @@ public class ShadowParser {
 	
 	private Block parseBlock(LineData data, List<ShadowElement> content, ParseContext context) {
 		String name = data.getName();
-		Optional<BlockDef> op = context.getBlocks().stream().filter(BlockDef.is(name)).findFirst();
+		Optional<BlockDef> op = context.findBlock(name);
 		if (!op.isPresent()) {
 			if (context.getParseLevel().strictBlocks()) {
 				throw new ShadowParseException("Unkown block: " + name, context);
