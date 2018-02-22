@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface BlockAction {
 	
-	void trigger(BlockDef def, List<ShadowSection> mods, Scope scope, Stepper stepper);
+	void trigger(BlockDef def, List<ShadowSection> mods, List<String> parameters, Scope scope, Stepper stepper);
 	
 }

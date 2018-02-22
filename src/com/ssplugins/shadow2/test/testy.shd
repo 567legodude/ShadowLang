@@ -1,9 +1,12 @@
 test {
-    log It works
-}
-
-event PlayerBoiEvent (e,e2) {
-    if true {
-        thing
+    count 1 100 (i) {
+        set sb =StringBuilder
+        if [i] % 3 == 0 {
+            call <sb:append(Fizz)
+        }
+        if [i] % 5 == 0 {
+            call <sb:append(Buzz)
+        }
+        log [i] + ": " + {sb}
     }
 }

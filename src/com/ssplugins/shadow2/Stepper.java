@@ -16,6 +16,9 @@ public class Stepper {
 	private Runnable onFinish;
 	private StepAction action = StepAction.NORMAL;
 	
+	private ShadowElement lastElement;
+	private boolean lastElementRan;
+	
 	public Stepper(List<ShadowElement> list, Scope scope, Stepper parent) {
 		this.iterator = Collections.unmodifiableList(list).listIterator();
 		this.scope = scope;
@@ -23,7 +26,7 @@ public class Stepper {
 	}
 	
 	private void resetIterator() {
-		while (iterator.previousIndex() > 0) {
+		while (iterator.previousIndex() >= 0) {
 			iterator.previous();
 		}
 	}
@@ -47,6 +50,19 @@ public class Stepper {
 	private void breakAll() {
 		next(StepAction.BREAK_ALL);
 		if (parent != null) parent.breakAll();
+	}
+	
+	public void setLastInfo(ShadowElement element, boolean ran) {
+		this.lastElement = element;
+		this.lastElementRan = ran;
+	}
+	
+	public ShadowElement getLastElement() {
+		return lastElement;
+	}
+	
+	public boolean lastElementRan() {
+		return lastElementRan;
 	}
 	
 	public void setOnStep(StepperAction stepperAction) {

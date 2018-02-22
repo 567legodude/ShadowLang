@@ -23,6 +23,16 @@ public class Scope {
 		return parent;
 	}
 	
+	public int level() {
+		int i = 1;
+		Scope p = parent;
+		while (p != null) {
+			i++;
+			p = p.parent;
+		}
+		return i;
+	}
+	
 	public Scope newChild() {
 		Scope scope = new Scope(vars.subsection());
 		scope.parent = this;

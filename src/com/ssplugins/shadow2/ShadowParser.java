@@ -7,6 +7,7 @@ import com.ssplugins.shadow2.def.*;
 import com.ssplugins.shadow2.element.Block;
 import com.ssplugins.shadow2.element.Keyword;
 import com.ssplugins.shadow2.element.ShadowElement;
+import com.ssplugins.shadow2.element.ShadowSection;
 import com.ssplugins.shadow2.exceptions.ShadowParseException;
 
 import java.io.BufferedReader;
@@ -69,14 +70,15 @@ public class ShadowParser {
 		BlockDef def = op.orElse(BlockDef.temporary(name));
 		String[] mods = ShadowTools.get(def.getSplitter()).map(splitter -> splitter.split(data.getMods(), context)).orElse(data.getSplitMods());
 		String[] params = data.getParams();
-		if (def.getModifierCount().outsideRange(mods.length)) {
-			throw new ShadowParseException("Block " + name + " expects " + def.getModifierCount().toString() + " modifiers, counted " + mods.length + ".", context);
-		}
 		if (def.getParameterCount().outsideRange(params.length)) {
 			throw new ShadowParseException("Block " + name + " expects " + def.getModifierCount().toString() + " parameters, counted " + params.length + ".", context);
 		}
 		SectionParser parser = ShadowTools.get(def.getSectionParser()).orElse(SectionParser.standard());
-		return new Block(context, name, parser.getSections(mods, context), Arrays.asList(params), content);
+		List<ShadowSection> sections = parser.getSections(mods, context);
+		if (def.getModifierCount().outsideRange(sections.size())) {
+			throw new ShadowParseException("Block " + name + " expects " + def.getModifierCount().toString() + " modifiers, counted " + mods.length + ".", context);
+		}
+		return new Block(context, name, sections, Arrays.asList(params), content);
 	}
 	
 	private List<ShadowElement> parseElements(List<String> content, ShadowContext context) {

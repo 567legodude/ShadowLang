@@ -1,5 +1,6 @@
 package com.ssplugins.shadow2.common;
 
+import com.ssplugins.shadow2.ShadowTools;
 import com.ssplugins.shadow2.element.Reference;
 import com.ssplugins.shadow2.element.ShadowSection;
 
@@ -24,6 +25,11 @@ public class TypeReference {
 	
 	public void setType(Class<?> type) {
 		this.type = type;
+	}
+	
+	public void set(Object o) {
+		setValue(o);
+		setType(ShadowTools.get(o).map(Object::getClass).orElse(null));
 	}
 	
 	public ShadowSection toSection() {

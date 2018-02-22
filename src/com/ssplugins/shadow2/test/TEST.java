@@ -14,7 +14,7 @@ import java.util.List;
 public class TEST {
 	
 	public static void main(String[] args) throws IOException {
-		Debug.setEnabled(true);
+		//Debug.setEnabled(true);
 		
 		InputStream stream = TEST.class.getResourceAsStream("/com/ssplugins/shadow2/test/testy.shd");
 		BufferedReader reader = new BufferedReader(new InputStreamReader(stream));

@@ -30,6 +30,10 @@ public abstract class ShadowSection {
 		return this instanceof Expression;
 	}
 	
+	public boolean isScopeVar() {
+		return this instanceof ScopeVar;
+	}
+	
 	public boolean isEmpty() {
 		return this instanceof Empty;
 	}
@@ -81,6 +85,13 @@ public abstract class ShadowSection {
 			return (Expression) this;
 		}
 		throw new IllegalStateException("Object is not Expression.");
+	}
+	
+	public ScopeVar asScopeVar() {
+		if (isScopeVar()) {
+			return (ScopeVar) this;
+		}
+		throw new IllegalStateException("Object is not ScopeVar.");
 	}
 
 }

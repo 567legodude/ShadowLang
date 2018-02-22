@@ -38,14 +38,19 @@ public class Executor {
 		BlockDef def = op.get();
 		boolean enter = ShadowTools.get(def.getEntryCondition()).map(condition -> condition.trigger(def, block.getModifiers(), scope, stepper)).orElse(true);
 		if (!enter) return false;
-		if (params.length != block.getParameters().size()) throw new ShadowExecutionException("Block " + block.getName() + " expected " + block.getParameters().size() + " parameters, received " + params.length + ".");
+		if (def.paramsProvided()) {
+			if (params.length != block.getParameters().size()) throw new ShadowExecutionException("Block " + block.getName() + " expected " + block.getParameters().size() + " parameters, received " + params.length + ".");
+		}
+		else {
+			if (!def.getParameterCount().inRange(block.getParameters().size())) throw new ShadowExecutionException("Block " + block.getName() + " expected " + block.getParameters().size() + " parameters, received " + params.length + ".");
+		}
 		for (int i = 0; i < params.length; i++) {
 			scope.setVar(block.getParameters().get(i), params[i]);
 		}
-		ShadowTools.get(def.getEnterEvent()).ifPresent(blockAction -> blockAction.trigger(def, block.getModifiers(), scope, stepper));
+		ShadowTools.get(def.getEnterEvent()).ifPresent(blockAction -> blockAction.trigger(def, block.getModifiers(), block.getParameters(), scope, stepper));
 		stepper.setOnStep(this::run);
 		stepper.setOnFinish(() -> {
-			ShadowTools.get(def.getEndEvent()).ifPresent(blockAction -> blockAction.trigger(def, block.getModifiers(), scope, stepper));
+			ShadowTools.get(def.getEndEvent()).ifPresent(blockAction -> blockAction.trigger(def, block.getModifiers(), block.getParameters(), scope, stepper));
 			if (!stepper.willRestart() && onFinish != null) onFinish.run();
 		});
 		stepper.start();
@@ -63,19 +68,21 @@ public class Executor {
 	
 	private void run(Stepper stepper, Scope scope, ShadowElement element) {
 		if (element.isBlock()) {
-			stepper.next(StepAction.PAUSE);
+			//stepper.next(StepAction.PAUSE);
 			boolean run = execute(scope, stepper, element.asBlock(), stepper::start);
-			//
+			stepper.setLastInfo(element, run);
 		}
 		else if (element.isKeyword()) {
 			Keyword keyword = element.asKeyword();
 			Debug.log("Executing keyword: " + keyword.getKeyword());
 			Optional<KeywordDef> op = scope.getContext().findKeyword(keyword.getKeyword());
 			if (!op.isPresent()) {
+				stepper.setLastInfo(element, false);
 				if (scope.getContext().getParseLevel().strictKeywords()) throw new ShadowExecutionException("Unknown keyword: " + keyword.getKeyword(), keyword.getLine());
 				Debug.log("Keyword not found, ignoring.");
 				return;
 			}
+			stepper.setLastInfo(element, true);
 			KeywordDef def = op.get();
 			ShadowTools.get(def.getAction()).ifPresent(keywordAction -> keywordAction.execute(def, keyword.getArguments(), scope, stepper));
 		}

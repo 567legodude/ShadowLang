@@ -25,7 +25,7 @@ public interface SectionParser {
 				String token = ShadowTools.get(m.group(1)).orElse("");
 				String name = m.group(2);
 				String[] args = ShadowTools.get(m.group(3)).map(s1 -> s1.split(", *")).orElse(new String[0]);
-				Optional<EvalSymbolDef> op = context.getEvalSymbols().stream().filter(EvalSymbolDef.is(token)).findFirst();
+				Optional<EvalSymbolDef> op = context.findEvalSymbol(token);
 				if (!op.isPresent()) throw new ShadowParseException("Unknown eval symbol: \"" + token + "\"", context);
 				EvalSymbolDef def = op.get();
 				List<ShadowSection> params = ShadowTools.get(def.getSectionParser()).orElse(SectionParser.standard()).getSections(args, context);
@@ -73,7 +73,7 @@ public interface SectionParser {
 				Optional<ExpressionDef> op = context.findExpression(s);
 				if (op.isPresent()) {
 					Debug.log("found expression");
-					if (i == 0 || out.get(out.size() - 1) instanceof Expression) throw new ShadowParseException("Expression has no lefthand element.", context);
+					if (i == 0) throw new ShadowParseException("Expression has no lefthand element.", context);
 					if (i + 1 == sections.length) throw new ShadowParseException("Expression has no righthand element.", context);
 					ShadowSection left = out.remove(out.size() - 1);
 					ShadowSection right = getSection(sections[i + 1], context);
@@ -94,7 +94,7 @@ public interface SectionParser {
 		if (section.startsWith("\"") && section.endsWith("\"")) {
 			return new Plain(section.substring(1, section.length() - 1).replace("\\\"", "\""));
 		}
-		else if (section.contains("{")) {
+		else if (section.contains("{") && section.contains("}")) {
 			int b = section.indexOf('{');
 			String token = section.substring(0, b);
 			String content = section.substring(b + 1, section.lastIndexOf('}'));
@@ -104,6 +104,11 @@ public interface SectionParser {
 			Splitter splitter = ShadowTools.get(rDef.getSplitter()).orElse(Splitter.replacerSplit());
 			SectionParser parser = ShadowTools.get(rDef.getSectionParser()).orElse(SectionParser.replacerContents());
 			return new Replacer(token, parser.getSections(splitter.split(content, context), context));
+		}
+		else if (section.contains("[") && section.contains("]")) {
+			int b = section.indexOf('[');
+			String content = section.substring(b + 1, section.lastIndexOf("]"));
+			return new ScopeVar(content);
 		}
 		else {
 			if (section.equalsIgnoreCase("true")) return new Reference(true);

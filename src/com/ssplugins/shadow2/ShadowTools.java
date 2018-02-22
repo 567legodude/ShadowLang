@@ -1,5 +1,7 @@
 package com.ssplugins.shadow2;
 
+import com.ssplugins.shadow2.common.NamedReference;
+import com.ssplugins.shadow2.common.Range;
 import com.ssplugins.shadow2.common.TypeReference;
 import com.ssplugins.shadow2.def.EvalSymbolDef;
 import com.ssplugins.shadow2.def.ExpressionDef;
@@ -10,9 +12,9 @@ import com.ssplugins.shadow2.exceptions.ShadowExecutionException;
 import com.ssplugins.shadow2.exceptions.ShadowParseException;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -56,6 +58,10 @@ public final class ShadowTools {
 		verify(args.length >= len, "Invalid argument count.", context);
 	}
 	
+	public static void verifySections(List<ShadowSection> sections, Range range) {
+		if (!range.inRange(sections.size())) throw new ShadowExecutionException("Invalid number of sections. Expected: " + range.toString() + ", Received: " + sections.size());
+	}
+	
 	public static Optional<Number> asNumber(Plain plain) {
 		String s = plain.toString();
 		try {
@@ -73,6 +79,23 @@ public final class ShadowTools {
 	public static Optional<Boolean> asBoolean(ShadowSection section, Scope scope) {
 		if (section.isReplacer()) {
 			return asBoolean(getReplacerValue(section.asReplacer(), scope), scope);
+		}
+		else if (section.isLazyReplacer()) {
+			List<ShadowSection> sections = evalLazyReplacer(section.asLazyReplacer(), scope);
+			if (sections.size() == 0) return Optional.empty();
+			return asBoolean(sections.get(0), scope);
+		}
+		else if (section.isScopeVar()) {
+			return scope.getVar(section.asScopeVar().getVar())
+						.map(AtomicReference::get)
+						.map(Reference::new)
+						.flatMap(ref -> asBoolean(ref, scope));
+		}
+		else if (section.isEvalGroup()) {
+			return asBoolean(executeEval(section.asEvalGroup(), scope), scope);
+		}
+		else if (section.isExpression()) {
+			return asBoolean(getExpressionValue(section.asExpression(), scope), scope);
 		}
 		else if (section.isEvalGroup()) {
 			return asBoolean(executeEval(section.asEvalGroup(), scope), scope);
@@ -100,7 +123,21 @@ public final class ShadowTools {
 		else if (section.isReplacer()) return asObject(getReplacerValue(section.asReplacer(), scope), scope);
 		else if (section.isExpression()) return asObject(getExpressionValue(section.asExpression(), scope), scope);
 		else if (section.isEvalGroup()) return asObject(executeEval(section.asEvalGroup(), scope), scope);
+		else if (section.isScopeVar()) return asObject(getScopeVar(section.asScopeVar(), scope), scope);
 		return Optional.empty();
+	}
+	
+	public static Optional<Object[]> asObjectArray(List<ShadowSection> sections, Scope scope) {
+		try {
+			Object[] arr = new Object[sections.size()];
+			for (int i = 0; i < arr.length; i++) {
+				arr[i] = asObject(sections.get(i), scope).orElseThrow(ShadowException.err("Could not convert sections to objects."));
+			}
+			return Optional.of(arr);
+			//ShadowException.err("Could not convert sections to objects.")
+		} catch (ShadowException e) {
+			return Optional.empty();
+		}
 	}
 	
 	public static String sectionsToString(List<ShadowSection> list, Scope scope) {
@@ -117,6 +154,9 @@ public final class ShadowTools {
 			}
 			else if (section.isExpression()) {
 				builder.append(getExpressionValue(section.asExpression(), scope));
+			}
+			else if (section.isScopeVar()) {
+				builder.append(getScopeVar(section.asScopeVar(), scope));
 			}
 			else builder.append(section.toString());
 			builder.append(" ");
@@ -175,9 +215,15 @@ public final class ShadowTools {
 			Optional<EvalSymbolDef> op = scope.getContext().findEvalSymbol(section.getToken());
 			if (!op.isPresent()) throw new ShadowExecutionException("Eval symbol not found: " + section.getToken());
 			EvalSymbolDef def = op.get();
-			get(def.getAction()).ifPresent(evalAction -> evalAction.execute(ref, section));
+			get(def.getAction()).ifPresent(evalAction -> evalAction.execute(ref, section, scope));
+			if (ref.getValue() == null && ref.getType() == null) break;
 		}
 		return ref.toSection();
+	}
+	
+	public static ShadowSection getScopeVar(ScopeVar var, Scope scope) {
+		Optional<NamedReference<Object>> v = scope.getVar(var.getVar());
+		return v.<ShadowSection>map(ref -> new Reference(ref.get())).orElseGet(Empty::new);
 	}
 	
 }

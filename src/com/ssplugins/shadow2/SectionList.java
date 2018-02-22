@@ -8,18 +8,18 @@ import java.util.function.Predicate;
 
 public class SectionList<T> {
 	
-	private List<T> backer;
+	private SectionList<T> upper;
 	private List<T> specific = new ArrayList<>();
 	
 	private Function<T, String> extractor;
 	
-	private SectionList(Function<T, String> extractor, List<T> backer) {
-		this.backer = backer;
+	private SectionList(Function<T, String> extractor, SectionList<T> upper) {
+		this.upper = upper;
 		this.extractor = extractor;
 	}
 	
 	public static <U> SectionList<U> create(Function<U, String> extractor) {
-		return new SectionList<>(extractor, new ArrayList<>());
+		return new SectionList<>(extractor, null);
 	}
 	
 	private Predicate<T> is(String key) {
@@ -27,7 +27,7 @@ public class SectionList<T> {
 	}
 	
 	public SectionList<T> subsection() {
-		return new SectionList<>(extractor, backer);
+		return new SectionList<>(extractor, this);
 	}
 	
 	public void clearSection() {
@@ -39,21 +39,21 @@ public class SectionList<T> {
 	}
 	
 	public boolean remove(T item) {
-		return specific.remove(item) || backer.remove(item);
+		return specific.remove(item) || ShadowTools.get(upper).map(u -> u.remove(item)).orElse(false);
 	}
 	
 	public boolean contains(T item) {
-		return specific.contains(item) || backer.contains(item);
+		return specific.contains(item) || ShadowTools.get(upper).map(u -> u.contains(item)).orElse(false);
 	}
 	
 	public boolean hasKey(String key) {
-		return specific.stream().anyMatch(is(key)) || backer.stream().anyMatch(is(key));
+		return specific.stream().anyMatch(is(key)) || ShadowTools.get(upper).map(u -> u.hasKey(key)).orElse(false);
 	}
 	
 	public Optional<T> getFirst(String key) {
 		Optional<T> sp = specific.stream().filter(is(key)).findFirst();
 		if (sp.isPresent()) return sp;
-		return backer.stream().filter(is(key)).findFirst();
+		return ShadowTools.get(upper).flatMap(u -> u.getFirst(key));
 	}
 	
 }
