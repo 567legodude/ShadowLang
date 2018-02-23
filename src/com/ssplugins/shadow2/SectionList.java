@@ -10,6 +10,7 @@ public class SectionList<T> {
 	
 	private SectionList<T> upper;
 	private List<T> specific = new ArrayList<>();
+	private List<T> secondary = new ArrayList<>();
 	
 	private Function<T, String> extractor;
 	
@@ -34,25 +35,44 @@ public class SectionList<T> {
 		specific.clear();
 	}
 	
+	public void clearSecondary() {
+		secondary.clear();
+	}
+	
+	public void clearAll() {
+		clearSection();
+		clearSecondary();
+	}
+	
 	public boolean add(T item) {
 		return specific.add(item);
+	}
+	
+	public boolean addSecondary(T item) {
+		return secondary.add(item);
 	}
 	
 	public boolean remove(T item) {
 		return specific.remove(item) || ShadowTools.get(upper).map(u -> u.remove(item)).orElse(false);
 	}
 	
+	public boolean removeSecondary(T item) {
+		return secondary.remove(item);
+	}
+	
 	public boolean contains(T item) {
-		return specific.contains(item) || ShadowTools.get(upper).map(u -> u.contains(item)).orElse(false);
+		return specific.contains(item) || secondary.contains(item) || ShadowTools.get(upper).map(u -> u.contains(item)).orElse(false);
 	}
 	
 	public boolean hasKey(String key) {
-		return specific.stream().anyMatch(is(key)) || ShadowTools.get(upper).map(u -> u.hasKey(key)).orElse(false);
+		return specific.stream().anyMatch(is(key)) || secondary.stream().anyMatch(is(key)) || ShadowTools.get(upper).map(u -> u.hasKey(key)).orElse(false);
 	}
 	
 	public Optional<T> getFirst(String key) {
 		Optional<T> sp = specific.stream().filter(is(key)).findFirst();
 		if (sp.isPresent()) return sp;
+		Optional<T> sc = secondary.stream().filter(is(key)).findFirst();
+		if (sc.isPresent()) return sc;
 		return ShadowTools.get(upper).flatMap(u -> u.getFirst(key));
 	}
 	

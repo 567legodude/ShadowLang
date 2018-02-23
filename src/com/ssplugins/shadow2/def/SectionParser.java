@@ -57,9 +57,15 @@ public interface SectionParser {
 		};
 	}
 	
-	static SectionParser allPlain() {
+	static SectionParser allString() {
 		return (sections, context) -> {
-			return Stream.of(sections).map(Plain::new).collect(Collectors.toList());
+			return Stream.of(sections).map(Primitive::string).collect(Collectors.toList());
+		};
+	}
+	
+	static SectionParser allPrimitive() {
+		return (sections, context) -> {
+			return Stream.of(sections).map(Primitive::new).collect(Collectors.toList());
 		};
 	}
 	
@@ -92,7 +98,7 @@ public interface SectionParser {
 	static ShadowSection getSection(String section, ParseContext context) {
 		Debug.log("parsing as section");
 		if (section.startsWith("\"") && section.endsWith("\"")) {
-			return new Plain(section.substring(1, section.length() - 1).replace("\\\"", "\""));
+			return Primitive.string(section.substring(1, section.length() - 1).replace("\\\"", "\""));
 		}
 		else if (section.contains("{") && section.contains("}")) {
 			int b = section.indexOf('{');
@@ -111,12 +117,7 @@ public interface SectionParser {
 			return new ScopeVar(content);
 		}
 		else {
-			if (section.equalsIgnoreCase("true")) return new Reference(true);
-			else if (section.equalsIgnoreCase("false")) return new Reference(false);
-			else if (section.equalsIgnoreCase("null")) return new Reference(null);
-			Plain p = new Plain(section);
-			Optional<Number> nop = ShadowTools.asNumber(p);
-			return nop.<ShadowSection>map(Reference::new).orElse(p);
+			return new Primitive(section);
 		}
 	}
 	

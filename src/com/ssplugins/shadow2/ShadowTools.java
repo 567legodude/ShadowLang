@@ -62,20 +62,6 @@ public final class ShadowTools {
 		if (!range.inRange(sections.size())) throw new ShadowExecutionException("Invalid number of sections. Expected: " + range.toString() + ", Received: " + sections.size());
 	}
 	
-	public static Optional<Number> asNumber(Plain plain) {
-		String s = plain.toString();
-		try {
-			if (s.contains(".")) {
-				return Optional.of(Double.valueOf(s));
-			}
-			else {
-				return Optional.of(Integer.valueOf(s));
-			}
-		} catch (NumberFormatException e) {
-			return Optional.empty();
-		}
-	}
-	
 	public static Optional<Boolean> asBoolean(ShadowSection section, Scope scope) {
 		if (section.isReplacer()) {
 			return asBoolean(getReplacerValue(section.asReplacer(), scope), scope);
@@ -106,19 +92,19 @@ public final class ShadowTools {
 				return Optional.of((Boolean) o);
 			}
 			else if (o instanceof String) {
-				return asBoolean(new Plain((String) o), scope);
+				String s = (String) o;
+				if (s.equalsIgnoreCase("true")) return Optional.of(true);
+				else if (s.equalsIgnoreCase("false")) return Optional.of(false);
 			}
 		}
-		else if (section.isPlain()) {
-			String s = section.asPlain().getValue();
-			if (s.equalsIgnoreCase("true")) return Optional.of(true);
-			else if (s.equalsIgnoreCase("false")) return Optional.of(false);
+		else if (section.isPrimitive()) {
+			return asBoolean(new Reference(section.asPrimitive().get()), scope);
 		}
 		return Optional.empty();
 	}
 	
 	public static Optional<Object> asObject(ShadowSection section, Scope scope) {
-		if (section.isPlain()) return Optional.ofNullable(section.asPlain().getValue());
+		if (section.isPrimitive()) return Optional.ofNullable(section.asPrimitive().get());
 		else if (section.isReference()) return Optional.ofNullable(section.asReference().getValue());
 		else if (section.isReplacer()) return asObject(getReplacerValue(section.asReplacer(), scope), scope);
 		else if (section.isExpression()) return asObject(getExpressionValue(section.asExpression(), scope), scope);
@@ -202,7 +188,7 @@ public final class ShadowTools {
 		Matcher m = Pattern.compile("(\\w+)(?:\\{(.+)})").matcher(content);
 		while (m.find()) {
 			String plain = content.substring(last, m.start());
-			if (!plain.isEmpty()) list.add(new Plain(plain));
+			if (!plain.isEmpty()) list.add(Primitive.string(plain));
 			list.add(Replacer.temp(m.group(1), m.group(2), scope));
 			last = m.end();
 		}

@@ -2,8 +2,8 @@ package com.ssplugins.shadow2.element;
 
 public abstract class ShadowSection {
 	
-	public boolean isPlain() {
-		return this instanceof Plain;
+	public boolean isPrimitive() {
+		return this instanceof Primitive;
 	}
 	
 	public boolean isReplacer() {
@@ -38,11 +38,11 @@ public abstract class ShadowSection {
 		return this instanceof Empty;
 	}
 	
-	public Plain asPlain() {
-		if (isPlain()) {
-			return (Plain) this;
+	public Primitive asPrimitive() {
+		if (isPrimitive()) {
+			return (Primitive) this;
 		}
-		throw new IllegalStateException("Object is not Plain.");
+		throw new IllegalStateException("Object is not Primitive.");
 	}
 	
 	public Replacer asReplacer() {

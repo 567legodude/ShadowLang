@@ -5,7 +5,7 @@ import com.ssplugins.shadow2.common.ClassFinder;
 import com.ssplugins.shadow2.common.NamedReference;
 import com.ssplugins.shadow2.common.Range;
 import com.ssplugins.shadow2.def.*;
-import com.ssplugins.shadow2.element.Plain;
+import com.ssplugins.shadow2.element.Primitive;
 import com.ssplugins.shadow2.element.ShadowElement;
 import com.ssplugins.shadow2.element.ShadowSection;
 import com.ssplugins.shadow2.exceptions.ShadowExecutionException;
@@ -161,7 +161,7 @@ public class ShadowCommons extends ShadowAPI {
 	
 	private KeywordDef keywordSet() {
 		KeywordDef def = new KeywordDef("set", (def1, args, scope, stepper) -> {
-			String name = args.get(0).asPlain().getValue();
+			String name = args.get(0).asPrimitive().asString();
 			scope.setVar(name, ShadowTools.executeEval(args.get(1).asEvalGroup(), scope).asReference().getValue());
 		});
 		def.setArgumentCount(Range.lowerBound(2));
@@ -173,7 +173,7 @@ public class ShadowCommons extends ShadowAPI {
 		def.setSectionParser((sections, context) -> {
 			ShadowTools.verifyArgs(sections, 2, context);
 			List<ShadowSection> out = new ArrayList<>();
-			out.add(new Plain(sections[0]));
+			out.add(Primitive.string(sections[0]));
 			out.add(SectionParser.parseAsEval(sections[1], context));
 			return out;
 		});
@@ -182,10 +182,10 @@ public class ShadowCommons extends ShadowAPI {
 	
 	private KeywordDef keywordUnset() {
 		KeywordDef def = new KeywordDef("unset", (def1, args, scope, stepper) -> {
-			args.forEach(section -> scope.unset(section.asPlain().getValue()));
+			args.forEach(section -> scope.unset(section.asPrimitive().asString()));
 		});
 		def.setArgumentCount(Range.lowerBound(1));
-		def.setSectionParser(SectionParser.allPlain());
+		def.setSectionParser(SectionParser.allString());
 		return def;
 	}
 	
@@ -255,27 +255,26 @@ public class ShadowCommons extends ShadowAPI {
 		BlockDef def = new BlockDef("count");
 		def.setModifierCount(Range.from(2, 3));
 		def.setParameterCount(Range.single(1));
-		def.setSectionParser(SectionParser.allPlain());
+		def.setSectionParser(SectionParser.allPrimitive());
 		def.setEntryCondition((def1, mods, scope, stepper) -> {
-			Optional<Number> start = ShadowTools.asNumber(mods.get(0).asPlain());
-			Optional<Number> end = ShadowTools.asNumber(mods.get(1).asPlain());
+			Optional<Integer> start = mods.get(0).asPrimitive().asInt();
+			Optional<Integer> end = mods.get(1).asPrimitive().asInt();
 			if (start.isPresent() && end.isPresent()) {
 				if (mods.size() < 3) return true;
-				Optional<Plain> step = ShadowTools.get(mods.get(2)).map(ShadowSection::asPlain);
-				if (step.flatMap(ShadowTools::asNumber).isPresent()) return true;
+				if (mods.get(2).asPrimitive().asInt().isPresent()) return true;
 			}
 			throw new ShadowExecutionException("All parameters must be numbers.");
 		});
 		def.setEnterEvent((def1, mods, parameters, scope, stepper) -> {
-			scope.setParamVar(parameters.get(0), ShadowTools.asNumber(mods.get(0).asPlain()).map(Number::intValue).orElse(0));
+			scope.setParamVar(parameters.get(0), mods.get(0).asPrimitive().asInt().orElse(0));
 		});
 		def.setEndEvent((def1, mods, parameters, scope, stepper) -> {
 			Optional<NamedReference<Object>> var = scope.getVar(parameters.get(0));
 			if (!var.isPresent()) stepper.next(StepAction.BREAK);
 			else {
-				int start = ShadowTools.asNumber(mods.get(0).asPlain()).map(Number::intValue).orElse(0);
-				int end = ShadowTools.asNumber(mods.get(1).asPlain()).map(Number::intValue).orElse(1);
-				int step = ShadowTools.get(mods).filter(sections -> sections.size() > 2).map(sections -> sections.get(2)).map(ShadowSection::asPlain).flatMap(ShadowTools::asNumber).map(Number::intValue).orElse(1);
+				int start = mods.get(0).asPrimitive().asInt().orElse(0);
+				int end = mods.get(1).asPrimitive().asInt().orElse(1);
+				int step = ShadowTools.get(mods).filter(sections -> sections.size() > 2).flatMap(sections -> sections.get(2).asPrimitive().asInt()).orElse(1);
 				NamedReference<Object> ref = var.get();
 				int n = (int) ref.get();
 				if (start < end) {
@@ -298,10 +297,10 @@ public class ShadowCommons extends ShadowAPI {
 			String var = sections.get(0).toString();
 			Optional<NamedReference<Object>> op = scope.getVar(var);
 			if (!op.isPresent()) throw new ShadowExecutionException("Var " + var + " not found in scope.");
-			return new Plain(ShadowTools.get(op.get().get()).map(Object::toString).orElse("null"));
+			return Primitive.string(ShadowTools.get(op.get().get()).map(Object::toString).orElse("null"));
 		});
 		def.setSplitter(Splitter.singleArg());
-		def.setSectionParser(SectionParser.allPlain());
+		def.setSectionParser(SectionParser.allString());
 		return def;
 	}
 	
