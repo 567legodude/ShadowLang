@@ -49,6 +49,7 @@ public class LineReader {
 		BLOCK_CLOSE,
 		KEYWORD,
 		EMPTY,
+		COMMENT,
 		INVALID;
 	}
 	
@@ -73,6 +74,10 @@ public class LineReader {
 			this.raw = raw;
 			if (raw.isEmpty()) {
 				type = LineType.EMPTY;
+				return;
+			}
+			else if (raw.startsWith("//")) {
+				type = LineType.COMMENT;
 				return;
 			}
 			else if (raw.equals("}")) {
