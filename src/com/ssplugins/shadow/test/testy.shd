@@ -1,0 +1,15 @@
+test {
+    set list =ArrayList
+    call <list:add(test1)
+    call <list:add(test2)
+    foreach [list] (i) {
+        log [i]
+    }
+
+    set index ->0
+    while [index] < 5 {
+        log [index]
+        aset index [index] + 1
+    }
+    log done
+}

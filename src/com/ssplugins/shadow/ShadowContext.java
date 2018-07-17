@@ -1,0 +1,183 @@
+package com.ssplugins.shadow;
+
+import com.ssplugins.shadow.common.ClassFinder;
+import com.ssplugins.shadow.common.ParseLevel;
+import com.ssplugins.shadow.common.Parser;
+import com.ssplugins.shadow.def.*;
+import com.ssplugins.shadow.exceptions.ShadowAPIException;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
+
+public class ShadowContext implements ParseContext {
+	
+	private int line;
+	private String raw;
+	private String block;
+	private ParseLevel level;
+	
+	private List<Parser> lineParsers;
+	private List<ClassFinder> classFinders;
+	private List<ExpressionDef> expressions;
+	private List<KeywordDef> keywords;
+	private List<BlockDef> blocks;
+	private List<ReplacerDef> replacers;
+	private List<EvalSymbolDef> evalSymbols;
+	
+	public ShadowContext(List<ShadowAPI> apis, ParseLevel level) {
+		if (level == null) level = ParseLevel.NORMAL;
+		this.level = level;
+		lineParsers = new ArrayList<>();
+		classFinders = new ArrayList<>();
+		KeyedList<ExpressionDef> expressions = new KeyedList<>(ExpressionDef::getToken);
+		KeyedList<KeywordDef> keywords = new KeyedList<>(KeywordDef::getKeyword);
+		KeyedList<BlockDef> blocks = new KeyedList<>(BlockDef::getName);
+		KeyedList<ReplacerDef> replacers = new KeyedList<>(ReplacerDef::getToken);
+		KeyedList<EvalSymbolDef> evalSymbols = new KeyedList<>(EvalSymbolDef::getToken);
+		for (ShadowAPI api : apis) {
+			ternary(api.registerLineParsers(), lineParsers::addAll);
+			ternary(api.registerClassFinders(), classFinders::addAll);
+			ternary(api.registerExpressions(), expressions::addAll);
+			ternary(api.registerKeywords(), keywords::addAll);
+			ternary(api.registerBlocks(), blocks::addAll);
+			ternary(api.registerReplacers(), replacers::addAll);
+			ternary(api.registerEvalSymbols(), evalSymbols::addAll);
+		}
+		checkDuplicates(expressions, s -> "Duplicate expressions registered: " + s);
+		checkDuplicates(keywords, s -> "Duplicate keywords registered: " + s);
+		checkDuplicates(blocks, s -> "Duplicate blocks registered: " + s);
+		checkDuplicates(replacers, s -> "Duplicate replacers registered: " + s);
+		checkDuplicates(evalSymbols, s -> "Duplicate eval symbols registered: " + s);
+		lineParsers = lockList(lineParsers);
+		classFinders = lockList(classFinders);
+		this.expressions = lockList(expressions);
+		this.keywords = lockList(keywords);
+		this.blocks = lockList(blocks);
+		this.replacers = lockList(replacers);
+		this.evalSymbols = lockList(evalSymbols);
+	}
+	
+	private <T> void ternary(T value, Consumer<T> consumer) {
+		if (value != null) consumer.accept(value);
+	}
+	
+	private <T> void checkDuplicates(KeyedList<T> list, UnaryOperator<String> message) {
+		List<String> dupes = list.duplicateKeys();
+		if (dupes.size() > 0) throw new ShadowAPIException(message.apply("[" + String.join(",", dupes) + "]"));
+	}
+	
+	private <T> List<T> lockList(List<T> list) {
+		return Collections.unmodifiableList(list);
+	}
+	
+	public void nextLine() {
+		line++;
+	}
+	
+	public void setRaw(String raw) {
+		this.raw = raw;
+	}
+	
+	public void setBlock(String block) {
+		this.block = block;
+	}
+	
+	@Override
+	public int getLine() {
+		return line;
+	}
+	
+	@Override
+	public String raw() {
+		return raw;
+	}
+	
+	@Override
+	public String parentBlock() {
+		return block;
+	}
+	
+	@Override
+	public ParseLevel getParseLevel() {
+		return level;
+	}
+	
+	@Override
+	public List<Parser> getLineParsers() {
+		return lineParsers;
+	}
+	
+	@Override
+	public List<ClassFinder> getClassFinders() {
+		return classFinders;
+	}
+	
+	@Override
+	public List<ExpressionDef> getExpressions() {
+		return expressions;
+	}
+	
+	@Override
+	public List<KeywordDef> getKeywords() {
+		return keywords;
+	}
+	
+	@Override
+	public List<BlockDef> getBlocks() {
+		return blocks;
+	}
+	
+	@Override
+	public List<ReplacerDef> getReplacers() {
+		return replacers;
+	}
+	
+	@Override
+	public List<EvalSymbolDef> getEvalSymbols() {
+		return evalSymbols;
+	}
+	
+	@Override
+	public Optional<Class<?>> findClass(String input) {
+		Optional<Class<?>> op = Optional.empty();
+		for (ClassFinder finder : getClassFinders()) {
+			if ((op = finder.findClass(input)).isPresent()) break;
+		}
+		return op;
+	}
+	
+	@Override
+	public Optional<ExpressionDef> findExpression(String token) {
+		return getExpressions().stream().filter(ExpressionDef.is(token)).findFirst();
+	}
+	
+	@Override
+	public Optional<KeywordDef> findKeyword(String keyword) {
+		return getKeywords().stream().filter(KeywordDef.is(keyword)).findFirst();
+	}
+	
+	@Override
+	public Optional<BlockDef> findBlock(String name) {
+		return getBlocks().stream().filter(BlockDef.is(name)).findFirst();
+	}
+	
+	@Override
+	public Optional<ReplacerDef> findReplacer(String token) {
+		return getReplacers().stream().filter(ReplacerDef.is(token)).findFirst();
+	}
+	
+	@Override
+	public Optional<EvalSymbolDef> findEvalSymbol(String token) {
+		return getEvalSymbols().stream().filter(EvalSymbolDef.is(token)).findFirst();
+	}
+	
+	@Override
+	public String toString() {
+		return "Line " + line + ": \"" + raw + "\"";
+	}
+	
+}
