@@ -183,7 +183,7 @@ public class ShadowCommons extends ShadowAPI {
 	}
 	
 	private KeywordDef keywordASet() {
-		KeywordDef def = new KeywordDef("aset", (def1, args, scope, stepper) -> {
+		KeywordDef def = new KeywordDef("store", (def1, args, scope, stepper) -> {
 			String name = args.get(0).asPrimitive().asString();
 			Optional<Object> op = ShadowTools.asObject(args.get(1), scope);
 			if (!op.isPresent()) throw new ShadowExecutionException("Parameter could not be converted to object.");

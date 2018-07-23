@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 
 public final class EvalSymbolDef implements MiniParser {
 	
-	public static final Pattern PATTERN = Pattern.compile("(\\W+)?(\\w+)(?:\\(([^)]+)\\))?");
+	public static final Pattern PATTERN = Pattern.compile("(\\W+)?(\\w\\s+)(?:\\(([^)]+)\\))?");
 	
 	private String token;
 	private EvalAction action;
