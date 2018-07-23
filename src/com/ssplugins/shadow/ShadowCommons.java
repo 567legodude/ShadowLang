@@ -56,6 +56,7 @@ public class ShadowCommons extends ShadowAPI {
 		List<BlockDef> out = new ArrayList<>();
 		out.add(blockTest());
 		out.add(blockIf());
+        out.add(blockElseIf());
 		out.add(blockElse());
 		out.add(blockCount());
 		out.add(blockWhile());
@@ -257,14 +258,35 @@ public class ShadowCommons extends ShadowAPI {
 		return def;
 	}
 	
+	private BlockDef blockElseIf() {
+        BlockDef def = new BlockDef("elseif");
+        def.setModifierCount(Range.single(1));
+        def.setEntryCondition((def1, mods, scope, stepper) -> {
+            ShadowElement element = stepper.getLastElement();
+            if (element == null || !element.isBlock() ||
+                    (!element.asBlock().getName().equalsIgnoreCase("if") &&
+                            !element.asBlock().getName().equalsIgnoreCase("elseif"))) {
+                throw new ShadowExecutionException("Elseif must be preceded by \"if\" or \"elseif\" block.");
+            }
+            if (stepper.lastElementRan()) stepper.next(StepAction.BREAK_BLOCK_CHAIN);
+            else {
+                Optional<Boolean> op = ShadowTools.asBoolean(mods.get(0), scope);
+                if (!op.isPresent()) throw new ShadowExecutionException("Modifiers could not be parsed as boolean.");
+                return op.get();
+            }
+            return false;
+        });
+        return def;
+    }
+	
 	private BlockDef blockElse() {
 		BlockDef def = new BlockDef("else");
 		def.setEntryCondition((def1, mods, scope, stepper) -> {
 			ShadowElement element = stepper.getLastElement();
-			if (element == null ||
-					!element.isBlock() ||
-					!element.asBlock().getName().equalsIgnoreCase("if")) {
-				throw new ShadowExecutionException("Else must be preceded by \"if\" block.");
+			if (element == null || !element.isBlock() ||
+                    (!element.asBlock().getName().equalsIgnoreCase("if") &&
+                            !element.asBlock().getName().equalsIgnoreCase("elseif"))) {
+				throw new ShadowExecutionException("Else must be preceded by \"if\" or \"elseif\" block.");
 			}
 			return !stepper.lastElementRan();
 		});
@@ -402,7 +424,7 @@ public class ShadowCommons extends ShadowAPI {
 	}
 	
 	private EvalSymbolDef evalString() {
-		EvalSymbolDef def = new EvalSymbolDef("?", (reference, section, scope) -> {
+		EvalSymbolDef def = new EvalSymbolDef("#", (reference, section, scope) -> {
 			reference.set(section.getName());
 			return reference;
 		});
