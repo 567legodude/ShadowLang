@@ -5,6 +5,8 @@ import com.ssplugins.shadow.element.ShadowElement;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Stepper {
 	
@@ -16,13 +18,21 @@ public class Stepper {
 	private Runnable onFinish;
 	private StepAction action = StepAction.NORMAL;
 	
-	private ShadowElement lastElement;
-	private boolean lastElementRan;
+	private AtomicReference<ShadowElement> lastElement;
+	private AtomicBoolean lastElementRan;
 	
 	public Stepper(List<ShadowElement> list, Scope scope, Stepper parent) {
 		this.iterator = Collections.unmodifiableList(list).listIterator();
 		this.scope = scope;
 		this.parent = parent;
+        if (parent != null) {
+            lastElement = parent.lastElement;
+            lastElementRan = parent.lastElementRan;
+        }
+        else {
+            lastElement = new AtomicReference<>();
+            lastElementRan = new AtomicBoolean();
+        }
 	}
 	
 	private void resetIterator() {
@@ -53,17 +63,27 @@ public class Stepper {
 	}
 	
 	public void setLastInfo(ShadowElement element, boolean ran) {
-		this.lastElement = element;
-		this.lastElementRan = ran;
+	    lastElement.set(element);
+	    lastElementRan.set(ran);
 	}
 	
 	public ShadowElement getLastElement() {
-		return lastElement;
+		return lastElement.get();
 	}
 	
 	public boolean lastElementRan() {
-		return lastElementRan;
+		return lastElementRan.get();
 	}
+    
+    public boolean followsBlock(String block) {
+	    ShadowElement se = getLastElement();
+        return se != null && se.isBlock() && se.asBlock().getName().equalsIgnoreCase(block);
+    }
+    
+    public boolean followsKeyword(String keyword) {
+        ShadowElement se = getLastElement();
+        return se != null && se.isKeyword() && se.asKeyword().getKeyword().equalsIgnoreCase(keyword);
+    }
 	
 	public void setOnStep(StepperAction stepperAction) {
 		this.stepperAction = stepperAction;
@@ -81,6 +101,10 @@ public class Stepper {
 	public void next(StepAction action) {
 		this.action = (action == null ? StepAction.NORMAL : action);
 	}
+	
+	public StepAction getAction() {
+	    return action;
+    }
 	
 	public boolean willRestart() {
 		return action == StepAction.RESTART;

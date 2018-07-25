@@ -36,7 +36,13 @@ public class Executor {
 		}
 		BlockDef def = op.get();
 		boolean enter = ShadowTools.get(def.getEntryCondition()).map(condition -> condition.trigger(def, block.getModifiers(), scope, stepper)).orElse(true);
-		if (!enter) return false;
+		if (!enter) {
+            stepper.setLastInfo(block, false);
+            if (stepper.getAction() == Stepper.StepAction.BREAK_BLOCK_CHAIN) {
+                parentStepper.next(Stepper.StepAction.BREAK_BLOCK_CHAIN);
+            }
+		    return false;
+        }
 		if (def.paramsProvided()) {
 			if (params.length != block.getParameters().size()) throw new ShadowExecutionException("Block " + block.getName() + " expected " + block.getParameters().size() + " parameters, received " + params.length + ".");
 		}
@@ -50,7 +56,10 @@ public class Executor {
 		stepper.setOnStep(this::run);
 		stepper.setOnFinish(() -> {
 			ShadowTools.get(def.getEndEvent()).ifPresent(blockAction -> blockAction.trigger(def, block.getModifiers(), block.getParameters(), scope, stepper));
-			if (!stepper.willRestart() && onFinish != null) onFinish.run();
+			if (!stepper.willRestart() && onFinish != null) {
+			    stepper.setLastInfo(block, true);
+			    onFinish.run();
+            }
 		});
 		stepper.start();
 		return true;
