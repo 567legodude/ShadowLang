@@ -579,7 +579,7 @@ public class ShadowCommons extends ShadowAPI {
 	}
 	
 	private EvalSymbolDef evalVar() {
-		EvalSymbolDef def = new EvalSymbolDef("<", (reference, section, scope) -> {
+		EvalSymbolDef def = new EvalSymbolDef("", (reference, section, scope) -> {
 			Optional<NamedReference<Object>> var = scope.getVar(section.getName());
 			if (!var.isPresent()) throw new ShadowExecutionException("No variable defined named " + section.getName());
 			reference.set(var.get().get());
