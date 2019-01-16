@@ -6,6 +6,7 @@ import java.util.Optional;
 
 public class Scope {
 	
+    private Shadow shadow;
 	private ParseContext context;
 	
 	private Scope parent;
@@ -15,7 +16,8 @@ public class Scope {
 		this.vars = vars;
 	}
 	
-	public Scope(ParseContext context) {
+	public Scope(Shadow shadow, ParseContext context) {
+	    this.shadow = shadow;
 		this.context = context;
 	}
 	
@@ -32,8 +34,12 @@ public class Scope {
 		}
 		return i;
 	}
-	
-	public void clearScope() {
+    
+    public Shadow getShadow() {
+        return shadow;
+    }
+    
+    public void clearScope() {
 		vars.clearSection();
 	}
 	
@@ -41,6 +47,7 @@ public class Scope {
 		Scope scope = new Scope(vars.subsection());
 		scope.parent = this;
 		scope.context = this.context;
+        scope.shadow = shadow;
 		return scope;
 	}
 	

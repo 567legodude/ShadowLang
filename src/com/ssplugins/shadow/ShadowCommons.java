@@ -6,14 +6,17 @@ import com.ssplugins.shadow.common.NamedReference;
 import com.ssplugins.shadow.common.Range;
 import com.ssplugins.shadow.common.ShadowIterator;
 import com.ssplugins.shadow.def.*;
-import com.ssplugins.shadow.element.Primitive;
-import com.ssplugins.shadow.element.ShadowElement;
-import com.ssplugins.shadow.element.ShadowSection;
+import com.ssplugins.shadow.element.*;
+import com.ssplugins.shadow.exceptions.ShadowException;
 import com.ssplugins.shadow.exceptions.ShadowExecutionException;
+import com.ssplugins.shadow.exceptions.ShadowParseException;
 
+import java.lang.reflect.Array;
 import java.util.*;
 
 public class ShadowCommons extends ShadowAPI {
+    
+    private ReplacerDef replacerExec = replacerExec();
 	
 	@Override
 	public List<ClassFinder> registerClassFinders() {
@@ -46,21 +49,29 @@ public class ShadowCommons extends ShadowAPI {
 		List<KeywordDef> out = new ArrayList<>();
 		out.add(keywordLog());
 		out.add(keywordSet());
+        out.add(keywordUnset());
 		out.add(keywordCall());
-		out.add(keywordASet());
+		out.add(keywordStore());
+		out.add(keywordBreak());
+        out.add(keywordBreakAll());
+        out.add(keywordRepeatIf());
+        out.add(keywordReturn());
+        out.add(keywordExec());
 		return out;
 	}
 	
 	@Override
 	public List<BlockDef> registerBlocks() {
 		List<BlockDef> out = new ArrayList<>();
-		out.add(blockTest());
+		out.add(blockMain());
+        out.add(blockBlock());
 		out.add(blockIf());
         out.add(blockElseIf());
 		out.add(blockElse());
 		out.add(blockCount());
 		out.add(blockWhile());
 		out.add(blockForEach());
+        out.add(blockDefine());
 		return out;
 	}
 	
@@ -69,6 +80,11 @@ public class ShadowCommons extends ShadowAPI {
 		List<ReplacerDef> out = new ArrayList<>();
 		out.add(replacerToString());
 		out.add(replacerEval());
+        out.add(replacerUpper());
+        out.add(replacerLower());
+        out.add(replacerArray());
+        out.add(replacerLen());
+        out.add(replacerExec);
 		return out;
 	}
 	
@@ -163,27 +179,30 @@ public class ShadowCommons extends ShadowAPI {
 	}
 	
 	private KeywordDef keywordSet() {
-		KeywordDef def = new KeywordDef("set", (def1, args, scope, stepper) -> {
-			String name = args.get(0).asPrimitive().asString();
-			scope.setVar(name, ShadowTools.executeEval(args.get(1).asEvalGroup(), scope).asReference().getValue());
-		});
-		def.setArgumentCount(Range.lowerBound(2));
-		def.setSplitter((content, context) -> {
-			int i = content.indexOf(' ');
-			if (i == -1) return new String[0];
-			return new String[] {content.substring(0, i), content.substring(i + 1)};
-		});
-		def.setSectionParser((sections, context) -> {
-			ShadowTools.verifyArgs(sections, 2, context);
-			List<ShadowSection> out = new ArrayList<>();
-			out.add(Primitive.string(sections[0]));
-			out.add(SectionParser.parseAsEval(sections[1], context));
-			return out;
-		});
-		return def;
+        KeywordDef def = new KeywordDef("set", (def1, args, scope, stepper) -> {
+            String name = args.get(0).asPrimitive().asString();
+            scope.setVar(name, ShadowTools.executeEval(args.get(1).asEvalGroup(), scope).asReference().getValue());
+        });
+        
+        def.setArgumentCount(Range.lowerBound(2));
+        
+        def.setSplitter((content, context) -> {
+            int i = content.indexOf(' ');
+            if (i == -1) return new String[0];
+            return new String[] {content.substring(0, i), content.substring(i + 1)};
+        });
+        
+        def.setSectionParser((sections, context) -> {
+            ShadowTools.verifyArgs(sections, 2, context);
+            List<ShadowSection> out = new ArrayList<>();
+            out.add(Primitive.string(sections[0]));
+            out.add(SectionParser.parseAsEval(sections[1], context));
+            return out;
+        });
+        return def;
 	}
 	
-	private KeywordDef keywordASet() {
+	private KeywordDef keywordStore() {
 		KeywordDef def = new KeywordDef("store", (def1, args, scope, stepper) -> {
 			String name = args.get(0).asPrimitive().asString();
 			Optional<Object> op = ShadowTools.asObject(args.get(1), scope);
@@ -236,16 +255,47 @@ public class ShadowCommons extends ShadowAPI {
 	
 	private KeywordDef keywordRepeatIf() {
 		KeywordDef def = new KeywordDef("repeatif", (def1, args, scope, stepper) -> {
-			//
+            boolean r = scope.getContext()
+                 .findBlock("if")
+                 .map(BlockDef::getEntryCondition)
+                 .map(cond -> cond.trigger(null, args, scope, stepper))
+                 .orElse(false);
+            if (r) {
+                stepper.next(StepAction.RESTART);
+            }
 		});
-		// TODO
+        def.setArgumentCount(Range.single(1));
 		return def;
 	}
 	
-	private BlockDef blockTest() {
-		BlockDef def = new BlockDef("test");
+	private KeywordDef keywordReturn() {
+        KeywordDef def = new KeywordDef("return", (def1, args, scope, stepper) -> {
+            Object o = ShadowTools.asObject(args.get(0), scope).orElseThrow(ShadowException.sectionConvert(scope.getContext()));
+            stepper.getReturnable().ifPresent(block -> block.setReturned(o));
+            stepper.next(StepAction.BREAK_ALL);
+        });
+        def.setArgumentCount(Range.single(1));
+        return def;
+    }
+    
+    private KeywordDef keywordExec() {
+	    KeywordDef def = new KeywordDef("exec", (def1, args, scope, stepper) -> {
+            replacerExec.getAction().apply(args, scope);
+        });
+	    def.setArgumentCount(Range.lowerBound(1));
+	    def.setSectionParser(replacerExec.getSectionParser());
+	    return def;
+    }
+	
+	private BlockDef blockMain() {
+		BlockDef def = new BlockDef("main");
 		return def;
 	}
+	
+	private BlockDef blockBlock() {
+        BlockDef def = new BlockDef("block");
+        return def;
+    }
 	
 	private BlockDef blockIf() {
 		BlockDef def = new BlockDef("if");
@@ -356,7 +406,7 @@ public class ShadowCommons extends ShadowAPI {
 	private BlockDef blockForEach() {
 		BlockDef def = new BlockDef("foreach");
 		def.setModifierCount(Range.single(1));
-		def.setParameterCount(Range.single(1));
+		def.setParameterCount(Range.from(1, 2));
 		def.setEntryCondition((def1, mods, scope, stepper) -> {
 			Optional<Object> op = ShadowTools.asObject(mods.get(0), scope);
 			if (!op.isPresent()) throw new ShadowExecutionException("Modifier could not be converted to object.");
@@ -372,17 +422,36 @@ public class ShadowCommons extends ShadowAPI {
 				return;
 			}
 			scope.setVar(parameters.get(0), oi.get().next());
+            if (parameters.size() > 1) {
+                scope.setVar(parameters.get(1), 0);
+            }
 		});
 		def.setEndEvent((def1, mods, parameters, scope, stepper) -> {
 			if (!ShadowIterator.hasIterator(scope)) return;
 			Optional<Iterator> oi = ShadowIterator.getIterator(scope, null);
 			if (oi.isPresent() && oi.get().hasNext()) {
                 scope.setVar(parameters.get(0), oi.get().next());
+                if (parameters.size() > 1) {
+                    Integer next = scope.getVar(parameters.get(1)).filter(ref -> ref.get() instanceof Integer).map(ref -> (Integer) ref.get() + 1).orElse(0);
+                    scope.setVar(parameters.get(1), next);
+                }
 				stepper.next(StepAction.RESTART);
 			}
 		});
 		return def;
 	}
+	
+	private BlockDef blockDefine() {
+        BlockDef def = new BlockDef("define");
+        def.setModifierCount(Range.single(1));
+        def.setSectionParser((sections, context) -> {
+            ShadowTools.verifyArgs(sections, 1, context);
+            if (!sections[0].matches("^[\\w\\d]+")) throw new ShadowParseException("Invalid function name.", context);
+            return Collections.singletonList(Primitive.string(sections[0]));
+        });
+        def.setReturnable(true);
+        return def;
+    }
 	
 	private ReplacerDef replacerToString() {
 		ReplacerDef def = new ReplacerDef("", (sections, scope) -> {
@@ -407,6 +476,82 @@ public class ShadowCommons extends ShadowAPI {
 		return def;
 	}
 	
+	private ReplacerDef replacerUpper() {
+	    ReplacerDef def = new ReplacerDef("upper", (shadowSections, scope) -> {
+            String s = ShadowTools.asObject(shadowSections.get(0), scope).map(Object::toString).orElse(ShadowTools.asString(shadowSections));
+            return new Primitive(s.toUpperCase());
+        });
+	    def.setSectionParser(SectionParser.standard());
+	    return def;
+    }
+    
+    private ReplacerDef replacerLower() {
+        ReplacerDef def = new ReplacerDef("lower", (shadowSections, scope) -> {
+            String s = ShadowTools.asObject(shadowSections.get(0), scope).map(Object::toString).orElse(ShadowTools.asString(shadowSections));
+            return new Primitive(s.toLowerCase());
+        });
+        def.setSectionParser(SectionParser.standard());
+        return def;
+    }
+    
+    private ReplacerDef replacerArray() {
+	    ReplacerDef def = new ReplacerDef("arr", (shadowSections, scope) -> {
+            Object value = ShadowTools.getArray(shadowSections, 0, scope);
+            Object index = ShadowTools.asObject(shadowSections.get(1), scope).orElseThrow(ShadowException.sectionConvert(scope.getContext()));
+            if (!(index instanceof Integer)) throw new ShadowExecutionException("Second parameter must be integer index.", scope.getContext());
+            return new Reference(Array.get(value, (Integer) index));
+        });
+	    def.setSplitter((content, context) -> content.split(","));
+	    def.setSectionParser((sections, context) -> {
+	        if (sections.length != 2) throw new ShadowParseException("Invalid arguments. Required 2, found " + sections.length, context);
+            List<ShadowSection> s = new ArrayList<>(2);
+            s.add(new ScopeVar(sections[0]));
+            s.addAll(SectionParser.standard().getSections(Arrays.copyOfRange(sections, 1, 2), context));
+            return s;
+        });
+	    return def;
+    }
+    
+    private ReplacerDef replacerLen() {
+        ReplacerDef def = new ReplacerDef("len", (shadowSections, scope) -> {
+            Object value = ShadowTools.getArray(shadowSections, 0, scope);
+            return Primitive.integer(Array.getLength(value));
+        });
+        def.setSectionParser((sections, context) -> {
+            ShadowTools.verifyArgs(sections, 1, context);
+            return Collections.singletonList(new ScopeVar(sections[0]));
+        });
+        return def;
+    }
+    
+    private ReplacerDef replacerExec() {
+	    replacerExec = new ReplacerDef("exec", (sections, scope) -> {
+            Optional<Block> b = scope.getShadow()
+                                     .streamBlocks()
+                                     .filter(block -> block.getName().equals("define"))
+                                     .filter(block -> block.getModifiers().get(0).asPrimitive().asString().equals(sections.get(0).asPrimitive().asString()))
+                                     .filter(block -> block.getParameters().size() == sections.size() - 1)
+                                     .findFirst();
+            if (!b.isPresent()) throw new ShadowExecutionException("Could not find matching '" + sections.get(0).asPrimitive().asString() + "' function.", scope.getContext());
+            Object[] params = sections.stream().skip(1).map(sec -> ShadowTools.asObject(sec, scope).orElseThrow(ShadowException.sectionConvert(scope.getContext()))).toArray();
+            Block block = b.get();
+            scope.getShadow().run(block, null, params);
+            Object returned = block.getReturned();
+            return new Reference(returned);
+        });
+	    replacerExec.setSplitter((content, context) -> content.split("(?<!\\\\),| "));
+	    replacerExec.setSectionParser((sections, context) -> {
+	        if (sections.length < 1) throw new ShadowParseException("Enter a function as a parameter.", context);
+            List<ShadowSection> s = new ArrayList<>();
+            s.add(Primitive.string(sections[0]));
+            if (sections.length > 1) {
+                s.addAll(SectionParser.standard().getSections(Arrays.copyOfRange(sections, 1, sections.length), context));
+            }
+            return s;
+        });
+	    return replacerExec;
+    }
+	
 	private EvalSymbolDef evalCast() {
 		EvalSymbolDef def = new EvalSymbolDef(">", (reference, section, scope) -> {
 			Optional<Class<?>> op = scope.getContext().findClass(section.getName());
@@ -422,7 +567,7 @@ public class ShadowCommons extends ShadowAPI {
             Reflect.of(reference, scope).method(section.getName(), section.getParams());
             return reference;
         });
-		return def;
+        return def;
 	}
 	
 	private EvalSymbolDef evalString() {
@@ -444,11 +589,11 @@ public class ShadowCommons extends ShadowAPI {
 	}
 	
 	private EvalSymbolDef evalConstruct() {
-		EvalSymbolDef def = new EvalSymbolDef("=", (reference, section, scope) -> {
-			Reflect.of(reference, scope).construct(section.getName(), section.getParams());
-			return reference;
-		});
-		return def;
+        EvalSymbolDef def = new EvalSymbolDef("=", (reference, section, scope) -> {
+            Reflect.of(reference, scope).construct(section.getName(), section.getParams());
+            return reference;
+        });
+        return def;
 	}
 	
 	private EvalSymbolDef evalField() {

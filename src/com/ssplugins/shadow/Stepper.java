@@ -1,10 +1,12 @@
 package com.ssplugins.shadow;
 
+import com.ssplugins.shadow.element.Block;
 import com.ssplugins.shadow.element.ShadowElement;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -12,6 +14,7 @@ public class Stepper {
 	
 	private Scope scope;
 	private Stepper parent;
+    private Block block;
 	
 	private ListIterator<ShadowElement> iterator;
 	private StepperAction stepperAction;
@@ -21,10 +24,11 @@ public class Stepper {
 	private AtomicReference<ShadowElement> lastElement;
 	private AtomicBoolean lastElementRan;
 	
-	public Stepper(List<ShadowElement> list, Scope scope, Stepper parent) {
+	public Stepper(Block block, Scope scope, Stepper parent, List<ShadowElement> list) {
 		this.iterator = Collections.unmodifiableList(list).listIterator();
 		this.scope = scope;
 		this.parent = parent;
+        this.block = block;
         if (parent != null) {
             lastElement = parent.lastElement;
             lastElementRan = parent.lastElementRan;
@@ -58,11 +62,24 @@ public class Stepper {
 	}
 	
 	private void breakAll() {
-		next(StepAction.BREAK_ALL);
+		if (action != StepAction.BREAK_ALL) next(StepAction.BREAK_ALL);
 		if (parent != null) parent.breakAll();
 	}
-	
-	public void setLastInfo(ShadowElement element, boolean ran) {
+    
+    public Block getBlock() {
+        return block;
+    }
+    
+    public Optional<Block> getReturnable() {
+	    Stepper s = this;
+        while (!s.block.isReturnable()) {
+            if (s.parent == null) return Optional.empty();
+            s = s.parent;
+        }
+        return Optional.of(s.block);
+    }
+    
+    public void setLastInfo(ShadowElement element, boolean ran) {
 	    lastElement.set(element);
 	    lastElementRan.set(ran);
 	}
@@ -94,12 +111,16 @@ public class Stepper {
 	}
 	
 	public void start() {
+	    if (action == StepAction.BREAK_ALL) return;
 		action = StepAction.NORMAL;
 		nextStep();
 	}
 	
 	public void next(StepAction action) {
 		this.action = (action == null ? StepAction.NORMAL : action);
+        if (this.action == StepAction.BREAK_ALL) {
+            breakAll();
+        }
 	}
 	
 	public StepAction getAction() {
@@ -125,22 +146,23 @@ public class Stepper {
 				scope.clearScope();
 				action = StepAction.NORMAL;
 			}
-			else if (action == StepAction.PAUSE) break;
+//			else if (action == StepAction.PAUSE) break;
 			else if (action == StepAction.BREAK) break;
 			else if (action == StepAction.BREAK_ALL) {
 				breakAll();
 				break;
 			}
 		}
-		if (action != StepAction.PAUSE) {
-			onFinish();
-		}
+		onFinish();
+//		if (action != StepAction.PAUSE) {
+//			onFinish();
+//		}
 	}
 	
 	public enum StepAction {
 		NORMAL,
 		RESTART,
-		PAUSE,
+//		PAUSE,
 		BREAK,
 		BREAK_ALL,
 		BREAK_BLOCK_CHAIN

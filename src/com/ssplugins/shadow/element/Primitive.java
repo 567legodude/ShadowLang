@@ -40,6 +40,20 @@ public class Primitive extends ShadowSection {
 		p.type = Type.STRING;
 		return p;
 	}
+    
+    public static Primitive integer(int i) {
+        Primitive p = new Primitive();
+        p.value = i;
+        p.type = Type.NUMBER;
+        return p;
+    }
+    
+    public static Primitive decimal(double d) {
+        Primitive p = new Primitive();
+        p.value = d;
+        p.type = Type.NUMBER;
+        return p;
+    }
 	
 	public boolean isString() {
 		return type == Type.STRING;
@@ -52,6 +66,14 @@ public class Primitive extends ShadowSection {
 	public boolean isNumber() {
 		return type == Type.NUMBER;
 	}
+	
+	public boolean isInt() {
+        return value instanceof Integer;
+    }
+    
+    public boolean isDouble() {
+        return value instanceof Double;
+    }
 	
 	public boolean isNull() {
 		return type ==Type.NULL;

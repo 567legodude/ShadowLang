@@ -44,16 +44,11 @@ public class ShadowIterator {
 	}
 	
 	private static Iterator fromArray(Object o) {
-		List<Object> list = new ArrayList<>();
-		int i = 0;
-		while (i != -1) {
-			try {
-				list.add(Array.get(o, i));
-				i++;
-			} catch (ArrayIndexOutOfBoundsException ignored) {
-				i = -1;
-			}
-		}
+        int len = Array.getLength(o);
+		List<Object> list = new ArrayList<>(len);
+        for (int i = 0; i < len; ++i) {
+            list.add(Array.get(o, i));
+        }
 		return list.iterator();
 	}
 

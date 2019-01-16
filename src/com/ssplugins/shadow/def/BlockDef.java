@@ -12,7 +12,8 @@ public final class BlockDef implements MiniParser {
 	private BlockAction endEvent;
 	private Range modifierCount = Range.any();
 	private Range parameterCount = Range.any();
-	private boolean provideParams;
+    private boolean provideParams;
+    private boolean returnable;
 	
 	private SectionParser parser;
 	private Splitter splitter;
@@ -82,8 +83,16 @@ public final class BlockDef implements MiniParser {
 	public void setProvideParams(boolean provideParams) {
 		this.provideParams = provideParams;
 	}
-	
-	@Override
+    
+    public boolean isReturnable() {
+        return returnable;
+    }
+    
+    public void setReturnable(boolean returnable) {
+        this.returnable = returnable;
+    }
+    
+    @Override
 	public void setSectionParser(SectionParser parser) {
 		this.parser = parser;
 	}

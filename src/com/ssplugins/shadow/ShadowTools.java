@@ -145,9 +145,8 @@ public final class ShadowTools {
 				builder.append(getScopeVar(section.asScopeVar(), scope));
 			}
 			else builder.append(section.toString());
-			builder.append(" ");
 		});
-		return builder.substring(0, builder.length() - 1);
+		return builder.toString();
 	}
 	
 	public static ShadowSection getExpressionValue(Expression exp, Scope scope) {
@@ -211,5 +210,13 @@ public final class ShadowTools {
 		Optional<NamedReference<Object>> v = scope.getVar(var.getVar());
 		return v.<ShadowSection>map(ref -> new Reference(ref.get())).orElseGet(Empty::new);
 	}
-	
+    
+    public static Object getArray(List<ShadowSection> sections, int i, Scope scope) {
+        Optional<Object> o = asObject(sections.get(i), scope);
+        if (!o.isPresent()) throw new ShadowExecutionException("First parameter could not be converted to object.", scope.getContext());
+        Object arr = o.get();
+        if (!arr.getClass().isArray()) throw new ShadowExecutionException("Variable is not array.", scope.getContext());
+        return arr;
+    }
+    
 }

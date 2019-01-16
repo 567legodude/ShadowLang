@@ -16,7 +16,7 @@ public class Executor {
 	private Scope scope;
 	
 	public Executor(Shadow shadow) {
-		this.scope = new Scope(shadow.getContext());
+		this.scope = new Scope(shadow, shadow.getContext());
 	}
 	
 	public Scope getScope() {
@@ -27,7 +27,7 @@ public class Executor {
 		Debug.log("Executing block: " + block.getName());
 		List<ShadowElement> list = block.getContent();
 		Scope scope = parentScope.newChild();
-		Stepper stepper = new Stepper(list, scope, parentStepper);
+		Stepper stepper = new Stepper(block, scope, parentStepper, list);
 		Optional<BlockDef> op = scope.getContext().findBlock(block.getName());
 		if (!op.isPresent()) {
 			if (scope.getContext().getParseLevel().strictBlocks()) throw new ShadowExecutionException("Unknown block: " + block.getName(), block.getLine());
@@ -61,6 +61,7 @@ public class Executor {
 			    onFinish.run();
             }
 		});
+		block.setReturned(null);
 		stepper.start();
 		return true;
 	}
@@ -76,7 +77,6 @@ public class Executor {
 	
 	private void run(Stepper stepper, Scope scope, ShadowElement element) {
 		if (element.isBlock()) {
-			//stepper.next(StepAction.PAUSE);
 			boolean run = execute(scope, stepper, element.asBlock(), stepper::start);
 			stepper.setLastInfo(element, run);
 		}

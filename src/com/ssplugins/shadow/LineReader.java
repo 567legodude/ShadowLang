@@ -53,11 +53,11 @@ public class LineReader {
 		INVALID;
 	}
 	
-	public class LineData {
+	public static class LineData {
 		
-		private final Pattern BLOCK_PATTERN = Pattern.compile("^(\\w+)(?: ((?:\\S+(?:\\{.*})? ??)+))?(?: \\(([^)]+)\\))? ?\\{$");
-		private final Pattern KEYWORD_PATTERN = Pattern.compile("^(\\w+)(?: ((?:\\S+(?:\\{.*})? ?)+))?$");
-		private final Pattern ARG_SPLITTER = Pattern.compile("(?:\"(.*?)(?<!\\\\)\"|(\\S+)(?:\\{(.*)})?) ?");
+		private static final Pattern BLOCK_PATTERN = Pattern.compile("^(\\w+)(?: ((?:\\S+(?:\\{.*})? ??)+))?(?: \\(([^)]+)\\))? ?\\{$");
+		private static final Pattern KEYWORD_PATTERN = Pattern.compile("^(\\w+)(?: ((?:\\S+(?:\\{.*})? ?)+))?$");
+		private static final Pattern ARG_SPLITTER = Pattern.compile("(?:[\"(](.*?)(?<!\\\\)[\")]|(\\S+)(?:\\{(.*)})?) ?");
 		
 		private String raw;
 		private LineType type;
@@ -84,27 +84,29 @@ public class LineReader {
 				type = LineType.BLOCK_CLOSE;
 				return;
 			}
-			boolean success;
-			success = testLine(BLOCK_PATTERN, matcher -> {
-				type = LineType.BLOCK_HEADER;
-				name = matcher.group(1);
-				String mods = matcher.group(2);
-				if (mods != null) {
-					LineData.this.mods = mods;
-					LineData.this.splitMods = split(mods, ARG_SPLITTER);
-				}
-				else {
-					LineData.this.mods = "";
-					LineData.this.splitMods = new String[0];
-				}
-				String params = matcher.group(3);
-				if (params != null) {
-					LineData.this.params = params.split(", *");
-				}
-				else {
-					LineData.this.params = new String[0];
-				}
-			});
+			boolean success = false;
+			if (raw.endsWith("{")) {
+                success = testLine(BLOCK_PATTERN, matcher -> {
+                    type = LineType.BLOCK_HEADER;
+                    name = matcher.group(1);
+                    String mods = matcher.group(2);
+                    if (mods != null) {
+                        LineData.this.mods = mods;
+                        LineData.this.splitMods = split(mods, ARG_SPLITTER);
+                    }
+                    else {
+                        LineData.this.mods = "";
+                        LineData.this.splitMods = new String[0];
+                    }
+                    String params = matcher.group(3);
+                    if (params != null) {
+                        LineData.this.params = params.split(", *");
+                    }
+                    else {
+                        LineData.this.params = new String[0];
+                    }
+                });
+            }
 			if (!success) {
 				success = testLine(KEYWORD_PATTERN, matcher -> {
 					type = LineType.KEYWORD;
@@ -138,7 +140,7 @@ public class LineReader {
 			while (m.find()) {
 				out.add(m.group().trim());
 			}
-			return out.toArray(new String[out.size()]);
+			return out.toArray(new String[0]);
 		}
 		
 		public LineType getType() {

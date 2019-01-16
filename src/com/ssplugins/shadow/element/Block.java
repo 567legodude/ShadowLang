@@ -12,6 +12,9 @@ public final class Block extends ShadowElement {
 	private List<String> parameters;
 	private List<ShadowElement> content;
 	
+	private boolean returnable;
+	private Object returned;
+	
 	public Block(ParseContext context, String name, List<ShadowSection> modifiers, List<String> parameters, List<ShadowElement> content) {
 		super(context);
 		this.name = name;
@@ -35,5 +38,21 @@ public final class Block extends ShadowElement {
 	public List<ShadowElement> getContent() {
 		return content;
 	}
-	
+    
+    public boolean isReturnable() {
+        return returnable;
+    }
+    
+    public void setReturnable(boolean returnable) {
+        this.returnable = returnable;
+    }
+    
+    public Object getReturned() {
+        return returned;
+    }
+    
+    public void setReturned(Object returned) {
+        this.returned = returned;
+    }
+    
 }

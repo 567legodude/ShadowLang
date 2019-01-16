@@ -11,19 +11,7 @@ import java.util.function.BiFunction;
 
 public final class Expressions {
 	
-	private static ShadowSection mathOp(ShadowSection left, ShadowSection right, Scope scope, BiFunction<Integer, Integer, Integer> ints, BiFunction<Double, Double, Double> doubles) {
-		Object l = ShadowTools.asObject(left, scope).orElseThrow(ShadowException.sectionConvert());
-		Object r = ShadowTools.asObject(right, scope).orElseThrow(ShadowException.sectionConvert());
-		if (l instanceof Number && r instanceof Number) {
-			Number ln = (Number) l;
-			Number rn = (Number) r;
-			if (ln instanceof Double || rn instanceof Double) return new Reference(doubles.apply(ln.doubleValue(), rn.doubleValue()));
-			else return new Reference(ints.apply(ln.intValue(), rn.intValue()));
-		}
-		throw new ShadowExecutionException("Invalid operands. Numbers only.");
-	}
-	
-	private static ShadowSection compareOp(ShadowSection left, ShadowSection right, Scope scope, BiFunction<Integer, Integer, Boolean> ints, BiFunction<Double, Double, Boolean> doubles) {
+	private static ShadowSection mathOp(ShadowSection left, ShadowSection right, Scope scope, BiFunction<Integer, Integer, Object> ints, BiFunction<Double, Double, Object> doubles) {
 		Object l = ShadowTools.asObject(left, scope).orElseThrow(ShadowException.sectionConvert());
 		Object r = ShadowTools.asObject(right, scope).orElseThrow(ShadowException.sectionConvert());
 		if (l instanceof Number && r instanceof Number) {
@@ -70,19 +58,19 @@ public final class Expressions {
 	}
 	
 	public static ShadowSection lessThan(ShadowSection left, ShadowSection right, Scope scope) {
-		return compareOp(left, right, scope, (integer, integer2) -> integer < integer2, (aDouble, aDouble2) -> aDouble < aDouble2);
+		return mathOp(left, right, scope, (integer, integer2) -> integer < integer2, (aDouble, aDouble2) -> aDouble < aDouble2);
 	}
 	
 	public static ShadowSection lessThanEqual(ShadowSection left, ShadowSection right, Scope scope) {
-		return compareOp(left, right, scope, (integer, integer2) -> integer <= integer2, (aDouble, aDouble2) -> aDouble <= aDouble2);
+		return mathOp(left, right, scope, (integer, integer2) -> integer <= integer2, (aDouble, aDouble2) -> aDouble <= aDouble2);
 	}
 	
 	public static ShadowSection greaterThan(ShadowSection left, ShadowSection right, Scope scope) {
-		return compareOp(left, right, scope, (integer, integer2) -> integer > integer2, (aDouble, aDouble2) -> aDouble > aDouble2);
+		return mathOp(left, right, scope, (integer, integer2) -> integer > integer2, (aDouble, aDouble2) -> aDouble > aDouble2);
 	}
 	
 	public static ShadowSection greaterThanEqual(ShadowSection left, ShadowSection right, Scope scope) {
-		return compareOp(left, right, scope, (integer, integer2) -> integer >= integer2, (aDouble, aDouble2) -> aDouble >= aDouble2);
+		return mathOp(left, right, scope, (integer, integer2) -> integer >= integer2, (aDouble, aDouble2) -> aDouble >= aDouble2);
 	}
 	
 	public static ShadowSection equals(ShadowSection left, ShadowSection right, Scope scope) {

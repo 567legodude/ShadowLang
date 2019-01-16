@@ -6,6 +6,7 @@ import com.ssplugins.shadow.element.ShadowElement;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Shadow {
 	
@@ -34,6 +35,10 @@ public class Shadow {
 	public List<Block> getBlocks() {
 		return elements.stream().filter(ShadowElement::isBlock).map(ShadowElement::asBlock).collect(Collectors.toList());
 	}
+	
+	public Stream<Block> streamBlocks() {
+	    return elements.stream().filter(ShadowElement::isBlock).map(ShadowElement::asBlock);
+    }
 	
 	public List<Block> getBlocks(String name) {
 		return getBlocks().stream().filter(block -> block.getName().equalsIgnoreCase(name)).collect(Collectors.toList());

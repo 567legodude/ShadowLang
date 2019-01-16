@@ -71,7 +71,7 @@ public interface SectionParser {
 	
 	static SectionParser standard() {
 		return (sections, context) -> {
-			Debug.log("~Parsing with standard parser");
+			Debug.log("~Parsing section with standard parser");
 			List<ShadowSection> out = new ArrayList<>();
 			for (int i = 0; i < sections.length; i++) {
 				String s = sections[i];
@@ -96,11 +96,16 @@ public interface SectionParser {
 	}
 	
 	static ShadowSection getSection(String section, ParseContext context) {
-		Debug.log("parsing as section");
+		Debug.log("interpreting value...");
+        if (section.startsWith("(") && section.endsWith(")")) {
+            section = section.substring(1, section.length() - 1);
+        }
 		if (section.startsWith("\"") && section.endsWith("\"")) {
+		    Debug.log("literal string");
 			return Primitive.string(section.substring(1, section.length() - 1).replace("\\\"", "\""));
 		}
 		else if (section.contains("{") && section.contains("}")) {
+		    Debug.log("replacer");
 			int b = section.indexOf('{');
 			String token = section.substring(0, b);
 			String content = section.substring(b + 1, section.lastIndexOf('}'));
@@ -112,11 +117,13 @@ public interface SectionParser {
 			return new Replacer(token, parser.getSections(splitter.split(content, context), context));
 		}
 		else if (section.contains("[") && section.contains("]")) {
+		    Debug.log("variable");
 			int b = section.indexOf('[');
 			String content = section.substring(b + 1, section.lastIndexOf("]"));
 			return new ScopeVar(content);
 		}
 		else {
+		    Debug.log("primitive");
 			return new Primitive(section);
 		}
 	}

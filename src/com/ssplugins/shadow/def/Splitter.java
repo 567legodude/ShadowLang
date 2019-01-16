@@ -21,7 +21,7 @@ public interface Splitter {
 			while (m.find()) {
 				list.add(m.group());
 			}
-			return list.toArray(new String[list.size()]);
+			return list.toArray(new String[0]);
 		};
 	}
 	

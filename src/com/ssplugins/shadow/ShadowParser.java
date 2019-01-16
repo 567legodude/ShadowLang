@@ -3,7 +3,9 @@ package com.ssplugins.shadow;
 import com.ssplugins.shadow.LineReader.LineData;
 import com.ssplugins.shadow.Shadow.ShadowBuilder;
 import com.ssplugins.shadow.common.ParseLevel;
-import com.ssplugins.shadow.def.*;
+import com.ssplugins.shadow.def.BlockDef;
+import com.ssplugins.shadow.def.KeywordDef;
+import com.ssplugins.shadow.def.SectionParser;
 import com.ssplugins.shadow.element.Block;
 import com.ssplugins.shadow.element.Keyword;
 import com.ssplugins.shadow.element.ShadowElement;
@@ -52,11 +54,12 @@ public class ShadowParser {
 		}
 		KeywordDef def = op.orElse(KeywordDef.temporary(keyword));
 		String[] args = ShadowTools.get(def.getSplitter()).map(splitter -> splitter.split(data.getArgs(), context)).orElse(data.getSplitArgs());
-		if (def.getArgumentCount().outsideRange(args.length)) {
-			throw new ShadowParseException("Keyword " + keyword + " expects " + def.getArgumentCount().toString() + " arguments, counted " + args.length + ".", context);
-		}
 		SectionParser parser = ShadowTools.get(def.getSectionParser()).orElse(SectionParser.standard());
-		return new Keyword(context, keyword, parser.getSections(args, context));
+        List<ShadowSection> argList = parser.getSections(args, context);
+        if (def.getArgumentCount().outsideRange(argList.size())) {
+            throw new ShadowParseException("Keyword " + keyword + " expects " + def.getArgumentCount().toString() + " arguments, counted " + args.length + ".", context);
+        }
+        return new Keyword(context, keyword, argList);
 	}
 	
 	private Block parseBlock(LineData data, List<ShadowElement> content, ParseContext context) {
@@ -78,7 +81,9 @@ public class ShadowParser {
 		if (def.getModifierCount().outsideRange(sections.size())) {
 			throw new ShadowParseException("Block " + name + " expects " + def.getModifierCount().toString() + " modifiers, counted " + mods.length + ".", context);
 		}
-		return new Block(context, name, sections, Arrays.asList(params), content);
+        Block block = new Block(context, name, sections, Arrays.asList(params), content);
+		block.setReturnable(def.isReturnable());
+        return block;
 	}
 	
 	private List<ShadowElement> parseElements(List<String> content, ShadowContext context) {
@@ -90,7 +95,6 @@ public class ShadowParser {
 		List<ShadowElement> elements = new ArrayList<>();
 		LineReader reader = new LineReader(content);
 		while (reader.hasNextLine()) {
-			context.nextLine();
 			LineData data = reader.readNextLine();
 			context.setRaw(data.getRaw());
 			Debug.log(context.toString());

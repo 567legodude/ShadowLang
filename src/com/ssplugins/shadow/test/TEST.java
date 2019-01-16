@@ -1,6 +1,5 @@
 package com.ssplugins.shadow.test;
 
-import com.ssplugins.shadow.Debug;
 import com.ssplugins.shadow.Shadow;
 import com.ssplugins.shadow.ShadowParser;
 
@@ -14,7 +13,7 @@ import java.util.List;
 public class TEST {
 	
 	public static void main(String[] args) throws IOException {
-		Debug.setEnabled(true);
+//		Debug.setEnabled(true);
 		
 		InputStream stream = TEST.class.getResourceAsStream("/com/ssplugins/shadow/test/testy.shd");
 		BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
@@ -28,12 +27,12 @@ public class TEST {
 		
 		ShadowParser parser = new ShadowParser();
 		Shadow shadow = parser.parse(lines);
-		Debug.separator();
-		shadow.getElements().forEach(element -> {
-			Debug.log(element.getClass().getSimpleName());
-		});
-		Debug.separator();
-		shadow.getBlocks("test").forEach(block -> {
+//		Debug.separator();
+//		shadow.getElements().forEach(element -> {
+//			Debug.log(element.getClass().getSimpleName());
+//		});
+//		Debug.separator();
+		shadow.getBlocks("main").forEach(block -> {
 			shadow.run(block, null);
 		});
 	}
