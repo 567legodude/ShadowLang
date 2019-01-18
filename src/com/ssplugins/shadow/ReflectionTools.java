@@ -6,27 +6,33 @@ import com.ssplugins.shadow.exceptions.ShadowExecutionException;
 import java.lang.reflect.*;
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 public final class ReflectionTools {
 	
 	public static Optional<Method> findMethod(TypeReference ref, String methodName, Object[] params) {
-		Optional<Method> method = Optional.empty();
+		AtomicReference<Optional<Method>> method = new AtomicReference<>(Optional.empty());
 		Class<?> toCheck;
 		if (ref.getValue() != null) toCheck = ref.getValue().getClass();
 		else toCheck = ref.getType();
 		while (toCheck != null) {
-			method = methodSearch(toCheck, methodName, params);
-			if (method.isPresent()) break;
-			for (Class<?> i : toCheck.getInterfaces()) {
-				method = methodSearch(i, methodName, params);
-				if (method.isPresent()) break;
-			}
-			if (method.isPresent()) break;
+			method.set(methodSearch(toCheck, methodName, params));
+			if (method.get().isPresent()) break;
+			interfaceSearch(method, toCheck, methodName, params);
 			toCheck = toCheck.getSuperclass();
 		}
-		return method;
+		return method.get();
 	}
+    
+    private static void interfaceSearch(AtomicReference<Optional<Method>> ref, Class<?> start, String methodNamme, Object[] params) {
+        for (Class<?> i : start.getInterfaces()) {
+            ref.set(methodSearch(i, methodNamme, params));
+            if (ref.get().isPresent()) break;
+            interfaceSearch(ref, i, methodNamme, params);
+            if (ref.get().isPresent()) break;
+        }
+    }
 	
 	public static void callMethod(TypeReference ref, Method method, Object[] params) {
 		if (method.isVarArgs()) {
