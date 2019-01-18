@@ -50,8 +50,8 @@ public class LineReader {
 		KEYWORD,
 		EMPTY,
 		COMMENT,
-		INVALID;
-	}
+		INVALID
+    }
 	
 	public static class LineData {
 		

@@ -76,19 +76,13 @@ public final class Expressions {
 	public static ShadowSection equals(ShadowSection left, ShadowSection right, Scope scope) {
 		Object l = ShadowTools.asObject(left, scope).orElseThrow(ShadowException.sectionConvert());
 		Object r = ShadowTools.asObject(right, scope).orElseThrow(ShadowException.sectionConvert());
-		if (l instanceof String || r instanceof String) {
-			return new Reference(l.equals(r));
-		}
-		return new Reference(l == r);
+		return new Reference(l.equals(r));
 	}
 	
 	public static ShadowSection notEquals(ShadowSection left, ShadowSection right, Scope scope) {
 		Object l = ShadowTools.asObject(left, scope).orElseThrow(ShadowException.sectionConvert());
 		Object r = ShadowTools.asObject(right, scope).orElseThrow(ShadowException.sectionConvert());
-		if (l instanceof String || r instanceof String) {
-			return new Reference(!l.equals(r));
-		}
-		return new Reference(l != r);
+		return new Reference(!l.equals(r));
 	}
 	
 	public static ShadowSection and(ShadowSection left, ShadowSection right, Scope scope) {

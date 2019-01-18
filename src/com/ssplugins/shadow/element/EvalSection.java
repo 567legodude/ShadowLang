@@ -30,7 +30,7 @@ public class EvalSection extends ShadowSection {
 	
 	@Override
 	public String toString() {
-		return token + name + ShadowTools.asString(params);
+		return token + name + (params.size() > 0 ? "(" + ShadowTools.asString(params) + ")" : "");
 	}
 	
 }

@@ -1,5 +1,5 @@
 main {
-    store count exec{count_chars,"aaa"}
+    store count exec{count_chars,"aaabcac"}
     log [count]
 }
 

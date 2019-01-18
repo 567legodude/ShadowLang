@@ -111,7 +111,7 @@ public class Primitive extends ShadowSection {
 		STRING,
 		NUMBER,
 		BOOLEAN,
-		NULL;
-	}
+		NULL
+    }
 	
 }
