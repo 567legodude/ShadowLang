@@ -49,9 +49,9 @@ public final class Expressions {
 		return mathOp(left, right, scope, (integer, integer2) -> integer * integer2, (aDouble, aDouble2) -> aDouble * aDouble2);
 	}
 	
-	public static ShadowSection divide(ShadowSection left, ShadowSection right, Scope scope) {
-		return mathOp(left, right, scope, (integer, integer2) -> integer / integer2, (aDouble, aDouble2) -> aDouble / aDouble2);
-	}
+    public static ShadowSection divide(ShadowSection left, ShadowSection right, Scope scope) {
+        return mathOp(left, right, scope, (integer, integer2) -> integer / integer2, (aDouble, aDouble2) -> aDouble / aDouble2);
+    }
 	
 	public static ShadowSection mod(ShadowSection left, ShadowSection right, Scope scope) {
 		return mathOp(left, right, scope, (integer, integer2) -> integer % integer2, (aDouble, aDouble2) -> aDouble % aDouble2);

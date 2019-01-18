@@ -172,10 +172,10 @@ public class ShadowCommons extends ShadowAPI {
 	}
 	
 	private KeywordDef keywordLog() {
-		KeywordDef def = new KeywordDef("log", (def1, args, scope, stepper) -> {
-			System.out.println(ShadowTools.sectionsToString(args, scope));
-		});
-		return def;
+        KeywordDef def = new KeywordDef("log", (def1, args, scope, stepper) -> {
+            System.out.println(ShadowTools.sectionsToString(args, scope));
+        });
+        return def;
 	}
 	
 	private KeywordDef keywordSet() {

@@ -95,6 +95,7 @@ public class ShadowParser {
 		List<ShadowElement> elements = new ArrayList<>();
 		LineReader reader = new LineReader(content);
 		while (reader.hasNextLine()) {
+		    context.nextLine();
 			LineData data = reader.readNextLine();
 			context.setRaw(data.getRaw());
 			Debug.log(context.toString());
