@@ -1,15 +1,20 @@
-test {
-    set list =ArrayList
-    call <list:add(test1)
-    call <list:add(test2)
-    foreach [list] (i) {
-        log [i]
-    }
+main {
+    store count exec{count_chars,"aaa"}
+    log [count]
+}
 
-    set index ->0
-    while [index] < 5 {
-        log [index]
-        aset index [index] + 1
+define count_chars (str) {
+    set map =HashMap
+    store i 0
+    while [i] < %{str:length} {
+        set c str:charAt([i])
+        if %{map:containsKey([c])} == false {
+            call map:put([c], 0)
+        }
+        set count map:get([c])
+        store count [count] + 1
+        call map:put([c], [count])
+        store i [i] + 1
     }
-    log done
+    return [map]
 }
