@@ -11,6 +11,9 @@ import com.ssplugins.shadow.exceptions.ShadowException;
 import com.ssplugins.shadow.exceptions.ShadowExecutionException;
 import com.ssplugins.shadow.exceptions.ShadowParseException;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.Array;
 import java.util.*;
 
@@ -82,9 +85,10 @@ public class ShadowCommons extends ShadowAPI {
 		out.add(replacerEval());
         out.add(replacerUpper());
         out.add(replacerLower());
-        out.add(replacerArray());
+        out.add(replacerArr());
         out.add(replacerLen());
         out.add(replacerExec);
+        out.add(replacerInput());
 		return out;
 	}
 	
@@ -494,7 +498,7 @@ public class ShadowCommons extends ShadowAPI {
         return def;
     }
     
-    private ReplacerDef replacerArray() {
+    private ReplacerDef replacerArr() {
 	    ReplacerDef def = new ReplacerDef("arr", (shadowSections, scope) -> {
             Object value = ShadowTools.getArray(shadowSections, 0, scope);
             Object index = ShadowTools.asObject(shadowSections.get(1), scope).orElseThrow(ShadowException.sectionConvert(scope.getContext()));
@@ -550,6 +554,23 @@ public class ShadowCommons extends ShadowAPI {
             return s;
         });
 	    return replacerExec;
+    }
+    
+    private ReplacerDef replacerInput() {
+	    ReplacerDef def = new ReplacerDef("input", (shadowSections, scope) -> {
+            String query = ShadowTools.get(shadowSections)
+                                       .filter(ss -> ss.size() > 0)
+                                       .flatMap(ss -> ShadowTools.asObject(ss.get(0), scope))
+                                       .map(Object::toString).orElse("");
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(System.in))) {
+                System.out.print(query);
+                return Primitive.string(reader.readLine());
+            } catch (IOException e) {
+                return new Empty();
+            }
+        });
+	    def.setSectionParser(SectionParser.standard());
+	    return def;
     }
 	
 	private EvalSymbolDef evalCast() {

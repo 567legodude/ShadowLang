@@ -160,7 +160,7 @@ public final class ShadowTools {
 		Optional<ReplacerDef> op = scope.getContext().findReplacer(replacer.getToken());
 		if (!op.isPresent()) throw new ShadowExecutionException("Replacer not found: " + replacer.getToken());
 		List<ShadowSection> content = replacer.getContent();
-		if (content.size() == 0) return new Empty();
+		if (content.size() == 0) return get(op.get().getAction()).map(action -> action.apply(Collections.emptyList(), scope)).orElse(new Empty());
 		else {
 			ShadowSection section = content.get(0);
 			if (section.isLazyReplacer()) {

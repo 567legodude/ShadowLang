@@ -11,10 +11,18 @@ define count_chars (str) {
         if %{map:containsKey([c])} == false {
             call map:put([c], 0)
         }
-        set count map:get([c])
-        store count [count] + 1
-        call map:put([c], [count])
+        set c map:get([c])
+        store c [c] + 1
+        call map:put([c], [c])
         store i [i] + 1
     }
     return [map]
 }
+
+
+
+define count_chars (str) {
+^      ^           ^^    ^
+keyword
+       modifier    parentheses
+

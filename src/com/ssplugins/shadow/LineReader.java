@@ -57,7 +57,7 @@ public class LineReader {
 		
 		private static final Pattern BLOCK_PATTERN = Pattern.compile("^(\\w+)(?: ((?:\\S+(?:\\{.*})? ??)+))?(?: \\(([^)]+)\\))? ?\\{$");
 		private static final Pattern KEYWORD_PATTERN = Pattern.compile("^(\\w+)(?: ((?:\\S+(?:\\{.*})? ?)+))?$");
-		private static final Pattern ARG_SPLITTER = Pattern.compile("(?:[\"(](.*?)(?<!\\\\)[\")]|(\\S+)(?:\\{(.*)})?) ?");
+		private static final Pattern ARG_SPLITTER = Pattern.compile("(?:\"(.*?)(?<!\\\\)\"|\\((.*?)(?<!\\\\)\\)|(\\S+)(?:\\{(.*)})?) ?");
 		
 		private String raw;
 		private LineType type;
