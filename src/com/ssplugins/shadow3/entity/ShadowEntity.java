@@ -4,15 +4,20 @@ import com.ssplugins.shadow3.parsing.TokenLine;
 
 public abstract class ShadowEntity {
     
+    private Flow flow;
     private ShadowEntity previous;
     private ShadowEntity next;
     
     private TokenLine line;
-    private Block parent;
+    private ShadowEntity parent;
     
-    public ShadowEntity(TokenLine line, Block parent) {
+    private boolean inline;
+    
+    public ShadowEntity(TokenLine line, ShadowEntity parent, boolean inline) {
         this.line = line;
         this.parent = parent;
+        this.inline = inline;
+        flow = new Flow(this);
     }
     
     ShadowEntity getPrevious() {
@@ -29,6 +34,18 @@ public abstract class ShadowEntity {
     
     void setNext(ShadowEntity next) {
         this.next = next;
+    }
+    
+    public Flow flow() {
+        return flow;
+    }
+    
+    public ShadowEntity getParent() {
+        return parent;
+    }
+    
+    public boolean isInline() {
+        return inline;
     }
     
 }

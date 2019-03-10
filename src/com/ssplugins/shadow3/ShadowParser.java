@@ -10,6 +10,9 @@ import com.ssplugins.shadow3.section.ShadowSection;
 import java.util.List;
 
 public class ShadowParser {
+    
+    public static final int ERR_NO_CLOSING = -1;
+    public static final int ERR_TOO_MANY_CLOSING = -2;
 
     private ShadowContext context;
     private Parser parser = this::toSection;

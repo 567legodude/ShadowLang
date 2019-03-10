@@ -22,8 +22,8 @@ public class Call extends ShadowSection {
             Token token = tokens[i];
             if (token.getType() == TokenType.GROUP_OPEN) {
                 int last = ShadowParser.findGroupEnd(tokens, i, end);
-                if (last == -1) throw new NamedShadowException("ParseError", line, token.getIndex(), "Unable to find closing token.");
-                if (last == -2) throw new NamedShadowException("ParseError", line, token.getIndex(), "Too many closing tokens.");
+                if (last == ShadowParser.ERR_NO_CLOSING) throw new NamedShadowException("ParseError", line, token.getIndex(), "Unable to find closing token.");
+                if (last == ShadowParser.ERR_TOO_MANY_CLOSING) throw new NamedShadowException("ParseError", line, token.getIndex(), "Too many closing tokens.");
                 i = last;
             }
             else if (token.getRaw().equals(",")) {

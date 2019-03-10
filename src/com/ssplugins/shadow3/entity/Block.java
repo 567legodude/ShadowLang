@@ -15,12 +15,8 @@ public class Block extends ShadowEntity {
     // Action interface
     
     public Block(TokenLine line, Block parent, String name) {
-        super(line, parent);
+        super(line, parent, false);
         this.name = name;
-    }
-    
-    public Flow flow() {
-        return new Flow(this);
     }
     
     public String getName() {

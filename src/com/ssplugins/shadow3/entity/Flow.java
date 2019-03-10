@@ -24,6 +24,11 @@ public class Flow {
         return this;
     }
     
+    public Flow parent() {
+        if (current != null) current = current.getParent();
+        return this;
+    }
+    
     public boolean isBlock(String... names) {
         if (current == null) return false;
         if (!(current instanceof Block)) return false;
