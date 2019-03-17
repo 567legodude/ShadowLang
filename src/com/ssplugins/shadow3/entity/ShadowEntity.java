@@ -31,4 +31,12 @@ public abstract class ShadowEntity {
         this.next = next;
     }
     
+    public TokenLine getLine() {
+        return line;
+    }
+    
+    public Block getParent() {
+        return parent;
+    }
+    
 }

@@ -24,7 +24,7 @@ public class ShadowException extends RuntimeException {
     }
     
     public ShadowException(TokenLine tokenLine, int pos, String message) {
-        this(tokenLine.getRaw(), tokenLine.getLine(), pos, message);
+        this(tokenLine.getRaw(), tokenLine.getLineNumber(), pos, message);
     }
     
     public ShadowException(String raw, int line, int pos, String message, Throwable cause) {

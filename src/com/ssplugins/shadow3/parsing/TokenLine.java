@@ -30,7 +30,7 @@ public class TokenLine {
         return raw;
     }
     
-    public int getLine() {
+    public int getLineNumber() {
         return line;
     }
     

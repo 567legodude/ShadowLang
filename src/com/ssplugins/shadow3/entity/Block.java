@@ -11,7 +11,6 @@ public class Block extends ShadowEntity {
     private Identifier[] parameters;
     private EntityList contents;
     
-    private Schema schema = Schema.EMPTY;
     // Action interface
     
     public Block(TokenLine line, Block parent, String name) {
