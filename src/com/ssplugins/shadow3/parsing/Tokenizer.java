@@ -76,7 +76,8 @@ public class Tokenizer {
             Token token = tokens.get(i);
             char first = token.getRaw().charAt(0);
             int type;
-            if (Character.isLetter(first) || first == '_') type = TokenType.IDENTIFIER;
+            if (token.getRaw().startsWith(COMMENT)) type = TokenType.COMMENT;
+            else if (Character.isLetter(first) || first == '_') type = TokenType.IDENTIFIER;
             else if (Character.isDigit(first)) {
                 type = TokenType.NUMBER;
                 if (i + 1 < tokens.size()) {

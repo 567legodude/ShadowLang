@@ -13,6 +13,8 @@ public abstract class ShadowSection {
         this.tokens = tokens;
     }
     
+    public abstract Object toObject();
+    
     public Token getPrimaryToken() {
         return tokens[0];
     }

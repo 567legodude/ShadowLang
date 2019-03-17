@@ -1,7 +1,7 @@
 package com.ssplugins.shadow3.section;
 
 import com.ssplugins.shadow3.ShadowParser;
-import com.ssplugins.shadow3.exception.NamedShadowException;
+import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.parsing.Token;
 import com.ssplugins.shadow3.parsing.TokenLine;
 import com.ssplugins.shadow3.parsing.TokenType;
@@ -22,14 +22,16 @@ public class Call extends ShadowSection {
             Token token = tokens[i];
             if (token.getType() == TokenType.GROUP_OPEN) {
                 int last = ShadowParser.findGroupEnd(tokens, i, end);
-                if (last == -1) throw new NamedShadowException("ParseError", line, token.getIndex(), "Unable to find closing token.");
-                if (last == -2) throw new NamedShadowException("ParseError", line, token.getIndex(), "Too many closing tokens.");
+                if (last == ShadowParser.ERR_NO_CLOSING)
+                    throw new ShadowParseError(line, token.getIndex(), "Unable to find closing token.");
+                if (last == ShadowParser.ERR_TOO_MANY_CLOSING)
+                    throw new ShadowParseError(line, token.getIndex(), "Too many closing tokens.");
                 i = last;
             }
             else if (token.getRaw().equals(",")) {
-                if (i - start == 0) throw new NamedShadowException("ParseError", line, token.getIndex(), "Missing parameter value.");
+                if (i - start == 0) throw new ShadowParseError(line, token.getIndex(), "Missing parameter value.");
                 Token[] paramTokens = Arrays.copyOfRange(tokens, start, i, Token[].class);
-                params.add(parser.toSection(paramTokens));
+                params.add(parser.toSection(line, paramTokens));
                 start = i + 1;
             }
         }

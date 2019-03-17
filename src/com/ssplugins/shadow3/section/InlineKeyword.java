@@ -5,6 +5,9 @@ import com.ssplugins.shadow3.parsing.TokenLine;
 
 public class InlineKeyword extends ShadowSection {
     
+    public static final String OPEN = "[";
+    public static final String CLOSE = "]";
+    
     public InlineKeyword(TokenLine line, Token[] tokens) {
         super(line, tokens);
     }
