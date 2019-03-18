@@ -9,6 +9,7 @@ import com.ssplugins.shadow3.parsing.Tokenizer;
 import com.ssplugins.shadow3.section.*;
 
 import java.util.List;
+import java.util.Optional;
 
 public class ShadowParser {
     
@@ -37,6 +38,20 @@ public class ShadowParser {
         return ERR_NO_CLOSING;
     }
     
+    public static int findBlockEnd(List<TokenLine> lines, int start) {
+        int bracket = 0;
+        for (int i = start; i < lines.size(); ++i) {
+            TokenLine line = lines.get(i);
+            Optional<Token> last = line.lastCodeToken();
+            if (!last.isPresent()) continue;
+            Token token = last.get();
+            if (token.getType() == TokenType.GROUP_OPEN && token.getRaw().equals("{")) ++bracket;
+            else if (line.size() == 1 && token.getType() == TokenType.GROUP_CLOSE && token.getRaw().equals("}")) --bracket;
+            if (bracket == 0) return i;
+        }
+        return ERR_NO_CLOSING;
+    }
+    
     private ShadowSection toSection(TokenLine line, Token[] tokens) {
         if (tokens.length == 0) throw new IllegalArgumentException("Empty token array.");
         if (tokens.length == 1) {
@@ -47,14 +62,21 @@ public class ShadowParser {
             else if (type == TokenType.IDENTIFIER) return new Identifier(line, tokens);
             else if (type == TokenType.NUMBER) return new ShadowNumber(line, tokens);
         }
-        else {
-            //
-        }
+        else if (Call.SCHEMA.test(tokens)) return new Call(line, tokens, parser);
+        else if (InlineKeyword.SCHEMA.test(tokens)) return new InlineKeyword(line, tokens);
         throw new ShadowParseError(line, tokens[0].getIndex(), "Unable to parse section.");
     }
     
     public Shadow parse(List<String> lines) {
         List<TokenLine> tokens = new Tokenizer().tokenize(lines);
+        for (int i = 0; i < tokens.size(); ++i) {
+            TokenLine line = tokens.get(i);
+            if (line.endsWith(TokenType.GROUP_OPEN, "{")) {
+                int end = findBlockEnd(tokens, i);
+                if (end == ERR_NO_CLOSING) throw new ShadowParseError(line, line.lastCodeToken().map(Token::getIndex).orElse(0), "Can't find closing bracket for block.");
+                // parse block
+            }
+        }
         return null;
     }
     

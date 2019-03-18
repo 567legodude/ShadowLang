@@ -4,6 +4,7 @@ import com.ssplugins.shadow3.ShadowParser;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.parsing.Token;
 import com.ssplugins.shadow3.parsing.TokenLine;
+import com.ssplugins.shadow3.parsing.TokenSchema;
 import com.ssplugins.shadow3.parsing.TokenType;
 
 import java.util.ArrayList;
@@ -11,6 +12,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Call extends ShadowSection {
+    
+    public static final TokenSchema SCHEMA = createTokenSchema();
     
     private ShadowSection[] parameters;
     
@@ -22,10 +25,8 @@ public class Call extends ShadowSection {
             Token token = tokens[i];
             if (token.getType() == TokenType.GROUP_OPEN) {
                 int last = ShadowParser.findGroupEnd(tokens, i, end);
-                if (last == ShadowParser.ERR_NO_CLOSING)
-                    throw new ShadowParseError(line, token.getIndex(), "Unable to find closing token.");
-                if (last == ShadowParser.ERR_TOO_MANY_CLOSING)
-                    throw new ShadowParseError(line, token.getIndex(), "Too many closing tokens.");
+                if (last == ShadowParser.ERR_NO_CLOSING) throw new ShadowParseError(line, token.getIndex(), "Unable to find closing token.");
+                if (last == ShadowParser.ERR_TOO_MANY_CLOSING) throw new ShadowParseError(line, token.getIndex(), "Too many closing tokens.");
                 i = last;
             }
             else if (token.getRaw().equals(",")) {
@@ -36,6 +37,15 @@ public class Call extends ShadowSection {
             }
         }
         parameters = params.toArray(new ShadowSection[0]);
+    }
+    
+    private static TokenSchema createTokenSchema() {
+        TokenSchema schema = new TokenSchema()
+                .minLength(3)
+                .type(TokenType.IDENTIFIER)
+                .type(TokenType.GROUP_OPEN, "(")
+                .typeLast(TokenType.GROUP_CLOSE, ")");
+        return schema;
     }
     
     public String getName() {
