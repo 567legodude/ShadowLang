@@ -1,24 +1,18 @@
 package com.ssplugins.shadow3.section;
 
-import com.ssplugins.shadow3.parsing.Token;
-import com.ssplugins.shadow3.parsing.TokenLine;
-import com.ssplugins.shadow3.parsing.TokenSchema;
-import com.ssplugins.shadow3.parsing.TokenType;
+import com.ssplugins.shadow3.execute.Scope;
+import com.ssplugins.shadow3.parsing.TokenReader;
 
 public class InlineKeyword extends ShadowSection {
     
-    public static final TokenSchema SCHEMA = createTokenSchema();
-    
-    public InlineKeyword(TokenLine line, Token[] tokens) {
-        super(line, tokens);
+    public InlineKeyword(TokenReader reader) {
+        super(reader.getLine());
+        // TODO read keyword
     }
     
-    public static TokenSchema createTokenSchema() {
-        TokenSchema schema = new TokenSchema()
-                .minLength(3)
-                .type(TokenType.GROUP_OPEN, "[")
-                .typeLast(TokenType.GROUP_CLOSE, "]");
-        return schema;
+    @Override
+    public Object toObject(Scope scope) {
+        return null; // TODO forward to keyword.
     }
     
 }

@@ -1,0 +1,100 @@
+package com.ssplugins.shadow3.execute;
+
+import com.ssplugins.shadow3.api.ShadowContext;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+public class Scope {
+    
+    private ShadowContext context;
+    private Scope parent;
+    
+    private Map<String, Object> variables = new HashMap<>();
+    
+    private Object blockValue;
+    
+    private Scope(ShadowContext context, Scope parent) {
+        this.context = context;
+        this.parent = parent;
+    }
+    
+    public Scope(ShadowContext context) {
+        this(context, null);
+    }
+    
+    private Scope find(String key) {
+        Scope s = this;
+        do {
+            if (s.variables.containsKey(key)) return s;
+            s = s.parent;
+        } while (s != null);
+        return null;
+    }
+    
+    private Scope findOrLocal(String key) {
+        Scope s = find(key);
+        if (s == null) return this;
+        return s;
+    }
+    
+    public void setLocal(String key, Object value) {
+        variables.put(key, value);
+    }
+    
+    public void set(String key, Object value) {
+        findOrLocal(key).setLocal(key, value);
+    }
+    
+    public void unsetLocal(String key) {
+        variables.remove(key);
+    }
+    
+    public void unset(String key) {
+        findOrLocal(key).unsetLocal(key);
+    }
+    
+    public void unsetAll(String key) {
+        Scope s;
+        while ((s = find(key)) != null) {
+            s.unsetLocal(key);
+        }
+    }
+    
+    public Optional<Object> get(String key) {
+        return Optional.ofNullable(find(key)).map(scope -> scope.variables.get(key));
+    }
+    
+    public Scope makeLevel() {
+        return new Scope(context, this);
+    }
+    
+    public void reset() {
+        variables.clear();
+    }
+    
+    public void clean() {
+        reset();
+        context = null;
+        parent = null;
+        blockValue = null;
+    }
+    
+    public ShadowContext getContext() {
+        return context;
+    }
+    
+    public Scope getParent() {
+        return parent;
+    }
+    
+    public Object getBlockValue() {
+        return blockValue;
+    }
+    
+    public void setBlockValue(Object blockValue) {
+        this.blockValue = blockValue;
+    }
+    
+}

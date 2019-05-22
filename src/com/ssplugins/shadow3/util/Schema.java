@@ -1,11 +1,11 @@
-package com.ssplugins.shadow3.entity;
+package com.ssplugins.shadow3.util;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 
-public class Schema<T> {
+public class Schema<T> implements Predicate<T> {
     
     public static final Schema<Object> EMPTY = new Schema<>(Collections.emptyList());
     
@@ -24,6 +24,7 @@ public class Schema<T> {
         require(predicate);
     }
     
+    @Override
     public boolean test(T entity) {
         return tests.stream().allMatch(predicate -> predicate.test(entity));
     }

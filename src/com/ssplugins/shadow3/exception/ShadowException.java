@@ -1,8 +1,11 @@
 package com.ssplugins.shadow3.exception;
 
 import com.ssplugins.shadow3.parsing.TokenLine;
+import com.ssplugins.shadow3.parsing.TokenReader;
+import com.ssplugins.shadow3.section.ShadowSection;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class ShadowException extends RuntimeException {
     
@@ -36,6 +39,22 @@ public class ShadowException extends RuntimeException {
     
     public ShadowException(List<String> lines, int line, int pos, String message) {
         this(lines.get(line), line, pos, message);
+    }
+    
+    public static ShadowParseError ended(TokenReader reader) {
+        return new ShadowParseError(reader.getLine(), reader.getLine().lastToken().indexAfter(), "Unexpected end of line.");
+    }
+    
+    public static Supplier<IllegalArgumentException> arg(String msg) {
+        return () -> new IllegalArgumentException(msg);
+    }
+    
+    public static Supplier<NamedShadowException> section(ShadowSection section, String type, String msg) {
+        return () -> new NamedShadowException(type, section.getLine(), section.getPrimaryToken().getIndex(), msg);
+    }
+    
+    public static Supplier<NamedShadowException> noDef(TokenLine line, int index, String msg) {
+        return () -> new NamedShadowException("DefinitionError", line, index, msg);
     }
     
     public String getRaw() {

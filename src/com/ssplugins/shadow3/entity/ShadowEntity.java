@@ -1,6 +1,10 @@
 package com.ssplugins.shadow3.entity;
 
+import com.ssplugins.shadow3.execute.Scope;
+import com.ssplugins.shadow3.execute.Stepper;
 import com.ssplugins.shadow3.parsing.TokenLine;
+
+import java.util.List;
 
 public abstract class ShadowEntity {
     
@@ -13,12 +17,13 @@ public abstract class ShadowEntity {
     
     private boolean inline;
     
-    public ShadowEntity(TokenLine line, ShadowEntity parent, boolean inline) {
+    public ShadowEntity(TokenLine line, ShadowEntity parent) {
         this.line = line;
         this.parent = parent;
-        this.inline = inline;
         flow = new Flow(this);
     }
+    
+    public abstract Object execute(Stepper stepper, Scope scope, List<Object> args);
     
     ShadowEntity getPrevious() {
         return previous;
@@ -50,6 +55,10 @@ public abstract class ShadowEntity {
     
     public boolean isInline() {
         return inline;
+    }
+    
+    public void setInline(boolean inline) {
+        this.inline = inline;
     }
     
 }

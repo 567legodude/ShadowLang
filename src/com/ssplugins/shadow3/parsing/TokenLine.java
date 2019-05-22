@@ -3,13 +3,15 @@ package com.ssplugins.shadow3.parsing;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 public class TokenLine {
     
     private String raw;
     private int line;
     private List<Token> tokens;
+    
+    private boolean isBlock;
+    private int blockEnd = -1;
     
     public TokenLine(String raw, int line) {
         this.raw = raw;
@@ -27,23 +29,17 @@ public class TokenLine {
         return new TokenLine("", line, Collections.emptyList());
     }
     
-    public Optional<Token> lastCodeToken() {
-        for (int i = tokens.size() - 1; i > 0; --i) {
-            Token token = tokens.get(i);
-            if (token.getType() != TokenType.NONE && token.getType() != TokenType.COMMENT) return Optional.of(token);
-        }
-        return Optional.empty();
+    public Token lastToken() {
+        return tokens.get(tokens.size() - 1);
     }
     
-    public boolean endsWith(int type) {
+    public boolean endsWith(TokenType type) {
         return endsWith(type, null);
     }
     
-    public boolean endsWith(int type, String raw) {
-        return lastCodeToken()
-                .filter(token -> token.getType() == type)
-                .filter(token -> raw == null || token.getRaw().equals(raw))
-                .isPresent();
+    public boolean endsWith(TokenType type, String raw) {
+        Token last = lastToken();
+        return last.getType() == type && (raw == null || last.getRaw().equals(raw));
     }
     
     public int size() {
@@ -60,6 +56,19 @@ public class TokenLine {
     
     public List<Token> getTokens() {
         return tokens;
+    }
+    
+    public boolean isBlock() {
+        return isBlock;
+    }
+    
+    public void setBlock(boolean block, int index) {
+        isBlock = block;
+        blockEnd = index;
+    }
+    
+    public int getBlockEnd() {
+        return blockEnd;
     }
     
 }

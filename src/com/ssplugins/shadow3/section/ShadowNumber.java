@@ -1,21 +1,28 @@
 package com.ssplugins.shadow3.section;
 
-import com.ssplugins.shadow3.parsing.Token;
-import com.ssplugins.shadow3.parsing.TokenLine;
+import com.ssplugins.shadow3.execute.Scope;
+import com.ssplugins.shadow3.parsing.TokenReader;
+import com.ssplugins.shadow3.parsing.TokenType;
 
 public class ShadowNumber extends ShadowSection {
     
     private Number value;
     
-    public ShadowNumber(TokenLine line, Token[] tokens) {
-        super(line, tokens);
+    public ShadowNumber(TokenReader reader) {
+        super(reader.getLine());
+        setToken(reader.expect(TokenType.NUMBER));
         String raw = getPrimaryToken().getRaw();
         if (raw.indexOf('.') > -1) {
-            char last = raw.charAt(raw.length() - 1);
-            if (last == 'f') value = Float.parseFloat(raw);
+            if (raw.endsWith("f")) value = Float.parseFloat(raw);
             else value = Double.parseDouble(raw);
         }
+        else if (raw.endsWith("L")) value = Long.parseLong(raw);
         else value = Integer.parseInt(raw);
+    }
+    
+    @Override
+    public Object toObject(Scope scope) {
+        return value;
     }
     
     public Number getValue() {

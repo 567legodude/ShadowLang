@@ -1,11 +1,10 @@
 package com.ssplugins.shadow3.section;
 
-import com.ssplugins.shadow3.ShadowParser;
-import com.ssplugins.shadow3.exception.ShadowParseError;
+import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.Token;
-import com.ssplugins.shadow3.parsing.TokenLine;
-import com.ssplugins.shadow3.parsing.TokenSchema;
+import com.ssplugins.shadow3.parsing.TokenReader;
 import com.ssplugins.shadow3.parsing.TokenType;
+import com.ssplugins.shadow3.util.Schema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,46 +12,43 @@ import java.util.List;
 
 public class Call extends ShadowSection {
     
-    public static final TokenSchema SCHEMA = createTokenSchema();
+    private static final Schema<Token> paramSplitter = Token.matcher().either(Token.is(TokenType.OPERATOR, ","), Token.is(TokenType.GROUP_CLOSE, ")"));
     
-    private ShadowSection[] parameters;
+    private Identifier name;
+    private List<ShadowSection> parameters;
     
-    public Call(TokenLine line, Token[] tokens, ShadowParser.Parser parser) {
-        super(line, tokens);
-        List<ShadowSection> params = new ArrayList<>();
-        int start = 2;
-        for (int i = 2, end = tokens.length - 1; i < end; ++i) {
-            Token token = tokens[i];
-            if (token.getType() == TokenType.GROUP_OPEN) {
-                int last = ShadowParser.findGroupEnd(tokens, i, end);
-                if (last == ShadowParser.ERR_NO_CLOSING) throw new ShadowParseError(line, token.getIndex(), "Unable to find closing token.");
-                if (last == ShadowParser.ERR_TOO_MANY_CLOSING) throw new ShadowParseError(line, token.getIndex(), "Too many closing tokens.");
-                i = last;
-            }
-            else if (token.getRaw().equals(",")) {
-                if (i - start == 0) throw new ShadowParseError(line, token.getIndex(), "Missing parameter value.");
-                Token[] paramTokens = Arrays.copyOfRange(tokens, start, i, Token[].class);
-                params.add(parser.toSection(line, paramTokens));
-                start = i + 1;
+    public Call(TokenReader reader) {
+        super(reader.getLine());
+        parameters = new ArrayList<>();
+        List<Token> tokens = new ArrayList<>();
+        
+        name = (Identifier) reader.readAs(TokenType.IDENTIFIER);
+        tokens.add(name.getPrimaryToken());
+        tokens.add(reader.expect(TokenType.GROUP_OPEN, "("));
+        if (!reader.nextMatches(TokenType.GROUP_CLOSE, ")")) {
+            while (reader.hasNext()) {
+                ShadowSection param = reader.readCompoundValue(paramSplitter, "\",\" or \")\"");
+                parameters.add(param);
+                tokens.addAll(Arrays.asList(param.getTokens()));
+                if (reader.nextMatches(TokenType.GROUP_CLOSE, ")")) break;
+                tokens.add(reader.expect(TokenType.OPERATOR, ","));
             }
         }
-        parameters = params.toArray(new ShadowSection[0]);
+        tokens.add(reader.expect(TokenType.GROUP_CLOSE, ")"));
+        
+        setTokens(tokens.toArray(new Token[0]));
     }
     
-    private static TokenSchema createTokenSchema() {
-        TokenSchema schema = new TokenSchema()
-                .minLength(3)
-                .type(TokenType.IDENTIFIER)
-                .type(TokenType.GROUP_OPEN, "(")
-                .typeLast(TokenType.GROUP_CLOSE, ")");
-        return schema;
+    @Override
+    public Object toObject(Scope scope) {
+        return null; // TODO
     }
     
     public String getName() {
         return getPrimaryToken().getRaw();
     }
     
-    public ShadowSection[] getParameters() {
+    public List<ShadowSection> getParameters() {
         return parameters;
     }
     

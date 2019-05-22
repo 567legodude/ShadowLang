@@ -1,24 +1,9 @@
 main {
-    print "Calculator v1"
 
-    set command input("val1", "val2")
+    print "Hello world"
 
-//    debug "Useful info"
-//
-//    set _0 [io open "debug.log"]
-//    io append _0 "Useful info"
-//    io close _0
-//    print "Useful info"
-//
-//
-//    if true :: print "true"
-//    else :: print "false"
+    : a = 5
 
-    <else block>.setSchema(new Schema().either(Schema.follows("if"), Schema.follows("elseif")));
-    <else block>.setSchema(new Schema(block -> block.flow().previous().is("if", "elseif")));
+    if a == 5 :: print ("test" + 3)
 
-}
-
-event PlayerJoinEvent (e) {
-    msg eval(e:getPlayer) "Welcome to the server."
 }

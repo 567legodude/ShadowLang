@@ -1,5 +1,7 @@
 package com.ssplugins.shadow3.test;
 
+import com.ssplugins.shadow3.ShadowCommons;
+import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.parsing.TokenLine;
 import com.ssplugins.shadow3.parsing.Tokenizer;
 
@@ -13,7 +15,7 @@ import java.util.List;
 public class TEST {
     
     public static void main(String[] args) throws IOException {
-    
+        
         InputStream stream = TEST.class.getResourceAsStream("/com/ssplugins/shadow3/test/testy.shd");
         List<String> lines = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
@@ -23,8 +25,10 @@ public class TEST {
             }
         }
     
+        ShadowContext context = ShadowCommons.create();
+    
         Tokenizer tokenizer = new Tokenizer();
-        List<TokenLine> t = tokenizer.tokenize(lines);
+        List<TokenLine> t = tokenizer.tokenize(lines, context);
         t.size();
     }
     

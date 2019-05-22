@@ -54,7 +54,7 @@ public class TokenIterator {
         if (tokenIndex == -1) tokenIndex = charIndex;
         int len = builder.length();
         String compare = Tokenizer.COMMENT;
-        if (len > compare.length() && builder.substring(len - compare.length()).equals(compare)) {
+        if (len >= compare.length() && builder.substring(len - compare.length()).equals(compare)) {
             builder.delete(len - compare.length(), len);
             charIndex = line.length();
         }
@@ -74,20 +74,16 @@ public class TokenIterator {
         push(constructor, charIndex - 1);
     }
     
+    public void pushChar() {
+        pushChar(Token::new);
+    }
+    
     public void pushSection() {
         push(Token::new, tokenIndex);
     }
     
     public void pushSection(int sectionType) {
         if (sectionType == this.sectionType) pushSection();
-    }
-    
-    public void pushOpen() {
-        pushChar(Token::new);
-    }
-    
-    public void pushClose() {
-        pushChar(Token::new);
     }
     
     public boolean escaped() {
@@ -110,6 +106,18 @@ public class TokenIterator {
         append();
         pushSection();
         open = null;
+    }
+    
+    public String current() {
+        return builder.toString();
+    }
+    
+    public int currentSize() {
+        return builder.length();
+    }
+    
+    public boolean isEmpty() {
+        return builder.length() == 0;
     }
     
     public TokenLine getTokenLine() {

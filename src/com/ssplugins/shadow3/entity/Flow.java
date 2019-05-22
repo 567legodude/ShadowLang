@@ -11,31 +11,27 @@ public class Flow {
     }
     
     public Optional<ShadowEntity> get() {
-        return Optional.ofNullable(current);
+        return Optional.of(current);
     }
     
     public Flow next() {
-        if (current != null) current = current.getNext();
-        return this;
+        return current.getNext().flow();
     }
     
     public Flow previous() {
-        if (current != null) current = current.getPrevious();
-        return this;
+        return current.getPrevious().flow();
     }
     
     public Flow parent() {
-        if (current != null) current = current.getParent();
-        return this;
+        return current.getParent().flow();
     }
     
     public boolean isBlock(String... names) {
-        if (current == null) return false;
         if (!(current instanceof Block)) return false;
         if (names.length == 0) return true;
-        Block block = (Block) current;
+        String target = ((Block) current).getName();
         for (String name : names) {
-            if (block.getName().equalsIgnoreCase(name)) return true;
+            if (target.equalsIgnoreCase(name)) return true;
         }
         return false;
     }
