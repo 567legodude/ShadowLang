@@ -1,3 +1,5 @@
 main {
-    print "Hello world" " " (1 + 2) // Prints "Hello world 3"
+
+    set a test(5)
+
 }

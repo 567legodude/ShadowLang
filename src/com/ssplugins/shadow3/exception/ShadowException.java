@@ -1,5 +1,6 @@
 package com.ssplugins.shadow3.exception;
 
+import com.ssplugins.shadow3.entity.Block;
 import com.ssplugins.shadow3.parsing.TokenLine;
 import com.ssplugins.shadow3.parsing.TokenReader;
 import com.ssplugins.shadow3.section.ShadowSection;
@@ -53,12 +54,20 @@ public class ShadowException extends RuntimeException {
         return () -> new NamedShadowException(type, section.getLine(), section.getPrimaryToken().getIndex(), msg);
     }
     
+    public static Supplier<NamedShadowException> sectionExec(ShadowSection section, String msg) {
+        return () -> new ShadowExecutionError(section.getLine(), section.getPrimaryToken().getIndex(), msg);
+    }
+    
     public static Supplier<NamedShadowException> noDef(TokenLine line, int index, String msg) {
         return () -> new NamedShadowException("DefinitionError", line, index, msg);
     }
     
     public static Supplier<NamedShadowException> noClose(TokenLine line, int index, String msg) {
         return () -> new NamedShadowException("EOFError", line, index, msg);
+    }
+    
+    public static Supplier<ShadowExecutionError> exec(Block block, String msg) {
+        return () -> new ShadowExecutionError(block.getLine(), block.getLine().firstToken().getIndex(), msg);
     }
     
     public String getRaw() {

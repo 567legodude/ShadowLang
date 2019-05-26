@@ -1,12 +1,14 @@
 package com.ssplugins.shadow3.entity;
 
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
 import com.ssplugins.shadow3.parsing.TokenLine;
 import com.ssplugins.shadow3.section.ShadowSection;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public abstract class ShadowEntity {
     
@@ -18,6 +20,8 @@ public abstract class ShadowEntity {
     
     private TokenLine line;
     private ShadowEntity parent;
+    
+    private ShadowEntity from;
     
     private boolean inline;
     
@@ -33,7 +37,30 @@ public abstract class ShadowEntity {
     
     public abstract void addArgument(ShadowSection section);
     
+    public abstract List<ShadowSection> getArguments();
+    
     public abstract ShadowContext getInnerContext();
+    
+    public <T> T getArgument(int index, Class<T> type, Scope scope, String err) {
+        ShadowSection section = getArguments().get(index);
+        Object o = section.toObject(scope);
+        if (!type.isInstance(o)) throw ShadowException.sectionExec(section, err).get();
+        return type.cast(o);
+    }
+    
+    public <T extends ShadowSection> T getArgumentSection(int index, Class<T> type, String err) {
+        ShadowSection section = getArguments().get(index);
+        if (!type.isInstance(section)) throw ShadowException.sectionExec(section, err).get();
+        return type.cast(section);
+    }
+    
+    public List<Object> argumentValues(Scope scope) {
+        return getArguments().stream().map(section -> section.toObject(scope)).collect(Collectors.toList());
+    }
+    
+    public Object argumentValue(int index, Scope scope) {
+        return getArguments().get(index).toObject(scope);
+    }
     
     ShadowEntity getPrevious() {
         return previous;
@@ -65,6 +92,14 @@ public abstract class ShadowEntity {
     
     public ShadowEntity getParent() {
         return parent;
+    }
+    
+    public ShadowEntity getFrom() {
+        return from;
+    }
+    
+    protected void setFrom(ShadowEntity from) {
+        this.from = from;
     }
     
     public TokenLine getLine() {

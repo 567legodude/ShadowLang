@@ -18,6 +18,7 @@ public class InlineKeyword extends ShadowSection {
         keyword = new Keyword(parent, reader, parser.getContext());
         reader.reset();
         reader.expect(TokenType.GROUP_CLOSE, "]");
+        keyword.setInline(true);
     }
     
     @Override

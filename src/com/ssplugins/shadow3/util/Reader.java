@@ -1,5 +1,7 @@
 package com.ssplugins.shadow3.util;
 
+import java.util.function.Supplier;
+
 public abstract class Reader<T> {
     
     private int index;
@@ -14,7 +16,11 @@ public abstract class Reader<T> {
     }
     
     public void consume() {
-        if (!hasNext()) throw new IndexOutOfBoundsException("Reader is exhausted.");
+        consume(() -> new IndexOutOfBoundsException("Reader is exhausted."));
+    }
+    
+    public void consume(Supplier<? extends RuntimeException> failCause) {
+        if (!hasNext()) throw failCause.get();
         ++index;
     }
     

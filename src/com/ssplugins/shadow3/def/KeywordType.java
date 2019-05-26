@@ -12,7 +12,7 @@ public class KeywordType {
     
     private KeywordAction action;
     
-    private ContextTransformer<Keyword> contextTransformer = ContextTransformer.keywordIdentity();
+    private ContextTransformer<Keyword> contextTransformer = ContextTransformer.keywordNone();
     
     public KeywordType(String name, Range arguments) {
         this.name = name;

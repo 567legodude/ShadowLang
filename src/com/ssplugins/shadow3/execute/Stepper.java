@@ -21,15 +21,11 @@ public class Stepper {
     
     private Iterator<ShadowEntity> iterator;
     
-    public Stepper(Stepper parent, ShadowContext context, EntityList content) {
+    public Stepper(Stepper parent, ShadowContext context, Block block) {
         this.parent = parent;
         this.context = context;
-        this.content = content;
+        this.content = block.getContents();
         iterator = content.iterator();
-    }
-    
-    public Stepper(Stepper parent, ShadowContext context, Block block) {
-        this(parent, context, block.getContents());
     }
     
     public void run() {

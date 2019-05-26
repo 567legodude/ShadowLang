@@ -5,8 +5,13 @@ import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.def.BlockType;
 import com.ssplugins.shadow3.def.KeywordType;
 import com.ssplugins.shadow3.def.OperatorAction;
+import com.ssplugins.shadow3.exception.ShadowException;
+import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
 import com.ssplugins.shadow3.util.Range;
+
+import java.util.PrimitiveIterator.OfInt;
+import java.util.stream.IntStream;
 
 @SuppressWarnings("WeakerAccess")
 public class ShadowCommons extends ShadowAPI {
@@ -56,6 +61,7 @@ public class ShadowCommons extends ShadowAPI {
     
     void addKeywords() {
         keywordPrint();
+        keywordSet();
     }
     
     void keywordPrint() {
@@ -68,16 +74,50 @@ public class ShadowCommons extends ShadowAPI {
         context.addKeyword(print);
     }
     
+    void keywordSet() {
+        KeywordType set = new KeywordType("set", new Range.Single(2));
+        set.setAction((keyword, stepper, scope) -> {
+            Identifier name = keyword.getArgumentSection(0, Identifier.class, "First argument should be identifier.");
+            Object o = keyword.argumentValue(1, scope);
+            scope.set(name, o);
+            return o;
+        });
+        context.addKeyword(set);
+    }
+    
     //endregion
     //region Blocks
     
     void addBlocks() {
         blockMain();
+        blockRepeat();
     }
     
     void blockMain() {
         BlockType main = new BlockType("main", new Range.None(), new Range.MinMax(0, 1));
         context.addBlock(main);
+    }
+    
+    void blockRepeat() {
+        BlockType repeat = new BlockType("repeat", new Range.Single(1), new Range.Single(1));
+        repeat.setPreRunCheck((block, scope, args) -> {
+            Integer i = block.getArgument(0, Integer.class, scope, "Modifier should be an integer.");
+            if (i < 0) throw ShadowException.exec(block, "Repeat count must be positive.").get();
+            if (i == 0) return false;
+            scope.setBlockValue(IntStream.range(0, i).iterator());
+            return true;
+        });
+        repeat.setEnterCallback((block, stepper, scope, args) -> {
+            OfInt it = (OfInt) scope.getBlockValue();
+            scope.setLocal(block.getParameters().get(0), it.next());
+        });
+        repeat.setEndCallback((block, stepper, scope) -> {
+            OfInt it = (OfInt) scope.getBlockValue();
+            if (!it.hasNext()) return;
+            scope.setLocal(block.getParameters().get(0), it.next());
+            stepper.restart();
+        });
+        context.addBlock(repeat);
     }
     
     //endregion

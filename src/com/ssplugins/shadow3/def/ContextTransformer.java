@@ -13,12 +13,12 @@ public interface ContextTransformer<T extends ShadowEntity> {
     
     ShadowContext get(T t, ShadowContext topContext, ShadowContext currentContext);
     
-    static ContextTransformer<Block> blockIdentity() {
-        return (block, topContext, currentContext) -> currentContext;
+    static ContextTransformer<Block> blockNone() {
+        return (block, topContext, currentContext) -> null;
     }
     
-    static ContextTransformer<Keyword> keywordIdentity() {
-        return (keyword, topContext, currentContext) -> currentContext;
+    static ContextTransformer<Keyword> keywordNone() {
+        return (keyword, topContext, currentContext) -> null;
     }
     
     static ContextTransformer<Block> blockModule(int pos) {

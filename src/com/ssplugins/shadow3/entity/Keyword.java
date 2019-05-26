@@ -35,14 +35,19 @@ public class Keyword extends ShadowEntity {
             arguments.add(def.nextSection());
         }
     
-        innerContext = definition.getContextTransformer().get(this, fallback, parent.getInnerContext());
+        innerContext = definition.getContextTransformer().get(this, fallback, (getFrom() == null ? fallback : getFrom().getInnerContext()));
     }
     
     private KeywordType findDef(ShadowEntity parent, ShadowContext fallback) {
         while (parent != null) {
             ShadowContext context = parent.getInnerContext();
-            Optional<KeywordType> keyword = context.findKeyword(name);
-            if (keyword.isPresent()) return keyword.get();
+            if (context != null) {
+                Optional<KeywordType> keyword = context.findKeyword(name);
+                if (keyword.isPresent()) {
+                    setFrom(parent);
+                    return keyword.get();
+                }
+            }
             parent = parent.getParent();
         }
         return fallback.findKeyword(name).orElseThrow(ShadowException.noDef(getLine(), getLine().firstToken().getIndex(), "No definition found for keyword: " + name));
@@ -68,16 +73,17 @@ public class Keyword extends ShadowEntity {
     }
     
     @Override
+    public List<ShadowSection> getArguments() {
+        return arguments;
+    }
+    
+    @Override
     public ShadowContext getInnerContext() {
         return innerContext;
     }
     
     public List<Object> argumentValues(Scope scope) {
         return getArguments().stream().map(section -> section.toObject(scope)).collect(Collectors.toList());
-    }
-    
-    public List<ShadowSection> getArguments() {
-        return arguments;
     }
     
     public KeywordType getDefinition() {

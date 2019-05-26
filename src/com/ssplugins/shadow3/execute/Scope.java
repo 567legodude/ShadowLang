@@ -1,6 +1,7 @@
 package com.ssplugins.shadow3.execute;
 
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.section.Identifier;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,8 +42,16 @@ public class Scope {
         return s;
     }
     
+    public void setLocal(Identifier identifier, Object value) {
+        setLocal(identifier.getName(), value);
+    }
+    
     public void setLocal(String key, Object value) {
         variables.put(key, value);
+    }
+    
+    public void set(Identifier identifier, Object value) {
+        set(identifier.getName(), value);
     }
     
     public void set(String key, Object value) {

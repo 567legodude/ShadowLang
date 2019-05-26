@@ -16,7 +16,7 @@ public class BlockType {
     private BlockEnterCallback enterCallback;
     private BlockEndCallback endCallback;
     
-    private ContextTransformer<Block> contextTransformer = ContextTransformer.blockIdentity();
+    private ContextTransformer<Block> contextTransformer = ContextTransformer.blockNone();
     private ShadowContext localContext;
     
     public BlockType(String name, Range modifiers, Range parameters) {

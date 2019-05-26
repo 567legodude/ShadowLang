@@ -1,5 +1,6 @@
 package com.ssplugins.shadow3.section;
 
+import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.Token;
 import com.ssplugins.shadow3.parsing.TokenReader;
@@ -41,7 +42,7 @@ public class Call extends ShadowSection {
     
     @Override
     public Object toObject(Scope scope) {
-        return null; // TODO
+        throw ShadowException.sectionExec(this, "Function calls are not implemented yet.").get();
     }
     
     public String getName() {
