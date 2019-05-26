@@ -1,6 +1,12 @@
 package com.ssplugins.shadow3.entity;
 
-public class EntityList {
+import java.util.Iterator;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+public class EntityList implements Iterable<ShadowEntity> {
     
     private ShadowEntity first;
     private ShadowEntity last;
@@ -36,6 +42,29 @@ public class EntityList {
     
     public ShadowEntity getLast() {
         return last;
+    }
+    
+    @Override
+    public Iterator<ShadowEntity> iterator() {
+        return new Iterator<ShadowEntity>() {
+            private ShadowEntity current = first;
+            
+            @Override
+            public boolean hasNext() {
+                return current != null;
+            }
+    
+            @Override
+            public ShadowEntity next() {
+                ShadowEntity c = current;
+                current = current.getNext();
+                return c;
+            }
+        };
+    }
+    
+    public Stream<ShadowEntity> stream() {
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(this.iterator(), Spliterator.IMMUTABLE), false);
     }
     
 }

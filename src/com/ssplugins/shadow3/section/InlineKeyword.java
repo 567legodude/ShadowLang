@@ -22,7 +22,7 @@ public class InlineKeyword extends ShadowSection {
     
     @Override
     public Object toObject(Scope scope) {
-        return null; // TODO forward to keyword.
+        return keyword.execute(scope.getStepper(), scope, null);
     }
     
 }

@@ -10,6 +10,8 @@ import java.util.List;
 
 public abstract class ShadowEntity {
     
+    private ShadowContext topContext;
+    
     private Flow flow;
     private ShadowEntity previous;
     private ShadowEntity next;
@@ -47,6 +49,14 @@ public abstract class ShadowEntity {
     
     void setNext(ShadowEntity next) {
         this.next = next;
+    }
+    
+    protected void setTopContext(ShadowContext context) {
+        this.topContext = context;
+    }
+    
+    public ShadowContext getTopContext() {
+        return topContext;
     }
     
     public Flow flow() {

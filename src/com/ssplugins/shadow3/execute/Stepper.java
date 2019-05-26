@@ -1,34 +1,63 @@
 package com.ssplugins.shadow3.execute;
 
+import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.entity.Block;
+import com.ssplugins.shadow3.entity.EntityList;
 import com.ssplugins.shadow3.entity.ShadowEntity;
+import com.ssplugins.shadow3.util.Schema;
+
+import java.util.Iterator;
+import java.util.function.Consumer;
 
 public class Stepper {
     
-    private ShadowEntity[] content;
-    
     private Stepper parent;
+    private ShadowContext context;
+    
+    private Scope scope;
+    private EntityList content;
     private boolean run;
-    private int index;
+    private Schema<ShadowEntity> skipSchema;
     
-    public Stepper(ShadowEntity content, Stepper parent) {
-        this(parent, new ShadowEntity[] {content});
-    }
+    private Iterator<ShadowEntity> iterator;
     
-    public Stepper(Stepper parent, ShadowEntity[] content) {
+    public Stepper(Stepper parent, ShadowContext context, EntityList content) {
         this.parent = parent;
+        this.context = context;
         this.content = content;
+        iterator = content.iterator();
     }
     
-    public boolean isFinished() {
-        return index == content.length;
+    public Stepper(Stepper parent, ShadowContext context, Block block) {
+        this(parent, context, block.getContents());
     }
     
-    public void run(Scope scope) {
+    public void run() {
+        run(null);
+    }
+    
+    public void run(Consumer<Stepper> callback) {
+        if (scope == null) scope = new Scope(context, this);
         run = true;
-        while (run && index < content.length) {
-            content[index].execute(this, scope, null);
-            ++index;
+        while (run) {
+            ShadowEntity next = iterator.next();
+            if (skipSchema != null) {
+                if (!skipSchema.test(next)) {
+                    skipSchema = null;
+                    next.execute(this, scope, null);
+                }
+            }
+            else next.execute(this, scope, null);
+            if (!iterator.hasNext()) {
+                run = false;
+                if (callback != null) callback.accept(this);
+            }
         }
+    }
+    
+    public void restart() {
+        run = true;
+        iterator = content.iterator();
     }
     
     public void breakBlock() {
@@ -37,6 +66,10 @@ public class Stepper {
     
     public Stepper getParent() {
         return parent;
+    }
+    
+    public void setScope(Scope scope) {
+        this.scope = scope;
     }
     
 }

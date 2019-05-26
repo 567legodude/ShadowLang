@@ -122,6 +122,7 @@ public class OperatorTree {
         public abstract Object objectValue(Scope scope);
         
         private void unlink() {
+            if (parent == null) return;
             for (int i = 0; i < parent.children.length; ++i) {
                 if (parent.children[i] == this) {
                     parent.children[i] = null;
@@ -143,7 +144,7 @@ public class OperatorTree {
             for (int i = 0; i < children.length; ++i) {
                 if (children[i] == null) {
                     children[i] = node;
-                    break;
+                    return;
                 }
             }
             throw new IllegalStateException("Node has reached maximum capacity.");

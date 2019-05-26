@@ -9,19 +9,21 @@ import java.util.Optional;
 public class Scope {
     
     private ShadowContext context;
+    private Stepper stepper;
     private Scope parent;
     
     private Map<String, Object> variables = new HashMap<>();
     
     private Object blockValue;
     
-    private Scope(ShadowContext context, Scope parent) {
+    private Scope(ShadowContext context, Stepper stepper, Scope parent) {
         this.context = context;
+        this.stepper = stepper;
         this.parent = parent;
     }
     
-    public Scope(ShadowContext context) {
-        this(context, null);
+    public Scope(ShadowContext context, Stepper stepper) {
+        this(context, stepper, null);
     }
     
     private Scope find(String key) {
@@ -67,7 +69,11 @@ public class Scope {
     }
     
     public Scope makeLevel() {
-        return new Scope(context, this);
+        return makeLevel(stepper);
+    }
+    
+    public Scope makeLevel(Stepper stepper) {
+        return new Scope(context, stepper, this);
     }
     
     public void reset() {
@@ -83,6 +89,10 @@ public class Scope {
     
     public ShadowContext getContext() {
         return context;
+    }
+    
+    public Stepper getStepper() {
+        return stepper;
     }
     
     public Scope getParent() {

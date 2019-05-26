@@ -79,15 +79,14 @@ public class ShadowParser {
             if (raw.equals("(")) return readCompound(reader, TokenType.GROUP_CLOSE, ")");
             throw new ShadowParseError(reader.getLine(), reader.peekNext().getIndex(), "Unexpected open pair.");
         }
-        else if (type == TokenType.GROUP_CLOSE) {
-            throw new ShadowParseError(reader.getLine(), reader.peekNext().getIndex(), "Unexpected closing bracket/parenthesis.");
-        }
+        else if (type == TokenType.GROUP_CLOSE) return new Dummy(reader);
         throw new ShadowParseError(reader.getLine(), reader.peekNext().getIndex(), "Unexpected token.");
     }
     
     public Compound readCompound(TokenReader reader, TokenType end, String raw) {
         if (reader.nextType() == TokenType.GROUP_OPEN) {
             String close = Tokenizer.getOppositePair(reader.peekNext().getRaw());
+            reader.consume();
             return readCompound(reader, TokenType.GROUP_CLOSE, close);
         }
         List<ShadowSection> sections = reader.readTo(end, raw);

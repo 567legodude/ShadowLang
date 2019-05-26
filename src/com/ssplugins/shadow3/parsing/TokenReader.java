@@ -71,7 +71,7 @@ public class TokenReader extends Reader<Token> {
     }
     
     public List<ShadowSection> readTo(TokenType type, String raw) {
-        return readTo(token -> nextType() == type && (raw != null && peekNext().getRaw().equals(raw)), tokenName(type, raw), true);
+        return readTo(token -> token.getType() == type && (raw != null && raw.equals(token.getRaw())), tokenName(type, raw), true);
     }
     
     public List<ShadowSection> readTo(Predicate<Token> predicate, String expecting, boolean include) {

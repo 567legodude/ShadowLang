@@ -1,7 +1,10 @@
 package com.ssplugins.shadow3.entity;
 
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.def.BlockEndCallback;
+import com.ssplugins.shadow3.def.BlockEnterCallback;
 import com.ssplugins.shadow3.def.BlockType;
+import com.ssplugins.shadow3.def.PreRunCheck;
 import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
@@ -16,6 +19,7 @@ import com.ssplugins.shadow3.util.Range;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class Block extends ShadowEntity {
     
@@ -29,9 +33,10 @@ public class Block extends ShadowEntity {
     
     public Block(Block parent, LineReader reader) {
         super(reader.next(), parent);
+        setTopContext(reader.getContext());
         TokenReader def = new TokenReader(this, reader.getParser(), getLine());
         name = def.expect(TokenType.IDENTIFIER).getRaw();
-    
+        
         definition = findDef(parent, reader.getContext());
         
         def.setLimit(getLine().getBlockEnd());
@@ -39,7 +44,7 @@ public class Block extends ShadowEntity {
         while (def.hasNext() && !def.nextMatches(TokenType.OPERATOR, "->")) {
             modifiers.add(def.nextSection());
         }
-    
+        
         parameters = new ArrayList<>();
         if (def.nextMatches(TokenType.OPERATOR, "->")) {
             parameters.add(def.expectSection(Identifier.class, "identifier"));
@@ -49,7 +54,7 @@ public class Block extends ShadowEntity {
             }
         }
         def.reset();
-    
+        
         Range mods = definition.getModifiers();
         if (!mods.contains(modifiers.size())) {
             throw new ShadowParseError(getLine(), getLine().firstToken().getIndex(), "Block expects " + mods.toString("modifier") + ", found " + modifiers.size());
@@ -58,7 +63,7 @@ public class Block extends ShadowEntity {
         if (!params.contains(parameters.size())) {
             throw new ShadowParseError(getLine(), getLine().firstToken().getIndex(), "Block expects " + params.toString("parameter") + ", found " + parameters.size());
         }
-    
+        
         innerContext = definition.getContextTransformer().get(this, reader.getContext(), (parent == null ? reader.getContext() : parent.getInnerContext()));
         
         contents = new EntityList();
@@ -76,6 +81,16 @@ public class Block extends ShadowEntity {
         }
     }
     
+    private BlockType findDef(Block parent, ShadowContext fallback) {
+        while (parent != null) {
+            ShadowContext context = parent.getInnerContext();
+            Optional<BlockType> block = context.findBlock(name);
+            if (block.isPresent()) return block.get();
+            parent = (Block) parent.getParent();
+        }
+        return fallback.findBlock(name).orElseThrow(ShadowException.noDef(getLine(), getLine().firstToken().getIndex(), "No definition found for block: " + name));
+    }
+    
     @Override
     public String getName() {
         return name;
@@ -83,7 +98,16 @@ public class Block extends ShadowEntity {
     
     @Override
     public Object execute(Stepper stepper, Scope scope, List<Object> args) {
-        // TODO execute block
+        PreRunCheck preRunCheck = definition.getPreRunCheck();
+        if (preRunCheck != null && !preRunCheck.willEnter(this, scope, args)) return null;
+        BlockEnterCallback enterCallback = definition.getEnterCallback();
+        if (enterCallback != null) enterCallback.onEnter(this, stepper, scope, args);
+        Stepper contentStepper = new Stepper(stepper, innerContext, contents);
+        contentStepper.setScope(scope.makeLevel(contentStepper));
+        contentStepper.run(stpr -> {
+            BlockEndCallback endCallback = definition.getEndCallback();
+            if (endCallback != null) endCallback.onEnd(this, stpr, scope);
+        });
         return null;
     }
     
@@ -97,14 +121,13 @@ public class Block extends ShadowEntity {
         return innerContext;
     }
     
-    private BlockType findDef(Block parent, ShadowContext fallback) {
-        while (parent != null) {
-            ShadowContext context = parent.getInnerContext();
-            Optional<BlockType> block = context.findBlock(name);
-            if (block.isPresent()) return block.get();
-            parent = (Block) parent.getParent();
-        }
-        return fallback.findBlock(name).orElseThrow(ShadowException.noDef(getLine(), getLine().firstToken().getIndex(), "No definition found for block: " + name));
+    public void run() {
+        Stepper stepper = new Stepper(null, getTopContext(), this);
+        stepper.run();
+    }
+    
+    public List<Object> modifierValues(Scope scope) {
+        return getModifiers().stream().map(section -> section.toObject(scope)).collect(Collectors.toList());
     }
     
     public List<ShadowSection> getModifiers() {

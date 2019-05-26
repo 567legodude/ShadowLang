@@ -27,7 +27,7 @@ public abstract class Reader<T> {
     }
     
     public boolean hasNext() {
-        return index > -1 && index < size() && (limit == -1 || index < limit);
+        return index < size() && (limit == -1 || index < limit);
     }
     
     public T next() {

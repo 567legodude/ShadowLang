@@ -30,8 +30,13 @@ public class ShadowCommons extends ShadowAPI {
     //region Operators
     
     void addOperators() {
+        operatorComment();
         operatorBlock();
         operatorAdd();
+    }
+    
+    void operatorComment() {
+        context.addOperator(new OperatorAction<>("//", OpOrder.ASSIGNMENT, null, null, null, null));
     }
     
     void operatorBlock() {
@@ -42,7 +47,7 @@ public class ShadowCommons extends ShadowAPI {
     void operatorAdd() {
         OperatorAction<Integer, Integer, Integer> addInt = new OperatorAction<>("+", int.class, int.class, int.class, Integer::sum);
         context.addOperator(addInt);
-        OperatorAction<String, Object, String> addString = new OperatorAction<>("+", String.class, Object.class, String.class, (s, o) -> s + o.toString());
+        OperatorAction<String, String, String> addString = new OperatorAction<>("+", String.class, String.class, String.class, (a, b) -> a + b);
         context.addOperator(addString);
     }
     
@@ -50,18 +55,17 @@ public class ShadowCommons extends ShadowAPI {
     //region Keywords
     
     void addKeywords() {
-        keywordExpression();
         keywordPrint();
     }
     
     void keywordPrint() {
         KeywordType print = new KeywordType("print", new Range.Any());
+        print.setAction((keyword, stepper, scope) -> {
+            keyword.argumentValues(scope).stream().forEach(System.out::print);
+            System.out.println();
+            return null;
+        });
         context.addKeyword(print);
-    }
-    
-    void keywordExpression() {
-        KeywordType expr = new KeywordType(":", new Range.Any());
-        context.addKeyword(expr);
     }
     
     //endregion

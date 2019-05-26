@@ -2,6 +2,7 @@ package com.ssplugins.shadow3.test;
 
 import com.ssplugins.shadow3.Shadow;
 import com.ssplugins.shadow3.ShadowCommons;
+import com.ssplugins.shadow3.entity.Block;
 import com.ssplugins.shadow3.parsing.ShadowParser;
 
 import java.io.BufferedReader;
@@ -27,6 +28,8 @@ public class TEST {
         ShadowParser parser = new ShadowParser(ShadowCommons.create());
     
         Shadow shadow = parser.parse(lines);
+        
+        shadow.firstBlock("main").ifPresent(Block::run);
         
     }
     
