@@ -1,5 +1,6 @@
 package com.ssplugins.shadow3.entity;
 
+import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.def.BlockType;
 import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.exception.ShadowParseError;
@@ -10,40 +11,74 @@ import com.ssplugins.shadow3.parsing.TokenType;
 import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.ShadowSection;
 import com.ssplugins.shadow3.util.LineReader;
+import com.ssplugins.shadow3.util.Range;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class Block extends ShadowEntity {
     
     private String name;
     private List<ShadowSection> modifiers;
-    private Identifier[] parameters;
-    private ShadowEntity[] contents;
+    private List<Identifier> parameters;
+    private EntityList contents;
     
-    private Stepper stepper;
+    private BlockType definition;
+    private ShadowContext innerContext;
     
-    public Block(Block parent, TokenReader def, LineReader reader) {
-        super(def.getLine(), parent);
+    public Block(Block parent, LineReader reader) {
+        super(reader.next(), parent);
+        TokenReader def = new TokenReader(this, reader.getParser(), getLine());
         name = def.expect(TokenType.IDENTIFIER).getRaw();
-        def.setLimit(getLine().getBlockEnd());
-        
-        BlockType type = reader.getContext().findBlock(name).orElseThrow(ShadowException.noDef(def.getLine(), 0, "No definition found for: " + name));
-        type.getReader().accept(this, def);
     
-        int params = type.getParameters();
-        parameters = new Identifier[params];
-        if (def.getIndex() < def.getLimit() || params > 0) {
-            def.expect(TokenType.GROUP_OPEN, "(");
-            for (int i = 0; i < params; ++i) {
-                if (!def.nextMatches(TokenType.IDENTIFIER, null)) {
-                    throw new ShadowParseError(def.getLine(), def.peekNext().getIndex(), "Expecting identifier, found: " + def.nextType().name());
-                }
-                parameters[i] = (Identifier) def.nextSection();
-                if (i < params - 1) def.expect(TokenType.OPERATOR, ",");
-            }
-            def.expect(TokenType.GROUP_CLOSE, ")");
+        definition = findDef(parent, reader.getContext());
+        
+        def.setLimit(getLine().getBlockEnd());
+        modifiers = new ArrayList<>();
+        while (def.hasNext() && !def.nextMatches(TokenType.OPERATOR, "->")) {
+            modifiers.add(def.nextSection());
         }
-        def.consume();
+    
+        parameters = new ArrayList<>();
+        if (def.nextMatches(TokenType.OPERATOR, "->")) {
+            parameters.add(def.expectSection(Identifier.class, "identifier"));
+            while (def.hasNext()) {
+                def.expect(TokenType.OPERATOR, ",");
+                parameters.add(def.expectSection(Identifier.class, "identifier"));
+            }
+        }
+        def.reset();
+    
+        Range mods = definition.getModifiers();
+        if (!mods.contains(modifiers.size())) {
+            throw new ShadowParseError(getLine(), getLine().firstToken().getIndex(), "Block expects " + mods.toString("modifier") + ", found " + modifiers.size());
+        }
+        Range params = definition.getParameters();
+        if (!params.contains(parameters.size())) {
+            throw new ShadowParseError(getLine(), getLine().firstToken().getIndex(), "Block expects " + params.toString("parameter") + ", found " + parameters.size());
+        }
+    
+        innerContext = definition.getContextTransformer().get(this, reader.getContext(), (parent == null ? reader.getContext() : parent.getInnerContext()));
+        
+        contents = new EntityList();
+        if (def.hasNext() && def.nextMatches(TokenType.OPERATOR, "::")) {
+            def.consume();
+            Keyword keyword = reader.getParser().readKeyword(this, def, reader.getContext());
+            contents.add(keyword);
+        }
+        else {
+            def.expect(TokenType.GROUP_OPEN, "{");
+            while (!reader.nextIsClose()) {
+                contents.add(reader.nextEntity(this, ShadowException.noClose(getLine(), getLine().lastToken().getIndex(), "Reached end of file while searching for closing bracket.")));
+            }
+            reader.consume();
+        }
+    }
+    
+    @Override
+    public String getName() {
+        return name;
     }
     
     @Override
@@ -52,23 +87,40 @@ public class Block extends ShadowEntity {
         return null;
     }
     
-    private Stepper parentStepper() {
-        ShadowEntity parent = getParent();
-        if (parent == null) return null;
-        return ((Block) parent).getStepper();
+    @Override
+    public void addArgument(ShadowSection section) {
+        modifiers.add(section);
     }
     
-    public String getName() {
-        return name;
+    @Override
+    public ShadowContext getInnerContext() {
+        return innerContext;
     }
     
-    public ShadowEntity[] getContents() {
+    private BlockType findDef(Block parent, ShadowContext fallback) {
+        while (parent != null) {
+            ShadowContext context = parent.getInnerContext();
+            Optional<BlockType> block = context.findBlock(name);
+            if (block.isPresent()) return block.get();
+            parent = (Block) parent.getParent();
+        }
+        return fallback.findBlock(name).orElseThrow(ShadowException.noDef(getLine(), getLine().firstToken().getIndex(), "No definition found for block: " + name));
+    }
+    
+    public List<ShadowSection> getModifiers() {
+        return modifiers;
+    }
+    
+    public List<Identifier> getParameters() {
+        return parameters;
+    }
+    
+    public EntityList getContents() {
         return contents;
     }
     
-    public Stepper getStepper() {
-        if (stepper == null) stepper = new Stepper(parentStepper(), this);
-        return stepper;
+    public BlockType getDefinition() {
+        return definition;
     }
     
 }

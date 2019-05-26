@@ -1,7 +1,5 @@
 package com.ssplugins.shadow3.entity;
 
-import java.util.Optional;
-
 public class Flow {
     
     private ShadowEntity current;
@@ -10,26 +8,42 @@ public class Flow {
         this.current = current;
     }
     
-    public Optional<ShadowEntity> get() {
-        return Optional.of(current);
+    public ShadowEntity get() {
+        return current;
     }
     
     public Flow next() {
-        return current.getNext().flow();
+        ShadowEntity next = current.getNext();
+        if (next == null) return null;
+        return next.flow();
     }
     
     public Flow previous() {
-        return current.getPrevious().flow();
+        ShadowEntity previous = current.getPrevious();
+        if (previous == null) return null;
+        return previous.flow();
     }
     
     public Flow parent() {
-        return current.getParent().flow();
+        ShadowEntity parent = current.getParent();
+        if (parent == null) return null;
+        return parent.flow();
     }
     
     public boolean isBlock(String... names) {
         if (!(current instanceof Block)) return false;
         if (names.length == 0) return true;
         String target = ((Block) current).getName();
+        for (String name : names) {
+            if (target.equalsIgnoreCase(name)) return true;
+        }
+        return false;
+    }
+    
+    public boolean isKeyword(String... names) {
+        if (!(current instanceof Keyword)) return false;
+        if (names.length == 0) return true;
+        String target = ((Keyword) current).getName();
         for (String name : names) {
             if (target.equalsIgnoreCase(name)) return true;
         }

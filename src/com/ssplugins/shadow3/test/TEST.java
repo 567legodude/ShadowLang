@@ -1,9 +1,8 @@
 package com.ssplugins.shadow3.test;
 
+import com.ssplugins.shadow3.Shadow;
 import com.ssplugins.shadow3.ShadowCommons;
-import com.ssplugins.shadow3.api.ShadowContext;
-import com.ssplugins.shadow3.parsing.TokenLine;
-import com.ssplugins.shadow3.parsing.Tokenizer;
+import com.ssplugins.shadow3.parsing.ShadowParser;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -25,11 +24,10 @@ public class TEST {
             }
         }
     
-        ShadowContext context = ShadowCommons.create();
+        ShadowParser parser = new ShadowParser(ShadowCommons.create());
     
-        Tokenizer tokenizer = new Tokenizer();
-        List<TokenLine> t = tokenizer.tokenize(lines, context);
-        t.size();
+        Shadow shadow = parser.parse(lines);
+        
     }
     
 }

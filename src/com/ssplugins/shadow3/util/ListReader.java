@@ -16,8 +16,12 @@ public class ListReader<T> extends Reader<T> {
     }
     
     @Override
-    protected int size() {
+    public int size() {
         return list.size();
+    }
+    
+    public List<T> getList() {
+        return list;
     }
     
 }

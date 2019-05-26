@@ -1,17 +1,27 @@
 package com.ssplugins.shadow3.def;
 
-import com.ssplugins.shadow3.entity.Block;
+import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.parsing.TokenReader;
 import com.ssplugins.shadow3.parsing.TokenType;
 
 import java.util.function.BiConsumer;
 
-public interface ArgumentReader extends BiConsumer<Block, TokenReader> {
+public interface ArgumentReader extends BiConsumer<ShadowEntity, TokenReader> {
     
-    static ArgumentReader values(int amount) {
+    static ArgumentReader mods(int amount) {
         return (block, reader) -> {
-            // TODO
+            for (int i = 0; i < amount; ++i) {
+                block.addArgument(reader.nextSection());
+            }
+        };
+    }
+    
+    static ArgumentReader args(int amount) {
+        return (block, reader) -> {
+            for (int i = 0; i < amount; ++i) {
+                block.addArgument(reader.nextSection());
+            }
         };
     }
     
@@ -27,7 +37,7 @@ public interface ArgumentReader extends BiConsumer<Block, TokenReader> {
                 if (!reader.nextMatches(type, null)) {
                     throw new ShadowParseError(reader.getLine(), reader.peekNext().getIndex(), "Expected " + type.name() + ", found " + reader.nextType().name() + ".");
                 }
-                reader.nextSection();
+                block.addArgument(reader.nextSection());
             }
         };
     }

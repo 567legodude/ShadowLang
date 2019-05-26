@@ -1,21 +1,27 @@
 package com.ssplugins.shadow3.def;
 
-import java.util.List;
+import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.entity.Block;
+import com.ssplugins.shadow3.util.Range;
+import com.ssplugins.shadow3.util.Schema;
 
 public class BlockType {
     
     private String name;
-    private int parameters;
-    private ArgumentReader reader;
+    private Range modifiers;
+    private Range parameters;
+    private Schema<Block> schema;
     
     private PreRunCheck preRunCheck;
     private BlockEnterCallback enterCallback;
     private BlockEndCallback endCallback;
     
-    private List<KeywordType> localKeywords;
+    private ContextTransformer<Block> contextTransformer = ContextTransformer.blockIdentity();
+    private ShadowContext localContext;
     
-    public BlockType(String name, int parameters) {
+    public BlockType(String name, Range modifiers, Range parameters) {
         this.name = name;
+        this.modifiers = modifiers;
         this.parameters = parameters;
     }
     
@@ -23,16 +29,20 @@ public class BlockType {
         return name;
     }
     
-    public int getParameters() {
+    public Range getModifiers() {
+        return modifiers;
+    }
+    
+    public Range getParameters() {
         return parameters;
     }
     
-    public ArgumentReader getReader() {
-        return reader;
+    public Schema<Block> getSchema() {
+        return schema;
     }
     
-    public void setReader(ArgumentReader reader) {
-        this.reader = reader;
+    public void setSchema(Schema<Block> schema) {
+        this.schema = schema;
     }
     
     public PreRunCheck getPreRunCheck() {
@@ -59,12 +69,20 @@ public class BlockType {
         this.endCallback = endCallback;
     }
     
-    public List<KeywordType> getLocalKeywords() {
-        return localKeywords;
+    public ContextTransformer<Block> getContextTransformer() {
+        return contextTransformer;
     }
     
-    public void setLocalKeywords(List<KeywordType> localKeywords) {
-        this.localKeywords = localKeywords;
+    public void setContextTransformer(ContextTransformer<Block> contextTransformer) {
+        this.contextTransformer = contextTransformer;
+    }
+    
+    public ShadowContext getLocalContext() {
+        return localContext;
+    }
+    
+    public void setLocalContext(ShadowContext localContext) {
+        this.localContext = localContext;
     }
     
 }

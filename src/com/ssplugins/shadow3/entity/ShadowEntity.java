@@ -1,8 +1,10 @@
 package com.ssplugins.shadow3.entity;
 
+import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
 import com.ssplugins.shadow3.parsing.TokenLine;
+import com.ssplugins.shadow3.section.ShadowSection;
 
 import java.util.List;
 
@@ -23,7 +25,13 @@ public abstract class ShadowEntity {
         flow = new Flow(this);
     }
     
+    public abstract String getName();
+    
     public abstract Object execute(Stepper stepper, Scope scope, List<Object> args);
+    
+    public abstract void addArgument(ShadowSection section);
+    
+    public abstract ShadowContext getInnerContext();
     
     ShadowEntity getPrevious() {
         return previous;

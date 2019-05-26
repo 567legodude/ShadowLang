@@ -15,7 +15,7 @@ public class ShadowExecutor {
     }
     
     public void add(Block block) {
-        add(block.getStepper());
+//        add(block.getStepper());
     }
     
     public void execute(ShadowContext context) {
@@ -25,7 +25,7 @@ public class ShadowExecutor {
     public void execute(Scope scope) {
         while (steps.size() > 0) {
             Stepper stepper = steps.getFirst();
-            stepper.run(this, scope);
+            stepper.run(scope);
             if (stepper.isFinished()) steps.removeFirst();
         }
     }

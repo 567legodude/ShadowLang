@@ -29,8 +29,16 @@ public class TokenLine {
         return new TokenLine("", line, Collections.emptyList());
     }
     
+    public Token firstToken() {
+        return tokens.get(0);
+    }
+    
     public Token lastToken() {
         return tokens.get(tokens.size() - 1);
+    }
+    
+    public Token blockEndToken() {
+        return tokens.get(blockEnd);
     }
     
     public boolean endsWith(TokenType type) {
@@ -40,6 +48,10 @@ public class TokenLine {
     public boolean endsWith(TokenType type, String raw) {
         Token last = lastToken();
         return last.getType() == type && (raw == null || last.getRaw().equals(raw));
+    }
+    
+    public boolean isClosing() {
+        return tokens.size() == 1 && endsWith(TokenType.GROUP_CLOSE, "}");
     }
     
     public int size() {

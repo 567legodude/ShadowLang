@@ -2,6 +2,9 @@ package com.ssplugins.shadow3.parsing;
 
 import com.ssplugins.shadow3.Shadow;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.entity.Block;
+import com.ssplugins.shadow3.entity.EntityList;
+import com.ssplugins.shadow3.entity.Keyword;
 import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.exception.ShadowParseError;
@@ -9,6 +12,7 @@ import com.ssplugins.shadow3.section.*;
 import com.ssplugins.shadow3.util.LineReader;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 public class ShadowParser {
     
@@ -17,8 +21,8 @@ public class ShadowParser {
 
     private ShadowContext context;
     
-    public ShadowParser() {
-        context = new ShadowContext();
+    public ShadowParser(ShadowContext context) {
+        this.context = context;
     }
     
     public static int findGroupEnd(Token[] tokens, int start, int end) {
@@ -47,12 +51,18 @@ public class ShadowParser {
         return ERR_NO_CLOSING;
     }
     
-    public ShadowEntity readEntity(LineReader reader) {
-        if (!reader.hasNext()) throw new IllegalArgumentException("Reader has no more elements.");
-        if (reader.nextIsBlock()) {
-            // TODO
-        }
-        return null;
+    public ShadowEntity readEntity(Block parent, LineReader reader, Supplier<? extends RuntimeException> failCause) {
+        if (!reader.hasNext()) throw failCause.get();
+        if (reader.nextIsBlock()) return readBlock(parent, reader);
+        else return readKeyword(parent, reader.nextAsReader(parent), reader.getContext());
+    }
+    
+    public Block readBlock(Block parent, LineReader reader) {
+        return new Block(parent, reader);
+    }
+    
+    public Keyword readKeyword(ShadowEntity parent, TokenReader reader, ShadowContext fallback) {
+        return new Keyword(parent, reader, fallback);
     }
     
     public ShadowSection readSection(TokenReader reader) {
@@ -65,7 +75,7 @@ public class ShadowParser {
         else if (type == TokenType.CALL) return new Call(reader);
         else if (type == TokenType.GROUP_OPEN) {
             String raw = reader.peekNext().getRaw();
-            if (raw.equals("[")) return new InlineKeyword(reader);
+            if (raw.equals("[")) return new InlineKeyword(reader.getParent(), reader, this);
             if (raw.equals("(")) return readCompound(reader, TokenType.GROUP_CLOSE, ")");
             throw new ShadowParseError(reader.getLine(), reader.peekNext().getIndex(), "Unexpected open pair.");
         }
@@ -85,21 +95,15 @@ public class ShadowParser {
         return new Compound(reader.getLine(), sections);
     }
     
-    public Shadow parse(List<String> lines, ShadowContext context) {
+    public Shadow parse(List<String> lines) {
         List<TokenLine> tokens = new Tokenizer().tokenize(lines, context);
+        Shadow shadow = new Shadow();
+        EntityList contents = shadow.getContents();
         LineReader reader = new LineReader(tokens, this, context);
-        for (int i = 0; i < tokens.size(); ++i) {
-            TokenLine line = tokens.get(i);
-            if (line.endsWith(TokenType.GROUP_OPEN, "{")) {
-                int end = findBlockEnd(tokens, i);
-                if (end == ERR_NO_CLOSING) throw new ShadowParseError(line, line.lastToken().getIndex(), "Can't find closing bracket for block.");
-                // TODO parse block
-            }
-            else {
-                // TODO parse keyword
-            }
+        while (reader.hasNext()) {
+            contents.add(reader.nextEntity(null, null));
         }
-        return null;
+        return shadow;
     }
     
     public ShadowContext getContext() {

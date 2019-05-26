@@ -57,6 +57,10 @@ public class ShadowException extends RuntimeException {
         return () -> new NamedShadowException("DefinitionError", line, index, msg);
     }
     
+    public static Supplier<NamedShadowException> noClose(TokenLine line, int index, String msg) {
+        return () -> new NamedShadowException("EOFError", line, index, msg);
+    }
+    
     public String getRaw() {
         return raw;
     }

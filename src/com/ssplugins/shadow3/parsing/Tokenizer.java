@@ -108,10 +108,10 @@ public class Tokenizer {
                     if (first == '(' && last != null && last.getType() == TokenType.IDENTIFIER) {
                         last.setType(TokenType.CALL);
                     }
+                    else if (i == tokens.size() - 1 && token.getRaw().equals("{")) line.setBlock(true, i);
                 }
                 else {
                     type = TokenType.GROUP_CLOSE;
-                    if (i == tokens.size() - 1 && token.getRaw().equals("{")) line.setBlock(true, i);
                 }
             }
             else if (GROUPS.indexOf(first) > -1) type = TokenType.STRING;

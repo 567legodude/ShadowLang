@@ -2,8 +2,11 @@ package com.ssplugins.shadow3;
 
 import com.ssplugins.shadow3.api.ShadowAPI;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.def.BlockType;
+import com.ssplugins.shadow3.def.KeywordType;
 import com.ssplugins.shadow3.def.OperatorAction;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
+import com.ssplugins.shadow3.util.Range;
 
 @SuppressWarnings("WeakerAccess")
 public class ShadowCommons extends ShadowAPI {
@@ -20,7 +23,11 @@ public class ShadowCommons extends ShadowAPI {
     public void load(ShadowContext context) {
         this.context = context;
         addOperators();
+        addKeywords();
+        addBlocks();
     }
+    
+    //region Operators
     
     void addOperators() {
         operatorBlock();
@@ -29,6 +36,7 @@ public class ShadowCommons extends ShadowAPI {
     
     void operatorBlock() {
         context.addOperator(new OperatorAction<>("::", OpOrder.ASSIGNMENT, null, null, null, null));
+        context.addOperator(new OperatorAction<>("->", OpOrder.ASSIGNMENT, null, null, null, null));
     }
     
     void operatorAdd() {
@@ -37,5 +45,37 @@ public class ShadowCommons extends ShadowAPI {
         OperatorAction<String, Object, String> addString = new OperatorAction<>("+", String.class, Object.class, String.class, (s, o) -> s + o.toString());
         context.addOperator(addString);
     }
+    
+    //endregion
+    //region Keywords
+    
+    void addKeywords() {
+        keywordExpression();
+        keywordPrint();
+    }
+    
+    void keywordPrint() {
+        KeywordType print = new KeywordType("print", new Range.Any());
+        context.addKeyword(print);
+    }
+    
+    void keywordExpression() {
+        KeywordType expr = new KeywordType(":", new Range.Any());
+        context.addKeyword(expr);
+    }
+    
+    //endregion
+    //region Blocks
+    
+    void addBlocks() {
+        blockMain();
+    }
+    
+    void blockMain() {
+        BlockType main = new BlockType("main", new Range.None(), new Range.MinMax(0, 1));
+        context.addBlock(main);
+    }
+    
+    //endregion
     
 }

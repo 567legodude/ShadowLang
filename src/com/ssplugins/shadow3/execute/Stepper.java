@@ -1,9 +1,6 @@
 package com.ssplugins.shadow3.execute;
 
-import com.ssplugins.shadow3.entity.Block;
 import com.ssplugins.shadow3.entity.ShadowEntity;
-
-import java.util.List;
 
 public class Stepper {
     
@@ -22,18 +19,14 @@ public class Stepper {
         this.content = content;
     }
     
-    public Stepper(Stepper parent, Block block) {
-        this(parent, block.getContents());
-    }
-    
     public boolean isFinished() {
         return index == content.length;
     }
     
-    public void run(Scope scope, List<Object> args) {
+    public void run(Scope scope) {
         run = true;
         while (run && index < content.length) {
-            content[index].execute(this, scope, args);
+            content[index].execute(this, scope, null);
             ++index;
         }
     }

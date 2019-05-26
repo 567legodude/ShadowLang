@@ -20,14 +20,22 @@ public class EntityList {
         if (first == null) first = entity;
         last = entity;
         entity.setNext(null);
-        size++;
+        ++size;
     }
     
     public void remove(ShadowEntity entity) {
         link(entity.getPrevious(), entity.getNext());
         entity.setPrevious(null);
         entity.setNext(null);
-        size--;
+        --size;
+    }
+    
+    public ShadowEntity getFirst() {
+        return first;
+    }
+    
+    public ShadowEntity getLast() {
+        return last;
     }
     
 }

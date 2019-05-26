@@ -2,22 +2,20 @@ package com.ssplugins.shadow3.util;
 
 public abstract class Reader<T> {
     
-    private int increment = 1;
     private int index;
     private int limit = -1;
     
     protected abstract T get(int index);
     
-    protected abstract int size();
+    public abstract int size();
     
     public void reset() {
-        increment = 1;
         limit = -1;
     }
     
     public void consume() {
         if (!hasNext()) throw new IndexOutOfBoundsException("Reader is exhausted.");
-        index += increment;
+        ++index;
     }
     
     public int getLimit() {
@@ -33,9 +31,8 @@ public abstract class Reader<T> {
     }
     
     public T next() {
-        T t = get(index);
-        index += increment;
-        return t;
+        if (index == limit) throw new IndexOutOfBoundsException("Tried to read past limit.");
+        return get(index++);
     }
     
     public T peekNext() {
@@ -48,14 +45,6 @@ public abstract class Reader<T> {
     
     public void setIndex(int index) {
         this.index = index;
-    }
-    
-    public int getIncrement() {
-        return increment;
-    }
-    
-    public void setIncrement(int increment) {
-        this.increment = increment;
     }
     
 }

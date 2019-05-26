@@ -24,6 +24,10 @@ public class Schema<T> implements Predicate<T> {
         require(predicate);
     }
     
+    public static <U> Schema<U> single(Predicate<U> predicate) {
+        return new Schema<>(Collections.singletonList(predicate));
+    }
+    
     @Override
     public boolean test(T entity) {
         return tests.stream().allMatch(predicate -> predicate.test(entity));

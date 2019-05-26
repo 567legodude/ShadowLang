@@ -1,26 +1,38 @@
 package com.ssplugins.shadow3.def;
 
+import com.ssplugins.shadow3.entity.Keyword;
+import com.ssplugins.shadow3.util.Range;
+import com.ssplugins.shadow3.util.Schema;
+
 public class KeywordType {
     
     private String name;
-    private ArgumentReader reader;
+    private Range arguments;
+    private Schema<Keyword> schema;
     
     private KeywordAction action;
     
-    public KeywordType(String name) {
+    private ContextTransformer<Keyword> contextTransformer = ContextTransformer.keywordIdentity();
+    
+    public KeywordType(String name, Range arguments) {
         this.name = name;
+        this.arguments = arguments;
     }
     
     public String getName() {
         return name;
     }
     
-    public ArgumentReader getReader() {
-        return reader;
+    public Range getArguments() {
+        return arguments;
     }
     
-    public void setReader(ArgumentReader reader) {
-        this.reader = reader;
+    public Schema<Keyword> getSchema() {
+        return schema;
+    }
+    
+    public void setSchema(Schema<Keyword> schema) {
+        this.schema = schema;
     }
     
     public KeywordAction getAction() {
@@ -29,6 +41,14 @@ public class KeywordType {
     
     public void setAction(KeywordAction action) {
         this.action = action;
+    }
+    
+    public ContextTransformer<Keyword> getContextTransformer() {
+        return contextTransformer;
+    }
+    
+    public void setContextTransformer(ContextTransformer<Keyword> contextTransformer) {
+        this.contextTransformer = contextTransformer;
     }
     
 }

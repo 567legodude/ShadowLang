@@ -1,5 +1,6 @@
 package com.ssplugins.shadow3.parsing;
 
+import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.section.Compound;
 import com.ssplugins.shadow3.section.ShadowSection;
@@ -11,10 +12,12 @@ import java.util.function.Predicate;
 
 public class TokenReader extends Reader<Token> {
     
+    private ShadowEntity parent;
     private ShadowParser parser;
     private TokenLine line;
     
-    public TokenReader(ShadowParser parser, TokenLine line) {
+    public TokenReader(ShadowEntity parent, ShadowParser parser, TokenLine line) {
+        this.parent = parent;
         this.parser = parser;
         this.line = line;
     }
@@ -25,7 +28,7 @@ public class TokenReader extends Reader<Token> {
     }
     
     @Override
-    protected int size() {
+    public int size() {
         return line.getTokens().size();
     }
     
@@ -52,6 +55,15 @@ public class TokenReader extends Reader<Token> {
         if (next.getType() != type) throw new ShadowParseError(line, next.getIndex(), "Expected " + type.name() + ", found " + next.getType().name() + ".");
         if (raw != null && !next.getRaw().equals(raw)) throw new ShadowParseError(line, next.getIndex(), "Expected \"" + raw + "\", found \"" + next.getRaw() + "\".");
         return next;
+    }
+    
+    public <T extends ShadowSection> T expectSection(Class<T> type, String expecting) {
+        Token token = peekNext();
+        ShadowSection section = nextSection();
+        if (!type.isInstance(section)) {
+            throw new ShadowParseError(line, token.getIndex(), "Expected " + expecting + ", found " + token.getType().name());
+        }
+        return type.cast(section);
     }
     
     public List<ShadowSection> readTo(TokenType type) {
@@ -101,6 +113,10 @@ public class TokenReader extends Reader<Token> {
     
     public ShadowSection nextSection() {
         return parser.readSection(this);
+    }
+    
+    public ShadowEntity getParent() {
+        return parent;
     }
     
     public ShadowParser getParser() {
