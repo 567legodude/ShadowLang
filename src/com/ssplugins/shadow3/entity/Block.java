@@ -34,7 +34,7 @@ public class Block extends ShadowEntity {
         super(reader.next(), parent);
         setTopContext(reader.getContext());
         TokenReader def = new TokenReader(this, reader.getParser(), getLine());
-        name = def.readAs(TokenType.IDENTIFIER).getPrimaryToken().getRaw();
+        name = def.expect(TokenType.IDENTIFIER).getRaw();
         
         definition = findDef(parent, reader.getContext());
         

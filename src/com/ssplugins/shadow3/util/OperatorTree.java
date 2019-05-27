@@ -86,7 +86,7 @@ public class OperatorTree {
     }
     
     public boolean isFinished() {
-        return current instanceof ValueNode;
+        return current instanceof ValueNode || current instanceof UnaryOpNode;
     }
     
     public Object getValue(Scope scope) {
@@ -225,7 +225,7 @@ public class OperatorTree {
                                          .findOperator(getValue().getSymbol(), Void.class, type)
                                          .orElseThrow(ShadowException.section(getValue(), "OperatorError", "No definition for operand: " + type.getSimpleName()));
             //noinspection unchecked (Type is known at this point)
-            return action.getAction().apply(null, type);
+            return action.getAction().apply(null, operand);
         }
         
     }

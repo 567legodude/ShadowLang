@@ -8,7 +8,6 @@ public enum TokenType {
     STRING,
     BOOLEAN,
     OPERATOR,
-    CALL,
     GROUP_OPEN,
     GROUP_CLOSE;
     

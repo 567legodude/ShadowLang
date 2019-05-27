@@ -5,6 +5,7 @@ import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.def.BlockType;
 import com.ssplugins.shadow3.def.KeywordType;
 import com.ssplugins.shadow3.def.OperatorAction;
+import com.ssplugins.shadow3.def.UnaryOperatorAction;
 import com.ssplugins.shadow3.entity.Block;
 import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowException;
@@ -41,6 +42,7 @@ public class ShadowCommons extends ShadowAPI {
         operatorComment();
         operatorBlock();
         operatorEquals();
+        operatorNegate();
         operatorAdd();
     }
     
@@ -58,6 +60,11 @@ public class ShadowCommons extends ShadowAPI {
         context.addOperator(iieq);
     }
     
+    void operatorNegate() {
+        UnaryOperatorAction<Integer, Integer> neg = new UnaryOperatorAction<>("-", int.class, int.class, integer -> -integer);
+        context.addOperator(neg);
+    }
+    
     void operatorAdd() {
         OperatorAction<Integer, Integer, Integer> addInt = new OperatorAction<>("+", int.class, int.class, int.class, Integer::sum);
         context.addOperator(addInt);
@@ -71,6 +78,7 @@ public class ShadowCommons extends ShadowAPI {
     void addKeywords() {
         keywordPrint();
         keywordSet();
+        keywordType();
     }
     
     void keywordPrint() {
@@ -92,6 +100,15 @@ public class ShadowCommons extends ShadowAPI {
             return o;
         });
         context.addKeyword(set);
+    }
+    
+    void keywordType() {
+        KeywordType type = new KeywordType("type", new Range.Single(1));
+        type.setAction((keyword, stepper, scope) -> {
+            Object o = keyword.argumentValue(0, scope);
+            return o.getClass().getSimpleName();
+        });
+        context.addKeyword(type);
     }
     
     //endregion

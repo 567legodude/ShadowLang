@@ -110,10 +110,7 @@ public class Tokenizer {
             else if ((index = PAIRS.indexOf(first)) > -1) {
                 if (evenIndex(index)) {
                     type = TokenType.GROUP_OPEN;
-                    if (first == '(' && last != null && last.getType() == TokenType.IDENTIFIER) {
-                        last.setType(TokenType.CALL);
-                    }
-                    else if (i == tokens.size() - 1 && token.getRaw().equals("{")) line.setBlock(true, i);
+                    if (i == tokens.size() - 1 && token.getRaw().equals("{")) line.setBlock(true, i);
                 }
                 else {
                     type = TokenType.GROUP_CLOSE;

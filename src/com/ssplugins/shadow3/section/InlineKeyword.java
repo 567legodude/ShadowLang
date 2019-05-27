@@ -13,10 +13,12 @@ public class InlineKeyword extends ShadowSection {
     
     public InlineKeyword(ShadowEntity parent, TokenReader reader, ShadowParser parser) {
         super(reader.getLine());
-        reader.setLimit(reader.size() - 1);
+        int oldLimit = reader.getLimit();
+        int end = (reader.getLimit() == -1 ? reader.size() : reader.getLimit());
+        reader.setLimit(end - 1);
         reader.expect(TokenType.GROUP_OPEN, "[");
         keyword = new Keyword(parent, reader, parser.getContext());
-        reader.reset();
+        reader.setLimit(oldLimit);
         reader.expect(TokenType.GROUP_CLOSE, "]");
         keyword.setInline(true);
     }

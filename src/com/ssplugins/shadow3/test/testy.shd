@@ -1,3 +1,5 @@
 main {
-//
+
+    print [type [set a 1]]
+
 }
