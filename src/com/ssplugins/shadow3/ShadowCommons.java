@@ -5,10 +5,13 @@ import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.def.BlockType;
 import com.ssplugins.shadow3.def.KeywordType;
 import com.ssplugins.shadow3.def.OperatorAction;
+import com.ssplugins.shadow3.entity.Block;
+import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
 import com.ssplugins.shadow3.util.Range;
+import com.ssplugins.shadow3.util.Schema;
 
 import java.util.PrimitiveIterator.OfInt;
 import java.util.stream.IntStream;
@@ -91,6 +94,7 @@ public class ShadowCommons extends ShadowAPI {
     void addBlocks() {
         blockMain();
         blockRepeat();
+        blockConditionals();
     }
     
     void blockMain() {
@@ -118,6 +122,37 @@ public class ShadowCommons extends ShadowAPI {
             stepper.restart();
         });
         context.addBlock(repeat);
+    }
+    
+    @SuppressWarnings("Duplicates")
+    void blockConditionals() {
+        BlockType typeIf = new BlockType("if", new Range.Single(1), new Range.None());
+        typeIf.setPreRunCheck((block, scope, args) -> {
+            return block.getArgument(0, Boolean.class, scope, "Modifier should be a boolean.");
+        });
+        Schema<ShadowEntity> skipElse = new Schema<>(e -> e.flow().isBlock("elseif", "else"));
+        typeIf.setEnterCallback((block, stepper, scope, args) -> {
+            stepper.setSkipSchema(skipElse);
+        });
+    
+        Schema<Block> condSchema = new Schema<>(block -> block.flow().prevIsBlock("if", "elseif"));
+        condSchema.setSituation("Block must follow an if or elseif block.");
+        
+        BlockType elseif = new BlockType("elseif", new Range.Single(1), new Range.None());
+        elseif.setSchema(condSchema);
+        elseif.setPreRunCheck((block, scope, args) -> {
+            return block.getArgument(0, Boolean.class, scope, "Modifier should be a boolean.");
+        });
+        elseif.setEnterCallback((block, stepper, scope, args) -> {
+            stepper.setSkipSchema(skipElse);
+        });
+    
+        BlockType typeElse = new BlockType("else", new Range.None(), new Range.None());
+        typeElse.setSchema(condSchema);
+    
+        context.addBlock(typeIf);
+        context.addBlock(elseif);
+        context.addBlock(typeElse);
     }
     
     //endregion

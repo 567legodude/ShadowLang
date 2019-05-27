@@ -4,6 +4,7 @@ import com.ssplugins.shadow3.entity.Block;
 import com.ssplugins.shadow3.parsing.TokenLine;
 import com.ssplugins.shadow3.parsing.TokenReader;
 import com.ssplugins.shadow3.section.ShadowSection;
+import com.ssplugins.shadow3.util.Schema;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -64,6 +65,10 @@ public class ShadowException extends RuntimeException {
     
     public static Supplier<NamedShadowException> noClose(TokenLine line, int index, String msg) {
         return () -> new NamedShadowException("EOFError", line, index, msg);
+    }
+    
+    public static Supplier<NamedShadowException> schema(TokenLine line, int index, Schema schema) {
+        return () -> new NamedShadowException("SchemaError", line, index, schema.getSituation());
     }
     
     public static Supplier<ShadowExecutionError> exec(Block block, String msg) {

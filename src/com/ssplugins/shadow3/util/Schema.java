@@ -10,6 +10,7 @@ public class Schema<T> implements Predicate<T> {
     public static final Schema<Object> EMPTY = new Schema<>(Collections.emptyList());
     
     private List<Predicate<T>> tests;
+    private String situation = "";
     
     private Schema(List<Predicate<T>> list) {
         tests = list;
@@ -31,6 +32,14 @@ public class Schema<T> implements Predicate<T> {
     @Override
     public boolean test(T entity) {
         return tests.stream().allMatch(predicate -> predicate.test(entity));
+    }
+    
+    public String getSituation() {
+        return situation;
+    }
+    
+    public void setSituation(String situation) {
+        this.situation = situation;
     }
     
     public Schema<T> require(Predicate<T> predicate) {

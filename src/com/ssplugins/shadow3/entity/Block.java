@@ -15,6 +15,7 @@ import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.ShadowSection;
 import com.ssplugins.shadow3.util.LineReader;
 import com.ssplugins.shadow3.util.Range;
+import com.ssplugins.shadow3.util.Schema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +64,11 @@ public class Block extends ShadowEntity {
         if (!params.contains(parameters.size())) {
             throw new ShadowParseError(getLine(), getLine().firstToken().getIndex(), "Block expects " + params.toString("parameter") + ", found " + parameters.size());
         }
-        
+    
+        Schema<Block> schema = definition.getSchema();
+        if (schema != null && !schema.test(this)) {
+            throw ShadowException.schema(getLine(), getLine().firstToken().getIndex(), schema).get();
+        }
         innerContext = definition.getContextTransformer().get(this, reader.getContext(), (getFrom() == null ? reader.getContext() : getFrom().getInnerContext()));
         
         contents = new EntityList();

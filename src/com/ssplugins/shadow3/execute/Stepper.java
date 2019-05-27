@@ -68,4 +68,8 @@ public class Stepper {
         this.scope = scope;
     }
     
+    public void setSkipSchema(Schema<ShadowEntity> skipSchema) {
+        this.skipSchema = skipSchema;
+    }
+    
 }

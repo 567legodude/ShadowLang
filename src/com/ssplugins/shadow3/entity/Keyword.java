@@ -9,6 +9,7 @@ import com.ssplugins.shadow3.execute.Stepper;
 import com.ssplugins.shadow3.parsing.TokenReader;
 import com.ssplugins.shadow3.parsing.TokenType;
 import com.ssplugins.shadow3.section.ShadowSection;
+import com.ssplugins.shadow3.util.Schema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +36,10 @@ public class Keyword extends ShadowEntity {
             arguments.add(def.nextSection());
         }
     
+        Schema<Keyword> schema = definition.getSchema();
+        if (schema != null && !schema.test(this)) {
+            throw ShadowException.schema(getLine(), getLine().firstToken().getIndex(), schema).get();
+        }
         innerContext = definition.getContextTransformer().get(this, fallback, (getFrom() == null ? fallback : getFrom().getInnerContext()));
     }
     

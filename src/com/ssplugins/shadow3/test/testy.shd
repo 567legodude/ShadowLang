@@ -1,7 +1,3 @@
 main {
-
-    set a true
-
-    print a
-
+//
 }
