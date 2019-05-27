@@ -71,6 +71,7 @@ public class ShadowParser {
         if (type == TokenType.IDENTIFIER) return new Identifier(reader);
         else if (type == TokenType.NUMBER) return new ShadowNumber(reader);
         else if (type == TokenType.STRING) return new ShadowString(reader);
+        else if (type == TokenType.BOOLEAN) return new ShadowBoolean(reader);
         else if (type == TokenType.OPERATOR) return new Operator(reader);
         else if (type == TokenType.CALL) return new Call(reader);
         else if (type == TokenType.GROUP_OPEN) {

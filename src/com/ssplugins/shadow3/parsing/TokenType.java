@@ -6,6 +6,7 @@ public enum TokenType {
     IDENTIFIER,
     NUMBER,
     STRING,
+    BOOLEAN,
     OPERATOR,
     CALL,
     GROUP_OPEN,

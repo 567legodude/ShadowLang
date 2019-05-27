@@ -1,5 +1,7 @@
 main {
 
-    set a test(5)
+    set a true
+
+    print a
 
 }

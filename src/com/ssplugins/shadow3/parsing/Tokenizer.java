@@ -89,7 +89,12 @@ public class Tokenizer {
             Token token = tokens.get(i);
             char first = token.getRaw().charAt(0);
             TokenType type;
-            if (Character.isLetter(first) || first == '_') type = TokenType.IDENTIFIER;
+            if (Character.isLetter(first) || first == '_') {
+                if (token.getRaw().equals("true") || token.getRaw().equals("false")) {
+                    type = TokenType.BOOLEAN;
+                }
+                else type = TokenType.IDENTIFIER;
+            }
             else if (Character.isDigit(first)) {
                 type = TokenType.NUMBER;
                 int offset = 0;
