@@ -1,5 +1,8 @@
 package com.ssplugins.shadow3.entity;
 
+import com.ssplugins.shadow3.exception.ShadowException;
+import com.ssplugins.shadow3.util.Schema;
+
 import java.util.Iterator;
 import java.util.Spliterator;
 import java.util.Spliterators;
@@ -27,6 +30,21 @@ public class EntityList implements Iterable<ShadowEntity> {
         last = entity;
         entity.setNext(null);
         ++size;
+        
+        if (entity instanceof Block) {
+            Block block = (Block) entity;
+            Schema<Block> schema = block.getDefinition().getSchema();
+            if (schema != null && !schema.test(block)) {
+                throw ShadowException.schema(block.getLine(), block.getLine().firstToken().getIndex(), schema).get();
+            }
+        }
+        else if (entity instanceof Keyword) {
+            Keyword keyword = (Keyword) entity;
+            Schema<Keyword> schema = keyword.getDefinition().getSchema();
+            if (schema != null && !schema.test(keyword)) {
+                throw ShadowException.schema(keyword.getLine(), keyword.getLine().firstToken().getIndex(), schema).get();
+            }
+        }
     }
     
     public void remove(ShadowEntity entity) {

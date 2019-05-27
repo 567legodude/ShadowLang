@@ -33,7 +33,7 @@ public class Flow {
     public boolean isBlock(String... names) {
         if (!(current instanceof Block)) return false;
         if (names.length == 0) return true;
-        String target = ((Block) current).getName();
+        String target = current.getName();
         for (String name : names) {
             if (target.equalsIgnoreCase(name)) return true;
         }

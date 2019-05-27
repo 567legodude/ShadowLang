@@ -40,6 +40,7 @@ public class ShadowCommons extends ShadowAPI {
     void addOperators() {
         operatorComment();
         operatorBlock();
+        operatorEquals();
         operatorAdd();
     }
     
@@ -50,6 +51,11 @@ public class ShadowCommons extends ShadowAPI {
     void operatorBlock() {
         context.addOperator(new OperatorAction<>("::", OpOrder.ASSIGNMENT, null, null, null, null));
         context.addOperator(new OperatorAction<>("->", OpOrder.ASSIGNMENT, null, null, null, null));
+    }
+    
+    void operatorEquals() {
+        OperatorAction<Integer, Integer, Boolean> iieq = new OperatorAction<>("==", OpOrder.EQUALITY, int.class, int.class, boolean.class, Integer::equals);
+        context.addOperator(iieq);
     }
     
     void operatorAdd() {
