@@ -1,6 +1,6 @@
 package com.ssplugins.shadow3.util;
 
-import com.ssplugins.shadow3.def.OperatorAction;
+import com.ssplugins.shadow3.def.OperatorType;
 import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
@@ -120,16 +120,16 @@ public class OperatorTree {
         }
         
         public abstract Object objectValue(Scope scope);
-        
-        private void unlink() {
-            if (parent == null) return;
-            for (int i = 0; i < parent.children.length; ++i) {
-                if (parent.children[i] == this) {
-                    parent.children[i] = null;
+    
+        private void replace(Node a, Node b) {
+            for (int i = 0; i < children.length; ++i) {
+                if (children[i] == a) {
+                    a.parent = null;
+                    children[i] = b;
+                    b.parent = this;
                     break;
                 }
             }
-            parent = null;
         }
         
         private void link(Node parent) {
@@ -144,6 +144,7 @@ public class OperatorTree {
             for (int i = 0; i < children.length; ++i) {
                 if (children[i] == null) {
                     children[i] = node;
+                    node.parent = this;
                     return;
                 }
             }
@@ -152,8 +153,7 @@ public class OperatorTree {
         
         public void insertAt(Node other) {
             Node parent = other.parent;
-            other.unlink();
-            this.link(parent);
+            if (parent != null) parent.replace(other, this);
             this.addChild(other);
         }
         
@@ -194,11 +194,11 @@ public class OperatorTree {
             Object[] operands = operandValues(scope);
             Class<?> left = operands[0].getClass();
             Class<?> right = operands[1].getClass();
-            OperatorAction action = scope.getContext()
-                                         .findOperator(getValue().getSymbol(), left, right)
-                                         .orElseThrow(ShadowException.section(getValue(), "OperatorError", "No definition for operands: " + left.getSimpleName() + ", " + right.getSimpleName()));
+            OperatorType type = scope.getContext()
+                                       .findOperator(getValue().getSymbol(), operands[0], operands[1])
+                                       .orElseThrow(ShadowException.section(getValue(), "OperatorError", "No matching definition for operands: " + left.getSimpleName() + ", " + right.getSimpleName()));
             //noinspection unchecked (Types are known at this point)
-            return action.getAction().apply(operands[0], operands[1]);
+            return type.getAction().execute(operands[0], operands[1], type.getLeftWrap(), type.getRightWrap());
         }
         
     }
@@ -220,12 +220,12 @@ public class OperatorTree {
         @Override
         public Object objectValue(Scope scope) {
             Object operand = getChild().objectValue(scope);
-            Class<?> type = operand.getClass();
-            OperatorAction action = scope.getContext()
-                                         .findOperator(getValue().getSymbol(), Void.class, type)
-                                         .orElseThrow(ShadowException.section(getValue(), "OperatorError", "No definition for operand: " + type.getSimpleName()));
+            Class<?> opType = operand.getClass();
+            OperatorType type = scope.getContext()
+                                       .findOperator(getValue().getSymbol(), null, operand)
+                                       .orElseThrow(ShadowException.section(getValue(), "OperatorError", "No matching definition for operand: " + opType.getSimpleName()));
             //noinspection unchecked (Type is known at this point)
-            return action.getAction().apply(null, operand);
+            return type.getAction().execute(null, operand, Void.class, type.getRightWrap());
         }
         
     }

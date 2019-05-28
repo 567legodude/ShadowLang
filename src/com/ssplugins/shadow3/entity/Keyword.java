@@ -3,12 +3,14 @@ package com.ssplugins.shadow3.entity;
 import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.def.KeywordAction;
 import com.ssplugins.shadow3.def.KeywordType;
+import com.ssplugins.shadow3.exception.NamedShadowException;
 import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
 import com.ssplugins.shadow3.parsing.TokenReader;
 import com.ssplugins.shadow3.parsing.TokenType;
 import com.ssplugins.shadow3.section.ShadowSection;
+import com.ssplugins.shadow3.util.Range;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +36,12 @@ public class Keyword extends ShadowEntity {
         while (def.hasNext()) {
             arguments.add(def.nextSection());
         }
-        
+    
+        Range args = definition.getArguments();
+        if (!args.contains(arguments.size())) {
+            throw new NamedShadowException("", getLine(), getLine().firstToken().getIndex(), "Keyword expects " + args.toString("argument") + ", found " + arguments.size());
+        }
+    
         innerContext = definition.getContextTransformer().get(this, fallback, (getFrom() == null ? fallback : getFrom().getInnerContext()));
     }
     

@@ -1,5 +1,8 @@
 package com.ssplugins.shadow3.section;
 
+import com.ssplugins.shadow3.api.OperatorMap;
+import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.TokenReader;
 import com.ssplugins.shadow3.parsing.TokenType;
@@ -19,6 +22,12 @@ public class Operator extends ShadowSection {
     @Override
     public Object toObject(Scope scope) {
         return getSymbol();
+    }
+    
+    public void lookup(ShadowContext context) {
+        OperatorMap map = context.getOperatorMap(getSymbol()).orElseThrow(ShadowException.noDef(getLine(), getPrimaryToken().getIndex(), "Operator not found."));
+        setOrder(map.getOrder());
+        setLeftToRight(map.isLeftToRight());
     }
     
     public String getSymbol() {

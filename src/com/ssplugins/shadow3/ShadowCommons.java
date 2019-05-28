@@ -2,10 +2,9 @@ package com.ssplugins.shadow3;
 
 import com.ssplugins.shadow3.api.ShadowAPI;
 import com.ssplugins.shadow3.api.ShadowContext;
-import com.ssplugins.shadow3.def.BlockType;
-import com.ssplugins.shadow3.def.KeywordType;
-import com.ssplugins.shadow3.def.OperatorAction;
-import com.ssplugins.shadow3.def.UnaryOperatorAction;
+import com.ssplugins.shadow3.def.*;
+import com.ssplugins.shadow3.def.OperatorType.OperatorAction;
+import com.ssplugins.shadow3.def.OperatorType.OperatorMatcher;
 import com.ssplugins.shadow3.entity.Block;
 import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowException;
@@ -14,6 +13,7 @@ import com.ssplugins.shadow3.section.Operator.OpOrder;
 import com.ssplugins.shadow3.util.Range;
 import com.ssplugins.shadow3.util.Schema;
 
+import java.util.Objects;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.stream.IntStream;
 
@@ -44,32 +44,84 @@ public class ShadowCommons extends ShadowAPI {
         operatorEquals();
         operatorNegate();
         operatorAdd();
+        operatorSubtract();
+        operatorMultiply();
+        operatorDivide();
+        operatorExponent();
     }
     
     void operatorComment() {
-        context.addOperator(new OperatorAction<>("//", OpOrder.ASSIGNMENT, null, null, null, null));
+        context.addOperator(new OperatorType<>("//", OpOrder.ASSIGNMENT, null, null, null, null));
     }
     
     void operatorBlock() {
-        context.addOperator(new OperatorAction<>("::", OpOrder.ASSIGNMENT, null, null, null, null));
-        context.addOperator(new OperatorAction<>("->", OpOrder.ASSIGNMENT, null, null, null, null));
+        context.addOperator(new OperatorType<>("::", OpOrder.ASSIGNMENT, null, null, null, null));
+        context.addOperator(new OperatorType<>("->", OpOrder.ASSIGNMENT, null, null, null, null));
     }
     
     void operatorEquals() {
-        OperatorAction<Integer, Integer, Boolean> iieq = new OperatorAction<>("==", OpOrder.EQUALITY, int.class, int.class, boolean.class, Integer::equals);
-        context.addOperator(iieq);
+        OperatorType<Object, Object, Boolean> equals = new OperatorType<>("==", OpOrder.EQUALITY, Object.class, Object.class, boolean.class, Objects::equals);
+        context.addOperator(equals);
+        // Covered by above case
+//        OperatorType<String, String, Boolean> stringEquals = new OperatorType<>("==", String.class, String.class, boolean.class, String::equals);
+//        stringEquals.setMatcher(OperatorMatcher.sameType());
+//        context.addOperator(stringEquals);
     }
     
     void operatorNegate() {
-        UnaryOperatorAction<Integer, Integer> neg = new UnaryOperatorAction<>("-", int.class, int.class, integer -> -integer);
-        context.addOperator(neg);
+        UnaryOperatorType<Integer, Integer> nInt = new UnaryOperatorType<>("-", int.class, int.class, i -> -i);
+        context.addOperator(nInt);
+        UnaryOperatorType<Double, Double> nDouble = new UnaryOperatorType<>("-", double.class, double.class, d -> -d);
+        context.addOperator(nDouble);
+        UnaryOperatorType<Long, Long> nLong = new UnaryOperatorType<>("-", long.class, long.class, l -> -l);
+        context.addOperator(nLong);
+        UnaryOperatorType<Float, Float> nFloat = new UnaryOperatorType<>("-", float.class, float.class, f -> -f);
+        context.addOperator(nFloat);
     }
     
     void operatorAdd() {
-        OperatorAction<Integer, Integer, Integer> addInt = new OperatorAction<>("+", int.class, int.class, int.class, Integer::sum);
-        context.addOperator(addInt);
-        OperatorAction<String, String, String> addString = new OperatorAction<>("+", String.class, String.class, String.class, (a, b) -> a + b);
+        OperatorType<String, Object, String> addString = new OperatorType<>("+", String.class, Object.class, String.class, (a, b) -> a + b.toString());
         context.addOperator(addString);
+        OperatorType<Object, String, String> addString2 = new OperatorType<>("+", Object.class, String.class, String.class, (a, b) -> a.toString() + b);
+        addString2.setMatcher(OperatorMatcher.sameType());
+        context.addOperator(addString2);
+    
+        NumberOperatorType numberAdd = new NumberOperatorType("+", Integer::sum, Double::sum, Float::sum, Long::sum);
+        numberAdd.addTo(context);
+    }
+    
+    void operatorSubtract() {
+        NumberOperatorType numberSubtract = new NumberOperatorType("-", (a, b) -> a - b, (a, b) -> a - b, (a, b) -> a - b, (a, b) -> a - b);
+        numberSubtract.addTo(context);
+    }
+    
+    void operatorMultiply() {
+        NumberOperatorType numberMultiply = new NumberOperatorType("*", (a, b) -> a * b, (a, b) -> a * b, (a, b) -> a * b, (a, b) -> a * b);
+        numberMultiply.addTo(context);
+    }
+    
+    void operatorDivide() {
+        NumberOperatorType numberDivide = new NumberOperatorType("/", (a, b) -> a / b, (a, b) -> a / b, (a, b) -> a / b, (a, b) -> a / b);
+        numberDivide.addTo(context);
+    }
+    
+    void operatorExponent() {
+        OperatorType<Integer, Integer, Double> intPow = new OperatorType<>("^", int.class, int.class, double.class, (OperatorAction<Integer, Integer, Double>) Math::pow);
+        intPow.setMatcher(OperatorMatcher.forInt());
+        intPow.setLeftToRight(false);
+        context.addOperator(intPow);
+        OperatorType<Double, Double, Double> doublePow = new OperatorType<>("^", double.class, double.class, double.class, Math::pow);
+        doublePow.setMatcher(OperatorMatcher.forDouble());
+        doublePow.setLeftToRight(false);
+        context.addOperator(doublePow);
+        OperatorType<Float, Float, Double> floatPow = new OperatorType<>("^", float.class, float.class, double.class, (OperatorAction<Float, Float, Double>) Math::pow);
+        floatPow.setMatcher(OperatorMatcher.forFloat());
+        floatPow.setLeftToRight(false);
+        context.addOperator(floatPow);
+        OperatorType<Long, Long, Double> longPow = new OperatorType<>("^", long.class, long.class, double.class, (OperatorAction<Long, Long, Double>) Math::pow);
+        longPow.setMatcher(OperatorMatcher.forLong());
+        longPow.setLeftToRight(false);
+        context.addOperator(longPow);
     }
     
     //endregion
@@ -84,7 +136,7 @@ public class ShadowCommons extends ShadowAPI {
     void keywordPrint() {
         KeywordType print = new KeywordType("print", new Range.Any());
         print.setAction((keyword, stepper, scope) -> {
-            keyword.argumentValues(scope).stream().forEach(System.out::print);
+            keyword.argumentValues(scope).forEach(System.out::print);
             System.out.println();
             return null;
         });

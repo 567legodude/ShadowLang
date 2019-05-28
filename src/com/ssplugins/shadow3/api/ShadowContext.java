@@ -2,7 +2,8 @@ package com.ssplugins.shadow3.api;
 
 import com.ssplugins.shadow3.def.BlockType;
 import com.ssplugins.shadow3.def.KeywordType;
-import com.ssplugins.shadow3.def.OperatorAction;
+import com.ssplugins.shadow3.def.OperatorType;
+import com.ssplugins.shadow3.section.Operator.OpOrder;
 
 import java.util.*;
 import java.util.function.Predicate;
@@ -25,11 +26,11 @@ public class ShadowContext {
     
     //region Operators
     
-    private OperatorMap getOpMap(OperatorAction action) {
+    private OperatorMap getOpMap(OperatorType action) {
         return operators.computeIfAbsent(action.getToken(), s -> new OperatorMap(action.getOrder()));
     }
     
-    public boolean addOperator(OperatorAction operator) {
+    public boolean addOperator(OperatorType operator) {
         return getOpMap(operator).insert(operator);
     }
     
@@ -37,10 +38,28 @@ public class ShadowContext {
         return operators.containsKey(token);
     }
     
-    public Optional<OperatorAction> findOperator(String token, Class<?> left, Class<?> right) {
+    public Optional<OperatorType> findOperator(String token, Object left, Object right) {
         OperatorMap map = operators.get(token);
         if (map == null) return Optional.empty();
         return map.find(left, right);
+    }
+    
+    public Optional<OperatorType> findOperator(String token, Class<?> left, Class<?> right) {
+        OperatorMap map = operators.get(token);
+        if (map == null) return Optional.empty();
+        return map.find(left, right);
+    }
+    
+    public Optional<OperatorMap> getOperatorMap(String token) {
+        return Optional.ofNullable(operators.get(token));
+    }
+    
+    public Optional<OpOrder> getOperatorOrder(String token) {
+        return Optional.ofNullable(operators.get(token)).map(OperatorMap::getOrder);
+    }
+    
+    public Optional<Boolean> isOperatorLTR(String token) {
+        return Optional.ofNullable(operators.get(token)).map(OperatorMap::isLeftToRight);
     }
     
     public Set<String> operators() {

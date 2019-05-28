@@ -1,27 +1,27 @@
 package com.ssplugins.shadow3.api;
 
-import com.ssplugins.shadow3.def.OperatorAction;
+import com.ssplugins.shadow3.def.OperatorType;
+import com.ssplugins.shadow3.def.OperatorType.OperatorMatcher;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public class OperatorMap {
     
     private OpOrder order;
-    private Map<Class<?>, Map<Class<?>, OperatorAction>> actions;
+    private boolean leftToRight = true;
+    private List<OperatorType<?, ?, ?>> types;
+    private List<OperatorType<?, ?, ?>> search;
     
     public OperatorMap(OpOrder order) {
         this.order = order;
-        actions = new HashMap<>();
+        types = new ArrayList<>();
+        search = new ArrayList<>();
     }
     
-    private Map<Class<?>, OperatorAction> getMap(Class<?> type) {
-        return actions.computeIfAbsent(type, c -> new HashMap<>(3));
-    }
-    
-    private Class<?> wrap(Class<?> type) {
+    public static Class<?> wrap(Class<?> type) {
         if (type == null) return null;
         if (!type.isPrimitive()) return type;
         if (type == boolean.class) return Boolean.class;
@@ -36,34 +36,62 @@ public class OperatorMap {
     }
     
     public void clean() {
-        actions.forEach((c, map) -> map.clear());
-        actions.clear();
+        types.clear();
     }
     
     public boolean isEmpty() {
-        return actions.isEmpty();
+        return types.isEmpty();
     }
     
     public OpOrder getOrder() {
         return order;
     }
     
-    public boolean canContain(OperatorAction action) {
-        return !find(action.getLeftType(), action.getRightType()).isPresent();
+    public boolean isLeftToRight() {
+        return leftToRight;
     }
     
-    public boolean insert(OperatorAction action) {
+    public void setLeftToRight(boolean leftToRight) {
+        this.leftToRight = leftToRight;
+    }
+    
+    public boolean canContain(OperatorType type) {
+        return types.stream().noneMatch(t -> type.getLeftWrap() == t.getLeftWrap() && type.getRightWrap() == t.getRightWrap());
+    }
+    
+    public boolean insert(OperatorType action) {
         if (!action.isPlaceholder() && !canContain(action)) return false;
-        getMap(wrap(action.getLeftType())).put(wrap(action.getRightType()), action);
+        types.add(action);
         return true;
     }
     
-    public Optional<OperatorAction> find(Class<?> left, Class<?> right) {
-        return findAction(wrap(left), wrap(right));
+    public Optional<OperatorType> find(Object left, Object right) {
+        return findAction(left, right);
     }
     
-    private Optional<OperatorAction> findAction(Class<?> left, Class<?> right) {
-        return Optional.ofNullable(actions.get(left)).map(types -> types.get(right));
+    public Optional<OperatorType> find(Class<?> left, Class<?> right) {
+        return Optional.empty();
+//        return findAction(wrap(left), wrap(right));
+    }
+    
+    private Optional<OperatorType> findAction(Object left, Object right) {
+        types.forEach(type -> {
+            if (type.isPlaceholder()) return;
+            OperatorMatcher matcher = type.getMatcher();
+            if (matcher == null) return;
+            if (matcher.matches(type, left, right)) {
+                search.add(type);
+            }
+        });
+        if (search.size() == 0) return Optional.empty();
+        if (search.size() > 1) {
+            OperatorMatcher matcher = OperatorMatcher.sameType();
+            search.removeIf(type -> !matcher.matches(type, left, right));
+            if (search.size() != 1) return Optional.empty();
+        }
+        OperatorType<?, ?, ?> action = search.get(0);
+        search.clear();
+        return Optional.of(action);
     }
     
 }

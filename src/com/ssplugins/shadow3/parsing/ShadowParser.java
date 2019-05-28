@@ -25,13 +25,13 @@ public class ShadowParser {
         this.context = context;
     }
     
-    public static int findGroupEnd(Token[] tokens, int start, int end) {
+    public static int findGroupEnd(List<Token> tokens, int start, int end) {
         int paren = 0;
-        if (end == -1) end = tokens.length;
-        String ending = Tokenizer.getOppositePair(tokens[start].getRaw());
+        if (end == -1) end = tokens.size();
+        String ending = Tokenizer.getOppositePair(tokens.get(start).getRaw());
         if (ending == null) return ERR_NO_CLOSING;
         for (int i = start; i < end; ++i) {
-            Token token = tokens[i];
+            Token token = tokens.get(i);
             if (token.getType() == TokenType.GROUP_OPEN) ++paren;
             else if (token.getType() == TokenType.GROUP_CLOSE) --paren;
             if (paren == 0 && token.getRaw().equals(ending)) return i;
@@ -91,7 +91,7 @@ public class ShadowParser {
         }
         List<ShadowSection> sections = reader.readTo(end, raw);
         sections.remove(sections.size() - 1);
-        return new Compound(reader.getLine(), sections);
+        return new Compound(reader.getLine(), sections, reader.getParent().getTopContext());
     }
     
     public Shadow parse(List<String> lines) {

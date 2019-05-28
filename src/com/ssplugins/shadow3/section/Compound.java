@@ -1,5 +1,6 @@
 package com.ssplugins.shadow3.section;
 
+import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.Token;
@@ -19,7 +20,7 @@ public class Compound extends ShadowSection {
     private boolean computed = false;
     private Object value;
     
-    public Compound(TokenLine line, List<ShadowSection> sections) {
+    public Compound(TokenLine line, List<ShadowSection> sections, ShadowContext context) {
         super(line);
         this.setTokens(sections.stream().map(ShadowSection::getTokens).flatMap(Stream::of).toArray(Token[]::new));
         
@@ -29,6 +30,7 @@ public class Compound extends ShadowSection {
             constant &= (section instanceof ShadowString || section instanceof ShadowNumber);
             if (section instanceof Operator) {
                 Operator operator = (Operator) section;
+                operator.lookup(context);
                 if (opTree.expectingUnary()) {
                     opTree.insert(new UnaryOpNode(operator), section.getPrimaryToken());
                 }
