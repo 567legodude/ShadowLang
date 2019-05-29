@@ -15,6 +15,7 @@ public class Stepper {
     private ShadowContext context;
     
     private Scope scope;
+    private Block block;
     private EntityList content;
     private boolean run;
     private Schema<ShadowEntity> skipSchema;
@@ -24,6 +25,7 @@ public class Stepper {
     public Stepper(Stepper parent, ShadowContext context, Block block) {
         this.parent = parent;
         this.context = context;
+        this.block = block;
         this.content = block.getContents();
         iterator = content.iterator();
     }
@@ -62,6 +64,10 @@ public class Stepper {
     
     public Stepper getParent() {
         return parent;
+    }
+    
+    public Block getBlock() {
+        return block;
     }
     
     public void setScope(Scope scope) {

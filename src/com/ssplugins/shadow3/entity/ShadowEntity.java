@@ -5,6 +5,7 @@ import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
 import com.ssplugins.shadow3.parsing.TokenLine;
+import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.ShadowSection;
 
 import java.util.List;
@@ -41,6 +42,10 @@ public abstract class ShadowEntity {
     
     public abstract ShadowContext getInnerContext();
     
+    public ShadowContext getEffectiveContext() {
+        return getFrom() == null ? getTopContext() : getFrom().getInnerContext();
+    }
+    
     public <T> T getArgument(int index, Class<T> type, Scope scope, String err) {
         ShadowSection section = getArguments().get(index);
         Object o = section.toObject(scope);
@@ -54,8 +59,16 @@ public abstract class ShadowEntity {
         return type.cast(section);
     }
     
+    public Identifier getIdentifier(int index) {
+        return getArgumentSection(index, Identifier.class, "Argument should be an identifier.");
+    }
+    
     public List<Object> argumentValues(Scope scope) {
         return getArguments().stream().map(section -> section.toObject(scope)).collect(Collectors.toList());
+    }
+    
+    public List<Object> argumentValues(Scope scope, int start) {
+        return getArguments().stream().skip(start).map(section -> section.toObject(scope)).collect(Collectors.toList());
     }
     
     public Object argumentValue(int index, Scope scope) {

@@ -84,11 +84,12 @@ public class ShadowParser {
     }
     
     public Compound readCompound(TokenReader reader, TokenType end, String raw) {
-        if (reader.nextType() == TokenType.GROUP_OPEN) {
-            String close = Tokenizer.getOppositePair(reader.peekNext().getRaw());
-            reader.consume();
-            return readCompound(reader, TokenType.GROUP_CLOSE, close);
-        }
+//        if (reader.nextType() == TokenType.GROUP_OPEN) {
+//            String close = Tokenizer.getOppositePair(reader.peekNext().getRaw());
+//            reader.consume();
+//            return readCompound(reader, TokenType.GROUP_CLOSE, close);
+//        }
+        reader.consume();
         List<ShadowSection> sections = reader.readTo(end, raw);
         sections.remove(sections.size() - 1);
         return new Compound(reader.getLine(), sections, reader.getParent().getTopContext());

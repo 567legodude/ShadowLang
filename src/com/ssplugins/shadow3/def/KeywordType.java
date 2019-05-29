@@ -10,6 +10,7 @@ public class KeywordType {
     private Range arguments;
     private Schema<Keyword> schema;
     
+    private ParseCallback<Keyword> parseCallback;
     private KeywordAction action;
     
     private ContextTransformer<Keyword> contextTransformer = ContextTransformer.keywordNone();
@@ -33,6 +34,14 @@ public class KeywordType {
     
     public void setSchema(Schema<Keyword> schema) {
         this.schema = schema;
+    }
+    
+    public ParseCallback<Keyword> getParseCallback() {
+        return parseCallback;
+    }
+    
+    public void setParseCallback(ParseCallback<Keyword> parseCallback) {
+        this.parseCallback = parseCallback;
     }
     
     public KeywordAction getAction() {

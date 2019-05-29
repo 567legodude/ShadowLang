@@ -259,7 +259,11 @@ public class OperatorTree {
         public SectionNode(ShadowSection section) {
             this(section, null);
         }
-        
+    
+        public ShadowSection getSection() {
+            return section;
+        }
+    
         @Override
         public Object objectValue(Scope scope) {
             return section.toObject(scope);

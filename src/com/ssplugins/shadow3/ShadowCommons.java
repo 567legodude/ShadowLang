@@ -3,16 +3,19 @@ package com.ssplugins.shadow3;
 import com.ssplugins.shadow3.api.ShadowAPI;
 import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.def.*;
-import com.ssplugins.shadow3.def.OperatorType.OperatorAction;
 import com.ssplugins.shadow3.def.OperatorType.OperatorMatcher;
 import com.ssplugins.shadow3.entity.Block;
 import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowException;
+import com.ssplugins.shadow3.exception.ShadowExecutionError;
+import com.ssplugins.shadow3.exception.ShadowParseError;
+import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
 import com.ssplugins.shadow3.util.Range;
 import com.ssplugins.shadow3.util.Schema;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.PrimitiveIterator.OfInt;
 import java.util.stream.IntStream;
@@ -101,27 +104,22 @@ public class ShadowCommons extends ShadowAPI {
     }
     
     void operatorDivide() {
-        NumberOperatorType numberDivide = new NumberOperatorType("/", (a, b) -> a / b, (a, b) -> a / b, (a, b) -> a / b, (a, b) -> a / b);
-        numberDivide.addTo(context);
+        OperatorType<Number, Number, Double> div = new OperatorType<>("/", Number.class, Number.class, double.class, (a, b) -> a.doubleValue() / b.doubleValue());
+        context.addOperator(div);
     }
     
     void operatorExponent() {
-        OperatorType<Integer, Integer, Double> intPow = new OperatorType<>("^", int.class, int.class, double.class, (OperatorAction<Integer, Integer, Double>) Math::pow);
-        intPow.setMatcher(OperatorMatcher.forInt());
-        intPow.setLeftToRight(false);
-        context.addOperator(intPow);
-        OperatorType<Double, Double, Double> doublePow = new OperatorType<>("^", double.class, double.class, double.class, Math::pow);
-        doublePow.setMatcher(OperatorMatcher.forDouble());
-        doublePow.setLeftToRight(false);
-        context.addOperator(doublePow);
-        OperatorType<Float, Float, Double> floatPow = new OperatorType<>("^", float.class, float.class, double.class, (OperatorAction<Float, Float, Double>) Math::pow);
-        floatPow.setMatcher(OperatorMatcher.forFloat());
-        floatPow.setLeftToRight(false);
-        context.addOperator(floatPow);
-        OperatorType<Long, Long, Double> longPow = new OperatorType<>("^", long.class, long.class, double.class, (OperatorAction<Long, Long, Double>) Math::pow);
-        longPow.setMatcher(OperatorMatcher.forLong());
-        longPow.setLeftToRight(false);
-        context.addOperator(longPow);
+        OperatorType<Number, Number, Double> exp = new OperatorType<>("^", Number.class, Number.class, double.class, (a, b) -> Math.pow(a.doubleValue(), b.doubleValue()));
+        exp.setLeftToRight(false);
+        context.addOperator(exp);
+    }
+    
+    // Not added yet
+    void operatorBitShift() {
+        NumberOperatorType shiftRight = new NumberOperatorType(">>", OpOrder.SHIFT, (a, b) -> a >> b, null, null, (a, b) -> a >> b);
+        shiftRight.addTo(context);
+        NumberOperatorType shiftLeft = new NumberOperatorType("<<", OpOrder.SHIFT, (a, b) -> a << b, null, null, (a, b) -> a << b);
+        shiftLeft.addTo(context);
     }
     
     //endregion
@@ -131,6 +129,8 @@ public class ShadowCommons extends ShadowAPI {
         keywordPrint();
         keywordSet();
         keywordType();
+        keywordExec();
+//        keywordFrom(); Not fully implemented yet
     }
     
     void keywordPrint() {
@@ -146,7 +146,7 @@ public class ShadowCommons extends ShadowAPI {
     void keywordSet() {
         KeywordType set = new KeywordType("set", new Range.Single(2));
         set.setAction((keyword, stepper, scope) -> {
-            Identifier name = keyword.getArgumentSection(0, Identifier.class, "First argument should be identifier.");
+            Identifier name = keyword.getIdentifier(0);
             Object o = keyword.argumentValue(1, scope);
             scope.set(name, o);
             return o;
@@ -163,6 +163,30 @@ public class ShadowCommons extends ShadowAPI {
         context.addKeyword(type);
     }
     
+    void keywordExec() {
+        KeywordType exec = new KeywordType("exec", new Range.LowerBound(1));
+        exec.setAction((keyword, stepper, scope) -> {
+            String name = keyword.getIdentifier(0).getName();
+            List<Object> params = keyword.argumentValues(scope, 1);
+            Block block = scope.getContext().findFunction(name, params.size()).orElseThrow(ShadowException.noDef(keyword.getLine(), keyword.getLine().firstToken().getIndex(), "No matching function found."));
+            return block.execute(stepper, new Scope(scope.getContext(), stepper), params);
+        });
+        context.addKeyword(exec);
+    }
+    
+    void keywordFrom() {
+        KeywordType from = new KeywordType("from", new Range.LowerBound(3));
+        from.setParseCallback((keyword, c) -> {
+            Identifier sep = keyword.getIdentifier(1);
+            if (!sep.getName().equals("do")) {
+                throw new ShadowParseError(keyword.getLine(), sep.getPrimaryToken().getIndex(), "Expected keyword \"do\" here.");
+            }
+        });
+        from.setContextTransformer(ContextTransformer.keywordModule(0));
+        from.setAction((keyword, stepper, scope) -> keyword.argumentValue(2, scope));
+        context.addKeyword(from);
+    }
+    
     //endregion
     //region Blocks
     
@@ -170,6 +194,8 @@ public class ShadowCommons extends ShadowAPI {
         blockMain();
         blockRepeat();
         blockConditionals();
+        blockDefine();
+//        blockUsing(); Not fully implemented yet
     }
     
     void blockMain() {
@@ -228,6 +254,50 @@ public class ShadowCommons extends ShadowAPI {
         context.addBlock(typeIf);
         context.addBlock(elseif);
         context.addBlock(typeElse);
+    }
+    
+    void blockDefine() {
+        BlockType define = new BlockType("define", new Range.Single(1), new Range.Any());
+        define.setParseCallback((block, c) -> c.addFunction(block));
+        define.setPreRunCheck((block, scope, args) -> args != null);
+        define.setEnterCallback((block, stepper, scope, args) -> {
+            List<Identifier> parameters = block.getParameters();
+            if (args.size() != parameters.size()) {
+                throw new ShadowExecutionError(block.getLine(), block.getLine().firstToken().getIndex(), "Number of arguments does not equal number of parameters.");
+            }
+            for (int i = 0; i < args.size(); ++i) {
+                scope.set(parameters.get(i), args.get(i));
+            }
+        });
+        context.addBlock(define);
+    
+        ShadowContext defineContext = new ShadowContext();
+        define.setContextTransformer((block, topContext, currentContext) -> defineContext);
+    
+        KeywordType aReturn = new KeywordType("return", new Range.Single(1));
+        aReturn.setAction((keyword, stepper, scope) -> {
+            Scope original = scope;
+            while (stepper.getBlock().getDefinition() != define) {
+                stepper.breakBlock();
+                stepper = stepper.getParent();
+                scope = scope.getParent();
+            }
+            scope.setReturnValue(keyword.argumentValue(0, original));
+            stepper.breakBlock();
+            return null;
+        });
+        defineContext.addKeyword(aReturn);
+    }
+    
+    void blockUsing() {
+        BlockType using = new BlockType("using", new Range.Single(1), new Range.None());
+//        using.setContextTransformer((block, topContext, currentContext) -> {
+//            Identifier module = block.getIdentifier(0);
+//            String name = module.getName();
+//            return currentContext.findModule(name).orElseThrow(ShadowException.noDef(module.getLine(), module.getPrimaryToken().getIndex(), "No module found named: " + name));
+//        });
+        using.setContextTransformer(ContextTransformer.blockModule(0));
+        context.addBlock(using);
     }
     
     //endregion

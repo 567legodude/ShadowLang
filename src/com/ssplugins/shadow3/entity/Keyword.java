@@ -3,6 +3,7 @@ package com.ssplugins.shadow3.entity;
 import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.def.KeywordAction;
 import com.ssplugins.shadow3.def.KeywordType;
+import com.ssplugins.shadow3.def.ParseCallback;
 import com.ssplugins.shadow3.exception.NamedShadowException;
 import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.execute.Scope;
@@ -15,7 +16,6 @@ import com.ssplugins.shadow3.util.Range;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class Keyword extends ShadowEntity {
     
@@ -42,7 +42,9 @@ public class Keyword extends ShadowEntity {
             throw new NamedShadowException("", getLine(), getLine().firstToken().getIndex(), "Keyword expects " + args.toString("argument") + ", found " + arguments.size());
         }
     
-        innerContext = definition.getContextTransformer().get(this, fallback, (getFrom() == null ? fallback : getFrom().getInnerContext()));
+        ParseCallback<Keyword> parseCallback = definition.getParseCallback();
+        if (parseCallback != null) parseCallback.onParse(this, getEffectiveContext());
+        innerContext = definition.getContextTransformer().get(this, fallback, getEffectiveContext());
     }
     
     private KeywordType findDef(ShadowEntity parent, ShadowContext fallback) {
@@ -87,10 +89,6 @@ public class Keyword extends ShadowEntity {
     @Override
     public ShadowContext getInnerContext() {
         return innerContext;
-    }
-    
-    public List<Object> argumentValues(Scope scope) {
-        return getArguments().stream().map(section -> section.toObject(scope)).collect(Collectors.toList());
     }
     
     public KeywordType getDefinition() {

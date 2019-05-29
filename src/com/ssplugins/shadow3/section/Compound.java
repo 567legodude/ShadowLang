@@ -27,14 +27,15 @@ public class Compound extends ShadowSection {
         opTree = new OperatorTree(line);
         for (ShadowSection section : sections) {
             // If this compound is not a constant value, the variable is set to false and stays false.
-            constant &= (section instanceof ShadowString || section instanceof ShadowNumber);
+            constant &= (section instanceof Operator || section instanceof ShadowString || section instanceof ShadowNumber);
             if (section instanceof Operator) {
                 Operator operator = (Operator) section;
-                operator.lookup(context);
                 if (opTree.expectingUnary()) {
+                    operator.lookupUnary(context);
                     opTree.insert(new UnaryOpNode(operator), section.getPrimaryToken());
                 }
                 else {
+                    operator.lookup(context);
                     opTree.insert(new OpNode(operator), section.getPrimaryToken());
                 }
             }
@@ -56,6 +57,10 @@ public class Compound extends ShadowSection {
             return value;
         }
         return opTree.getValue(scope);
+    }
+    
+    public OperatorTree getOpTree() {
+        return opTree;
     }
     
 }

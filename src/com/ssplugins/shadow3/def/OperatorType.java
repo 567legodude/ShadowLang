@@ -101,30 +101,10 @@ public class OperatorType<L, R, O> {
         }
     
         static Object convert(Number number, Class<?> target) {
-            if (number instanceof Integer) {
-                if (target == Integer.class) return number.intValue();
-                if (target == Double.class) return (double) number.intValue();
-                if (target == Float.class) return (float) number.intValue();
-                if (target == Long.class) return (long) number.intValue();
-            }
-            if (number instanceof Double) {
-                if (target == Integer.class) return (int) number.doubleValue();
-                if (target == Double.class) return number.doubleValue();
-                if (target == Float.class) return (float) number.doubleValue();
-                if (target == Long.class) return (long) number.doubleValue();
-            }
-            if (number instanceof Float) {
-                if (target == Integer.class) return (int) number.floatValue();
-                if (target == Double.class) return (double) number.floatValue();
-                if (target == Float.class) return number.floatValue();
-                if (target == Long.class) return (long) number.floatValue();
-            }
-            if (number instanceof Long) {
-                if (target == Integer.class) return (int) number.longValue();
-                if (target == Double.class) return (double) number.longValue();
-                if (target == Float.class) return (float) number.longValue();
-                if (target == Long.class) return number.longValue();
-            }
+            if (target == Integer.class) return number.intValue();
+            if (target == Double.class) return number.doubleValue();
+            if (target == Float.class) return number.floatValue();
+            if (target == Long.class) return number.longValue();
             return number;
         }
         
@@ -150,6 +130,12 @@ public class OperatorType<L, R, O> {
     
         static boolean notNumbers(Object left, Object right) {
             return !(left instanceof Number) || !(right instanceof Number);
+        }
+    
+        static OperatorMatcher numbers() {
+            return (type, left, right) -> {
+                return left instanceof Number && right instanceof Number;
+            };
         }
     
         static OperatorMatcher forDouble() {

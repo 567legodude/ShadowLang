@@ -15,8 +15,9 @@ public class OperatorMap {
     private List<OperatorType<?, ?, ?>> types;
     private List<OperatorType<?, ?, ?>> search;
     
-    public OperatorMap(OpOrder order) {
-        this.order = order;
+    public OperatorMap(OpOrder order, boolean leftToRight) {
+        if (order != OpOrder.UNARY) this.order = order;
+        this.leftToRight = leftToRight;
         types = new ArrayList<>();
         search = new ArrayList<>();
     }
@@ -44,6 +45,7 @@ public class OperatorMap {
     }
     
     public OpOrder getOrder() {
+        if (order == null) return OpOrder.UNARY;
         return order;
     }
     
@@ -61,6 +63,10 @@ public class OperatorMap {
     
     public boolean insert(OperatorType action) {
         if (!action.isPlaceholder() && !canContain(action)) return false;
+        if (order == null && action.getOrder() != OpOrder.UNARY) {
+            order = action.getOrder();
+            leftToRight = action.isLeftToRight();
+        }
         types.add(action);
         return true;
     }
@@ -69,9 +75,8 @@ public class OperatorMap {
         return findAction(left, right);
     }
     
-    public Optional<OperatorType> find(Class<?> left, Class<?> right) {
-        return Optional.empty();
-//        return findAction(wrap(left), wrap(right));
+    public Optional<OperatorType<?, ?, ?>> find(Class<?> left, Class<?> right) {
+        return types.stream().filter(t -> t.getLeftWrap() == left && t.getRightWrap() == right).findFirst();
     }
     
     private Optional<OperatorType> findAction(Object left, Object right) {

@@ -17,7 +17,8 @@ public class Shadow {
     
     public Optional<Block> firstBlock(String name) {
         return contentStream().filter(entity -> entity instanceof Block)
-                              .map(e -> (Block) e).filter(b -> b.getName().equals(name))
+                              .map(e -> (Block) e)
+                              .filter(b -> b.getName().equals(name))
                               .findFirst();
     }
     

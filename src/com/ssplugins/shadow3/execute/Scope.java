@@ -16,6 +16,7 @@ public class Scope {
     private Map<String, Object> variables = new HashMap<>();
     
     private Object blockValue;
+    private Object returnValue;
     
     private Scope(ShadowContext context, Stepper stepper, Scope parent) {
         this.context = context;
@@ -94,6 +95,7 @@ public class Scope {
         context = null;
         parent = null;
         blockValue = null;
+        returnValue = null;
     }
     
     public ShadowContext getContext() {
@@ -114,6 +116,14 @@ public class Scope {
     
     public void setBlockValue(Object blockValue) {
         this.blockValue = blockValue;
+    }
+    
+    public Object getReturnValue() {
+        return returnValue;
+    }
+    
+    public void setReturnValue(Object returnValue) {
+        this.returnValue = returnValue;
     }
     
 }

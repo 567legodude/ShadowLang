@@ -30,6 +30,11 @@ public class Operator extends ShadowSection {
         setLeftToRight(map.isLeftToRight());
     }
     
+    public void lookupUnary(ShadowContext context) {
+        context.getOperatorMap(getSymbol()).orElseThrow(ShadowException.noDef(getLine(), getPrimaryToken().getIndex(), "Operator not found."));
+        setOrder(OpOrder.UNARY);
+    }
+    
     public String getSymbol() {
         return getPrimaryToken().getRaw();
     }
@@ -56,6 +61,7 @@ public class Operator extends ShadowSection {
         EXPONENT,
         MUL_DIV,
         ADD_SUB,
+        SHIFT,
         COMPARE,
         EQUALITY,
         B_AND,

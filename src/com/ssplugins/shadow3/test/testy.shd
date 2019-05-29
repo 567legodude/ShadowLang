@@ -1,5 +1,19 @@
 main {
+    //
+}
 
-    print [type [set a 1]]
+define fib -> n {
+    if (n == 0) :: return 0
+    if (n == 1) :: return 1
+    return ([exec fib (n - 1)] + [exec fib (n - 2)])
+}
 
+define sqrt -> input, iterations {
+    set result 0
+    set guess (input / 2)
+    repeat iterations -> i {
+        set result ((guess + input / guess) / 2)
+        set guess result
+    }
+    return result
 }

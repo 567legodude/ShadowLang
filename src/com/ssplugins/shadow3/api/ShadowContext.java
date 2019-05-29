@@ -3,10 +3,13 @@ package com.ssplugins.shadow3.api;
 import com.ssplugins.shadow3.def.BlockType;
 import com.ssplugins.shadow3.def.KeywordType;
 import com.ssplugins.shadow3.def.OperatorType;
+import com.ssplugins.shadow3.entity.Block;
+import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 public class ShadowContext {
     
@@ -14,9 +17,14 @@ public class ShadowContext {
     private Map<String, BlockType> blocks = new HashMap<>();
     private Map<String, KeywordType> keywords = new HashMap<>();
     private Map<String, ShadowContext> modules = new HashMap<>();
+    private Map<String, FunctionMap> functions = new HashMap<>();
     
     private <T> Optional<T> search(List<T> list, Predicate<T> predicate) {
         return list.stream().filter(predicate).findFirst();
+    }
+    
+    private <T> T getOrElse(Map<String, T> map, String key, Supplier<T> supplier) {
+        return map.computeIfAbsent(key, s -> supplier.get());
     }
     
     public void clean() {
@@ -27,7 +35,7 @@ public class ShadowContext {
     //region Operators
     
     private OperatorMap getOpMap(OperatorType action) {
-        return operators.computeIfAbsent(action.getToken(), s -> new OperatorMap(action.getOrder()));
+        return operators.computeIfAbsent(action.getToken(), s -> new OperatorMap(action.getOrder(), action.isLeftToRight()));
     }
     
     public boolean addOperator(OperatorType operator) {
@@ -44,7 +52,7 @@ public class ShadowContext {
         return map.find(left, right);
     }
     
-    public Optional<OperatorType> findOperator(String token, Class<?> left, Class<?> right) {
+    public Optional<OperatorType<?, ?, ?>> findOperator(String token, Class<?> left, Class<?> right) {
         OperatorMap map = operators.get(token);
         if (map == null) return Optional.empty();
         return map.find(left, right);
@@ -103,6 +111,24 @@ public class ShadowContext {
     
     public Optional<ShadowContext> findModule(String name) {
         return Optional.ofNullable(modules.get(name));
+    }
+    
+    //endregion
+    //region Functions
+    
+    public boolean addFunction(Block block) {
+        BlockType define = blocks.get("define");
+        if (define == null) throw new IllegalArgumentException("The function definition block has not been added.");
+        if (block.getDefinition() != define) throw new IllegalArgumentException("Block is not a function definition.");
+        String name = ((Identifier) block.getModifiers().get(0)).getName();
+        FunctionMap map = getOrElse(functions, name, FunctionMap::new);
+        if (map.contains(block.getParameters().size())) throw new IllegalArgumentException("Duplicate function definition.");
+        map.set(block.getParameters().size(), block);
+        return true;
+    }
+    
+    public Optional<Block> findFunction(String name, int i) {
+        return Optional.ofNullable(functions.get(name)).flatMap(fMap -> fMap.get(i));
     }
     
     //endregion

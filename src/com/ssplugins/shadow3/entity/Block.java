@@ -1,10 +1,7 @@
 package com.ssplugins.shadow3.entity;
 
 import com.ssplugins.shadow3.api.ShadowContext;
-import com.ssplugins.shadow3.def.BlockEndCallback;
-import com.ssplugins.shadow3.def.BlockEnterCallback;
-import com.ssplugins.shadow3.def.BlockType;
-import com.ssplugins.shadow3.def.PreRunCheck;
+import com.ssplugins.shadow3.def.*;
 import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
@@ -63,8 +60,10 @@ public class Block extends ShadowEntity {
         if (!params.contains(parameters.size())) {
             throw new ShadowParseError(getLine(), getLine().firstToken().getIndex(), "Block expects " + params.toString("parameter") + ", found " + parameters.size());
         }
-        
-        innerContext = definition.getContextTransformer().get(this, reader.getContext(), (getFrom() == null ? reader.getContext() : getFrom().getInnerContext()));
+    
+        ParseCallback<Block> parseCallback = definition.getParseCallback();
+        if (parseCallback != null) parseCallback.onParse(this, getEffectiveContext());
+        innerContext = definition.getContextTransformer().get(this, reader.getContext(), getEffectiveContext());
         
         contents = new EntityList();
         if (def.hasNext() && def.nextMatches(TokenType.OPERATOR, "::")) {
@@ -108,12 +107,15 @@ public class Block extends ShadowEntity {
         BlockEnterCallback enterCallback = definition.getEnterCallback();
         if (enterCallback != null) enterCallback.onEnter(this, stepper, scope, args);
         Stepper contentStepper = new Stepper(stepper, innerContext, this);
-        contentStepper.setScope(scope.makeLevel(contentStepper));
+        Scope innerScope = scope.makeLevel(contentStepper);
+        contentStepper.setScope(innerScope);
         contentStepper.run(stpr -> {
             BlockEndCallback endCallback = definition.getEndCallback();
             if (endCallback != null) endCallback.onEnd(this, stpr, scope);
         });
-        return null;
+        Object r = innerScope.getReturnValue();
+        innerScope.clean();
+        return r;
     }
     
     @Override

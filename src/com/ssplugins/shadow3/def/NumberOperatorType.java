@@ -38,18 +38,26 @@ public class NumberOperatorType {
     }
     
     public void addTo(ShadowContext context) {
-        OperatorType<Integer, Integer, Integer> intType = new OperatorType<>(token, int.class, int.class, int.class, intOp);
-        intType.setMatcher(OperatorMatcher.forInt());
-        context.addOperator(intType);
-        OperatorType<Double, Double, Double> doubleType = new OperatorType<>(token, double.class, double.class, double.class, doubleOp);
-        doubleType.setMatcher(OperatorMatcher.forDouble());
-        context.addOperator(doubleType);
-        OperatorType<Float, Float, Float> floatType = new OperatorType<>(token, float.class, float.class, float.class, floatOp);
-        floatType.setMatcher(OperatorMatcher.forFloat());
-        context.addOperator(floatType);
-        OperatorType<Long, Long, Long> longType = new OperatorType<>(token, long.class, long.class, long.class, longOp);
-        longType.setMatcher(OperatorMatcher.forLong());
-        context.addOperator(longType);
+        if (intOp != null) {
+            OperatorType<Integer, Integer, Integer> intType = new OperatorType<>(token, int.class, int.class, int.class, intOp);
+            intType.setMatcher(OperatorMatcher.forInt());
+            context.addOperator(intType);
+        }
+        if (doubleOp != null) {
+            OperatorType<Double, Double, Double> doubleType = new OperatorType<>(token, double.class, double.class, double.class, doubleOp);
+            doubleType.setMatcher(OperatorMatcher.forDouble());
+            context.addOperator(doubleType);
+        }
+        if (floatOp != null) {
+            OperatorType<Float, Float, Float> floatType = new OperatorType<>(token, float.class, float.class, float.class, floatOp);
+            floatType.setMatcher(OperatorMatcher.forFloat());
+            context.addOperator(floatType);
+        }
+        if (longOp != null) {
+            OperatorType<Long, Long, Long> longType = new OperatorType<>(token, long.class, long.class, long.class, longOp);
+            longType.setMatcher(OperatorMatcher.forLong());
+            context.addOperator(longType);
+        }
     }
     
 }

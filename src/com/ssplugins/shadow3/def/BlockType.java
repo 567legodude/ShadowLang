@@ -12,6 +12,7 @@ public class BlockType {
     private Range parameters;
     private Schema<Block> schema;
     
+    private ParseCallback<Block> parseCallback;
     private PreRunCheck preRunCheck;
     private BlockEnterCallback enterCallback;
     private BlockEndCallback endCallback;
@@ -43,6 +44,14 @@ public class BlockType {
     
     public void setSchema(Schema<Block> schema) {
         this.schema = schema;
+    }
+    
+    public ParseCallback<Block> getParseCallback() {
+        return parseCallback;
+    }
+    
+    public void setParseCallback(ParseCallback<Block> parseCallback) {
+        this.parseCallback = parseCallback;
     }
     
     public PreRunCheck getPreRunCheck() {
