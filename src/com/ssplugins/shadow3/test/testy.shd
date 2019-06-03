@@ -1,5 +1,12 @@
 main {
-    //
+
+    set a [list]
+    list a [add 1 2 3 4 5]
+
+    foreach a -> n {
+        print n
+    }
+
 }
 
 define fib -> n {
