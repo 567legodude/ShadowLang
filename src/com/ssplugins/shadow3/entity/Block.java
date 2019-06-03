@@ -2,7 +2,7 @@ package com.ssplugins.shadow3.entity;
 
 import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.def.*;
-import com.ssplugins.shadow3.exception.ShadowException;
+import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
@@ -74,13 +74,24 @@ public class Block extends ShadowEntity {
         else {
             def.expect(TokenType.GROUP_OPEN, "{");
             while (reader.hasNext() && !reader.nextIsClose()) {
-                contents.add(reader.nextEntity(this, ShadowException.noClose(getLine(), getLine().lastToken().getIndex(), "Reached end of file while searching for closing bracket.")));
+                contents.add(reader.nextEntity(this, ShadowCodeException.noClose(getLine(), getLine().lastToken().getIndex(), "Reached end of file while searching for closing bracket.")));
             }
-            reader.consume(ShadowException.noClose(getLine(), getLine().firstToken().getIndex(), "No closing bracket found for block."));
+            reader.consume(ShadowCodeException.noClose(getLine(), getLine().firstToken().getIndex(), "No closing bracket found for block."));
         }
     }
     
     private BlockType findDef(Block parent, ShadowContext fallback) {
+        // Check lookup context, then search parent tree for inner context.
+        if (parent != null) {
+            ShadowContext lookupContext = parent.getDefinition().getLookupContext();
+            if (lookupContext != null) {
+                Optional<BlockType> block = lookupContext.findBlock(name);
+                if (block.isPresent()) {
+                    setFrom(parent);
+                    return block.get();
+                }
+            }
+        }
         while (parent != null) {
             ShadowContext context = parent.getInnerContext();
             if (context != null) {
@@ -92,7 +103,7 @@ public class Block extends ShadowEntity {
             }
             parent = (Block) parent.getParent();
         }
-        return fallback.findBlock(name).orElseThrow(ShadowException.noDef(getLine(), getLine().firstToken().getIndex(), "No definition found for block: " + name));
+        return fallback.findBlock(name).orElseThrow(ShadowCodeException.noDef(getLine(), getLine().firstToken().getIndex(), "No definition found for block: " + name));
     }
     
     @Override

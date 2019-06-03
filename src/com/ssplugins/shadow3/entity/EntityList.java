@@ -1,6 +1,6 @@
 package com.ssplugins.shadow3.entity;
 
-import com.ssplugins.shadow3.exception.ShadowException;
+import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.util.Schema;
 
 import java.util.Iterator;
@@ -35,14 +35,14 @@ public class EntityList implements Iterable<ShadowEntity> {
             Block block = (Block) entity;
             Schema<Block> schema = block.getDefinition().getSchema();
             if (schema != null && !schema.test(block)) {
-                throw ShadowException.schema(block.getLine(), block.getLine().firstToken().getIndex(), schema).get();
+                throw ShadowCodeException.schema(block.getLine(), block.getLine().firstToken().getIndex(), schema).get();
             }
         }
         else if (entity instanceof Keyword) {
             Keyword keyword = (Keyword) entity;
             Schema<Keyword> schema = keyword.getDefinition().getSchema();
             if (schema != null && !schema.test(keyword)) {
-                throw ShadowException.schema(keyword.getLine(), keyword.getLine().firstToken().getIndex(), schema).get();
+                throw ShadowCodeException.schema(keyword.getLine(), keyword.getLine().firstToken().getIndex(), schema).get();
             }
         }
     }

@@ -1,5 +1,6 @@
 package com.ssplugins.shadow3.def;
 
+import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.entity.Keyword;
 import com.ssplugins.shadow3.util.Range;
 import com.ssplugins.shadow3.util.Schema;
@@ -14,6 +15,7 @@ public class KeywordType {
     private KeywordAction action;
     
     private ContextTransformer<Keyword> contextTransformer = ContextTransformer.keywordNone();
+    private ShadowContext lookupContext;
     
     public KeywordType(String name, Range arguments) {
         this.name = name;
@@ -58,6 +60,14 @@ public class KeywordType {
     
     public void setContextTransformer(ContextTransformer<Keyword> contextTransformer) {
         this.contextTransformer = contextTransformer;
+    }
+    
+    public ShadowContext getLookupContext() {
+        return lookupContext;
+    }
+    
+    public void setLookupContext(ShadowContext lookupContext) {
+        this.lookupContext = lookupContext;
     }
     
 }

@@ -4,7 +4,7 @@ import com.ssplugins.shadow3.parsing.TokenLine;
 
 import java.util.List;
 
-public class NamedShadowException extends ShadowException {
+public class NamedShadowException extends ShadowCodeException {
     
     private String name;
     

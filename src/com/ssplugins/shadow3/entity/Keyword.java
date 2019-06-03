@@ -5,7 +5,7 @@ import com.ssplugins.shadow3.def.KeywordAction;
 import com.ssplugins.shadow3.def.KeywordType;
 import com.ssplugins.shadow3.def.ParseCallback;
 import com.ssplugins.shadow3.exception.NamedShadowException;
-import com.ssplugins.shadow3.exception.ShadowException;
+import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
 import com.ssplugins.shadow3.parsing.TokenReader;
@@ -34,6 +34,7 @@ public class Keyword extends ShadowEntity {
         
         arguments = new ArrayList<>();
         while (def.hasNext()) {
+            def.setParent(this);
             arguments.add(def.nextSection());
         }
     
@@ -48,6 +49,19 @@ public class Keyword extends ShadowEntity {
     }
     
     private KeywordType findDef(ShadowEntity parent, ShadowContext fallback) {
+        // Check lookup context, then search parent tree for inner context.
+        if (parent != null) {
+            ShadowContext lookupContext = null;
+            if (parent instanceof Block) lookupContext = ((Block) parent).getDefinition().getLookupContext();
+            else if (parent instanceof Keyword) lookupContext = ((Keyword) parent).getDefinition().getLookupContext();
+            if (lookupContext != null) {
+                Optional<KeywordType> keyword = lookupContext.findKeyword(name);
+                if (keyword.isPresent()) {
+                    setFrom(parent);
+                    return keyword.get();
+                }
+            }
+        }
         while (parent != null) {
             ShadowContext context = parent.getInnerContext();
             if (context != null) {
@@ -59,7 +73,7 @@ public class Keyword extends ShadowEntity {
             }
             parent = parent.getParent();
         }
-        return fallback.findKeyword(name).orElseThrow(ShadowException.noDef(getLine(), getLine().firstToken().getIndex(), "No definition found for keyword: " + name));
+        return fallback.findKeyword(name).orElseThrow(ShadowCodeException.noDef(getLine(), getLine().firstToken().getIndex(), "No definition found for keyword: " + name));
     }
     
     @Override
@@ -71,7 +85,7 @@ public class Keyword extends ShadowEntity {
     public Object execute(Stepper stepper, Scope scope, List<Object> args) {
         KeywordAction action = definition.getAction();
         if (action == null) {
-            throw new ShadowException(getLine(), getLine().firstToken().getIndex(), "Keyword has no defined action.");
+            throw new ShadowCodeException(getLine(), getLine().firstToken().getIndex(), "Keyword has no defined action.");
         }
         return action.execute(this, stepper, scope);
     }

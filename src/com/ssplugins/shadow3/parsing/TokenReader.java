@@ -120,6 +120,10 @@ public class TokenReader extends Reader<Token> {
         return parent;
     }
     
+    public void setParent(ShadowEntity parent) {
+        this.parent = parent;
+    }
+    
     public ShadowParser getParser() {
         return parser;
     }

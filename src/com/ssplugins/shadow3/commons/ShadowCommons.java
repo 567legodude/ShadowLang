@@ -1,4 +1,4 @@
-package com.ssplugins.shadow3;
+package com.ssplugins.shadow3.commons;
 
 import com.ssplugins.shadow3.api.ShadowAPI;
 import com.ssplugins.shadow3.api.ShadowContext;
@@ -6,6 +6,7 @@ import com.ssplugins.shadow3.def.*;
 import com.ssplugins.shadow3.def.OperatorType.OperatorMatcher;
 import com.ssplugins.shadow3.entity.Block;
 import com.ssplugins.shadow3.entity.ShadowEntity;
+import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.exception.ShadowExecutionError;
 import com.ssplugins.shadow3.exception.ShadowParseError;
@@ -15,9 +16,10 @@ import com.ssplugins.shadow3.section.Operator.OpOrder;
 import com.ssplugins.shadow3.util.Range;
 import com.ssplugins.shadow3.util.Schema;
 
+import java.lang.reflect.Array;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
-import java.util.PrimitiveIterator.OfInt;
 import java.util.stream.IntStream;
 
 @SuppressWarnings("WeakerAccess")
@@ -25,43 +27,33 @@ public class ShadowCommons extends ShadowAPI {
     
     public static ShadowContext create() {
         ShadowContext context = new ShadowContext();
-        new ShadowCommons().load(context);
+        new ShadowCommons().loadInto(context);
         return context;
     }
     
     private ShadowContext context;
     
     @Override
-    public void load(ShadowContext context) {
+    public void loadInto(ShadowContext context) throws ShadowException {
         this.context = context;
-        addOperators();
-        addKeywords();
-        addBlocks();
+        this.callAnnotatedMethods();
+        this.context = null;
     }
     
     //region Operators
     
-    void addOperators() {
-        operatorComment();
-        operatorBlock();
-        operatorEquals();
-        operatorNegate();
-        operatorAdd();
-        operatorSubtract();
-        operatorMultiply();
-        operatorDivide();
-        operatorExponent();
-    }
-    
+    @Entity
     void operatorComment() {
         context.addOperator(new OperatorType<>("//", OpOrder.ASSIGNMENT, null, null, null, null));
     }
     
+    @Entity
     void operatorBlock() {
         context.addOperator(new OperatorType<>("::", OpOrder.ASSIGNMENT, null, null, null, null));
         context.addOperator(new OperatorType<>("->", OpOrder.ASSIGNMENT, null, null, null, null));
     }
     
+    @Entity
     void operatorEquals() {
         OperatorType<Object, Object, Boolean> equals = new OperatorType<>("==", OpOrder.EQUALITY, Object.class, Object.class, boolean.class, Objects::equals);
         context.addOperator(equals);
@@ -71,6 +63,7 @@ public class ShadowCommons extends ShadowAPI {
 //        context.addOperator(stringEquals);
     }
     
+    @Entity
     void operatorNegate() {
         UnaryOperatorType<Integer, Integer> nInt = new UnaryOperatorType<>("-", int.class, int.class, i -> -i);
         context.addOperator(nInt);
@@ -82,6 +75,7 @@ public class ShadowCommons extends ShadowAPI {
         context.addOperator(nFloat);
     }
     
+    @Entity
     void operatorAdd() {
         OperatorType<String, Object, String> addString = new OperatorType<>("+", String.class, Object.class, String.class, (a, b) -> a + b.toString());
         context.addOperator(addString);
@@ -93,21 +87,25 @@ public class ShadowCommons extends ShadowAPI {
         numberAdd.addTo(context);
     }
     
+    @Entity
     void operatorSubtract() {
         NumberOperatorType numberSubtract = new NumberOperatorType("-", (a, b) -> a - b, (a, b) -> a - b, (a, b) -> a - b, (a, b) -> a - b);
         numberSubtract.addTo(context);
     }
     
+    @Entity
     void operatorMultiply() {
         NumberOperatorType numberMultiply = new NumberOperatorType("*", (a, b) -> a * b, (a, b) -> a * b, (a, b) -> a * b, (a, b) -> a * b);
         numberMultiply.addTo(context);
     }
     
+    @Entity
     void operatorDivide() {
         OperatorType<Number, Number, Double> div = new OperatorType<>("/", Number.class, Number.class, double.class, (a, b) -> a.doubleValue() / b.doubleValue());
         context.addOperator(div);
     }
     
+    @Entity
     void operatorExponent() {
         OperatorType<Number, Number, Double> exp = new OperatorType<>("^", Number.class, Number.class, double.class, (a, b) -> Math.pow(a.doubleValue(), b.doubleValue()));
         exp.setLeftToRight(false);
@@ -125,14 +123,7 @@ public class ShadowCommons extends ShadowAPI {
     //endregion
     //region Keywords
     
-    void addKeywords() {
-        keywordPrint();
-        keywordSet();
-        keywordType();
-        keywordExec();
-//        keywordFrom(); Not fully implemented yet
-    }
-    
+    @Entity
     void keywordPrint() {
         KeywordType print = new KeywordType("print", new Range.Any());
         print.setAction((keyword, stepper, scope) -> {
@@ -143,6 +134,7 @@ public class ShadowCommons extends ShadowAPI {
         context.addKeyword(print);
     }
     
+    @Entity
     void keywordSet() {
         KeywordType set = new KeywordType("set", new Range.Single(2));
         set.setAction((keyword, stepper, scope) -> {
@@ -154,6 +146,7 @@ public class ShadowCommons extends ShadowAPI {
         context.addKeyword(set);
     }
     
+    @Entity
     void keywordType() {
         KeywordType type = new KeywordType("type", new Range.Single(1));
         type.setAction((keyword, stepper, scope) -> {
@@ -163,15 +156,35 @@ public class ShadowCommons extends ShadowAPI {
         context.addKeyword(type);
     }
     
+    @Entity
     void keywordExec() {
         KeywordType exec = new KeywordType("exec", new Range.LowerBound(1));
         exec.setAction((keyword, stepper, scope) -> {
             String name = keyword.getIdentifier(0).getName();
             List<Object> params = keyword.argumentValues(scope, 1);
-            Block block = scope.getContext().findFunction(name, params.size()).orElseThrow(ShadowException.noDef(keyword.getLine(), keyword.getLine().firstToken().getIndex(), "No matching function found."));
+            Block block = scope.getContext().findFunction(name, params.size()).orElseThrow(ShadowCodeException.noDef(keyword.getLine(), keyword.getLine().firstToken().getIndex(), "No matching function found."));
             return block.execute(stepper, new Scope(scope.getContext(), stepper), params);
         });
         context.addKeyword(exec);
+    }
+    
+    @Entity
+    void keywordChars() {
+        KeywordType chars = new KeywordType("chars", new Range.Single(1));
+        chars.setAction((keyword, stepper, scope) -> {
+            Object o = keyword.argumentValue(0, scope);
+            if (!(o instanceof String)) {
+                throw new ShadowExecutionError(keyword.getLine(), keyword.getArguments().get(0).getPrimaryToken().getIndex(), "First argument must be a string.");
+            }
+            return ((String) o).chars().mapToObj(i -> String.valueOf((char) i)).iterator();
+        });
+        context.addKeyword(chars);
+    }
+    
+    @Entity
+    void keywordList() {
+        ListKeyword listKeyword = new ListKeyword();
+        context.addKeyword(listKeyword);
     }
     
     void keywordFrom() {
@@ -190,41 +203,28 @@ public class ShadowCommons extends ShadowAPI {
     //endregion
     //region Blocks
     
-    void addBlocks() {
-        blockMain();
-        blockRepeat();
-        blockConditionals();
-        blockDefine();
-//        blockUsing(); Not fully implemented yet
-    }
-    
+    @Entity
     void blockMain() {
         BlockType main = new BlockType("main", new Range.None(), new Range.MinMax(0, 1));
         context.addBlock(main);
     }
     
+    @Entity
     void blockRepeat() {
         BlockType repeat = new BlockType("repeat", new Range.Single(1), new Range.Single(1));
         repeat.setPreRunCheck((block, scope, args) -> {
             Integer i = block.getArgument(0, Integer.class, scope, "Modifier should be an integer.");
-            if (i < 0) throw ShadowException.exec(block, "Repeat count must be positive.").get();
+            if (i < 0) throw ShadowCodeException.exec(block, "Repeat count must be positive.").get();
             if (i == 0) return false;
             scope.setBlockValue(IntStream.range(0, i).iterator());
             return true;
         });
-        repeat.setEnterCallback((block, stepper, scope, args) -> {
-            OfInt it = (OfInt) scope.getBlockValue();
-            scope.setLocal(block.getParameters().get(0), it.next());
-        });
-        repeat.setEndCallback((block, stepper, scope) -> {
-            OfInt it = (OfInt) scope.getBlockValue();
-            if (!it.hasNext()) return;
-            scope.setLocal(block.getParameters().get(0), it.next());
-            stepper.restart();
-        });
+        repeat.setEnterCallback(BlockEnterCallback.iterateParameter(0));
+        repeat.setEndCallback(BlockEndCallback.iterateParameter(0));
         context.addBlock(repeat);
     }
     
+    @Entity
     @SuppressWarnings("Duplicates")
     void blockConditionals() {
         BlockType typeIf = new BlockType("if", new Range.Single(1), new Range.None());
@@ -256,6 +256,7 @@ public class ShadowCommons extends ShadowAPI {
         context.addBlock(typeElse);
     }
     
+    @Entity
     void blockDefine() {
         BlockType define = new BlockType("define", new Range.Single(1), new Range.Any());
         define.setParseCallback((block, c) -> c.addFunction(block));
@@ -287,6 +288,43 @@ public class ShadowCommons extends ShadowAPI {
             return null;
         });
         defineContext.addKeyword(aReturn);
+    }
+    
+    @Entity
+    void blockForeach() {
+        BlockType foreach = new BlockType("foreach", new Range.Single(1), new Range.Single(1));
+        foreach.setPreRunCheck((block, scope, args) -> {
+            Object o = block.argumentValue(0, scope);
+            if (o instanceof Iterator) {
+                scope.setBlockValue(o);
+                return true;
+            }
+            else if (o instanceof Iterable) {
+                scope.setBlockValue(((Iterable) o).iterator());
+                return true;
+            }
+            else if (o.getClass().isArray()) {
+                Iterator<?> it = new Iterator<Object>() {
+                    private int index;
+                    
+                    @Override
+                    public boolean hasNext() {
+                        return index < Array.getLength(o);
+                    }
+        
+                    @Override
+                    public Object next() {
+                        return Array.get(o, index++);
+                    }
+                };
+                scope.setBlockValue(it);
+                return true;
+            }
+            throw new ShadowExecutionError(block.getLine(), block.getModifiers().get(0).getPrimaryToken().getIndex(), "Argument should be an iterator or iterable object.");
+        });
+        foreach.setEnterCallback(BlockEnterCallback.iterateParameter(0));
+        foreach.setEndCallback(BlockEndCallback.iterateParameter(0));
+        context.addBlock(foreach);
     }
     
     void blockUsing() {

@@ -6,7 +6,7 @@ import com.ssplugins.shadow3.entity.Block;
 import com.ssplugins.shadow3.entity.EntityList;
 import com.ssplugins.shadow3.entity.Keyword;
 import com.ssplugins.shadow3.entity.ShadowEntity;
-import com.ssplugins.shadow3.exception.ShadowException;
+import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.section.*;
 import com.ssplugins.shadow3.util.LineReader;
@@ -66,7 +66,7 @@ public class ShadowParser {
     }
     
     public ShadowSection readSection(TokenReader reader) {
-        if (!reader.hasNext()) throw ShadowException.ended(reader);
+        if (!reader.hasNext()) throw ShadowCodeException.ended(reader);
         TokenType type = reader.nextType();
         if (type == TokenType.IDENTIFIER) return new Identifier(reader);
         else if (type == TokenType.NUMBER) return new ShadowNumber(reader);
@@ -92,7 +92,7 @@ public class ShadowParser {
         reader.consume();
         List<ShadowSection> sections = reader.readTo(end, raw);
         sections.remove(sections.size() - 1);
-        return new Compound(reader.getLine(), sections, reader.getParent().getTopContext());
+        return new Compound(reader.getLine(), sections, reader.getParent().getEffectiveContext());
     }
     
     public Shadow parse(List<String> lines) {
@@ -108,12 +108,6 @@ public class ShadowParser {
     
     public ShadowContext getContext() {
         return context;
-    }
-    
-    public interface SectionParser {
-        
-        ShadowSection readSection(TokenReader reader);
-        
     }
     
 }

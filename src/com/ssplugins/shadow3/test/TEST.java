@@ -1,7 +1,7 @@
 package com.ssplugins.shadow3.test;
 
 import com.ssplugins.shadow3.Shadow;
-import com.ssplugins.shadow3.ShadowCommons;
+import com.ssplugins.shadow3.commons.ShadowCommons;
 import com.ssplugins.shadow3.parsing.ShadowParser;
 import com.ssplugins.shadow3.section.Compound;
 import com.ssplugins.shadow3.section.ShadowSection;

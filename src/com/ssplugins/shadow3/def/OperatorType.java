@@ -1,7 +1,7 @@
 package com.ssplugins.shadow3.def;
 
 import com.ssplugins.shadow3.api.OperatorMap;
-import com.ssplugins.shadow3.exception.ShadowException;
+import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
 
 import java.util.function.BiFunction;
@@ -36,7 +36,7 @@ public class OperatorType<L, R, O> {
     }
     
     public static OpOrder assumeOrder(String token) {
-        return OpOrder.get(token).orElseThrow(ShadowException.arg("Cannot assume operator precedence of \"" + token + "\""));
+        return OpOrder.get(token).orElseThrow(ShadowCodeException.arg("Cannot assume operator precedence of \"" + token + "\""));
     }
     
     public boolean isPlaceholder() {

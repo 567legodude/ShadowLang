@@ -1,7 +1,7 @@
 package com.ssplugins.shadow3.entity;
 
 import com.ssplugins.shadow3.api.ShadowContext;
-import com.ssplugins.shadow3.exception.ShadowException;
+import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
 import com.ssplugins.shadow3.parsing.TokenLine;
@@ -49,13 +49,13 @@ public abstract class ShadowEntity {
     public <T> T getArgument(int index, Class<T> type, Scope scope, String err) {
         ShadowSection section = getArguments().get(index);
         Object o = section.toObject(scope);
-        if (!type.isInstance(o)) throw ShadowException.sectionExec(section, err).get();
+        if (!type.isInstance(o)) throw ShadowCodeException.sectionExec(section, err).get();
         return type.cast(o);
     }
     
     public <T extends ShadowSection> T getArgumentSection(int index, Class<T> type, String err) {
         ShadowSection section = getArguments().get(index);
-        if (!type.isInstance(section)) throw ShadowException.sectionExec(section, err).get();
+        if (!type.isInstance(section)) throw ShadowCodeException.sectionExec(section, err).get();
         return type.cast(section);
     }
     
@@ -73,6 +73,10 @@ public abstract class ShadowEntity {
     
     public Object argumentValue(int index, Scope scope) {
         return getArguments().get(index).toObject(scope);
+    }
+    
+    public int argumentIndex(int index) {
+        return getArguments().get(index).getPrimaryToken().getIndex();
     }
     
     ShadowEntity getPrevious() {

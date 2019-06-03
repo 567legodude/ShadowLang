@@ -18,7 +18,7 @@ public class BlockType {
     private BlockEndCallback endCallback;
     
     private ContextTransformer<Block> contextTransformer = ContextTransformer.blockNone();
-    private ShadowContext localContext;
+    private ShadowContext lookupContext;
     
     public BlockType(String name, Range modifiers, Range parameters) {
         this.name = name;
@@ -86,12 +86,12 @@ public class BlockType {
         this.contextTransformer = contextTransformer;
     }
     
-    public ShadowContext getLocalContext() {
-        return localContext;
+    public ShadowContext getLookupContext() {
+        return lookupContext;
     }
     
-    public void setLocalContext(ShadowContext localContext) {
-        this.localContext = localContext;
+    public void setLookupContext(ShadowContext lookupContext) {
+        this.lookupContext = lookupContext;
     }
     
 }

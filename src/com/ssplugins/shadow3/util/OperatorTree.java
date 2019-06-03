@@ -1,7 +1,7 @@
 package com.ssplugins.shadow3.util;
 
 import com.ssplugins.shadow3.def.OperatorType;
-import com.ssplugins.shadow3.exception.ShadowException;
+import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.Token;
@@ -196,7 +196,7 @@ public class OperatorTree {
             Class<?> right = operands[1].getClass();
             OperatorType type = scope.getContext()
                                        .findOperator(getValue().getSymbol(), operands[0], operands[1])
-                                       .orElseThrow(ShadowException.section(getValue(), "OperatorError", "No matching definition for operands: " + left.getSimpleName() + ", " + right.getSimpleName()));
+                                       .orElseThrow(ShadowCodeException.section(getValue(), "OperatorError", "No matching definition for operands: " + left.getSimpleName() + ", " + right.getSimpleName()));
             //noinspection unchecked (Types are known at this point)
             return type.getAction().execute(operands[0], operands[1], type.getLeftWrap(), type.getRightWrap());
         }
@@ -223,7 +223,7 @@ public class OperatorTree {
             Class<?> opType = operand.getClass();
             OperatorType type = scope.getContext()
                                        .findOperator(getValue().getSymbol(), null, operand)
-                                       .orElseThrow(ShadowException.section(getValue(), "OperatorError", "No matching definition for operand: " + opType.getSimpleName()));
+                                       .orElseThrow(ShadowCodeException.section(getValue(), "OperatorError", "No matching definition for operand: " + opType.getSimpleName()));
             //noinspection unchecked (Type is known at this point)
             return type.getAction().execute(null, operand, Void.class, type.getRightWrap());
         }
