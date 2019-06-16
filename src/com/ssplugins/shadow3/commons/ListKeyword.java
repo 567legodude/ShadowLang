@@ -57,6 +57,15 @@ public class ListKeyword extends CommandKeyword<ListKeyword.ListTransformer, Lis
         });
         context.addKeyword(remove);
     
+        KeywordType get = new KeywordType("get", new Range.Single(1));
+        get.setAction((keyword, stepper, scope) -> {
+            return (ListTransformer) input -> {
+                Integer i = keyword.getArgument(0, Integer.class, scope, "Argument must be an integer.");
+                return input.get(i);
+            };
+        });
+        context.addKeyword(get);
+    
         KeywordType contains = new KeywordType("contains", new Range.LowerBound(1));
         contains.setAction((keyword, stepper, scope) -> {
             return (ListTransformer) input -> {
@@ -64,6 +73,12 @@ public class ListKeyword extends CommandKeyword<ListKeyword.ListTransformer, Lis
             };
         });
         context.addKeyword(contains);
+    
+        KeywordType size = new KeywordType("size", new Range.None());
+        size.setAction((keyword, stepper, scope) -> {
+            return (ListTransformer) List::size;
+        });
+        context.addKeyword(size);
     }
     
     @Override

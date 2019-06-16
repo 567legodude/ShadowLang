@@ -57,6 +57,7 @@ public class Operator extends ShadowSection {
     
     public enum OpOrder {
         
+        COMMA,
         UNARY,
         EXPONENT,
         MUL_DIV,

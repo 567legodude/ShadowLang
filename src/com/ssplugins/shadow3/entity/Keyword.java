@@ -12,6 +12,7 @@ import com.ssplugins.shadow3.parsing.TokenReader;
 import com.ssplugins.shadow3.parsing.TokenType;
 import com.ssplugins.shadow3.section.ShadowSection;
 import com.ssplugins.shadow3.util.Range;
+import com.ssplugins.shadow3.util.Schema;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,6 +75,12 @@ public class Keyword extends ShadowEntity {
             parent = parent.getParent();
         }
         return fallback.findKeyword(name).orElseThrow(ShadowCodeException.noDef(getLine(), getLine().firstToken().getIndex(), "No definition found for keyword: " + name));
+    }
+    
+    public static Schema<Keyword> inlineOnly() {
+        Schema<Keyword> s = new Schema<>(ShadowEntity::isInline);
+        s.setSituation("Keyword can only be used inline.");
+        return s;
     }
     
     @Override

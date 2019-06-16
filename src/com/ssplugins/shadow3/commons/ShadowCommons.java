@@ -5,6 +5,7 @@ import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.def.*;
 import com.ssplugins.shadow3.def.OperatorType.OperatorMatcher;
 import com.ssplugins.shadow3.entity.Block;
+import com.ssplugins.shadow3.entity.Keyword;
 import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.exception.ShadowException;
@@ -13,13 +14,14 @@ import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
+import com.ssplugins.shadow3.section.ShadowSection;
 import com.ssplugins.shadow3.util.Range;
 import com.ssplugins.shadow3.util.Schema;
 
+import java.io.IOException;
 import java.lang.reflect.Array;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
 @SuppressWarnings("WeakerAccess")
@@ -51,6 +53,32 @@ public class ShadowCommons extends ShadowAPI {
     void operatorBlock() {
         context.addOperator(new OperatorType<>("::", OpOrder.ASSIGNMENT, null, null, null, null));
         context.addOperator(new OperatorType<>("->", OpOrder.ASSIGNMENT, null, null, null, null));
+    }
+    
+    @Entity
+    void operatorParam() {
+        OperatorType<Object, Object, Parameters> param = new OperatorType<>(",", OpOrder.COMMA, Object.class, Object.class, Parameters.class, (o, o2) -> {
+            if (o instanceof Parameters && o2 instanceof Parameters) {
+                Parameters p = (Parameters) o;
+                p.getParams().addAll(((Parameters) o2).getParams());
+                return p;
+            }
+            else if (o instanceof Parameters) {
+                Parameters p = (Parameters) o;
+                p.addParam(o2);
+                return p;
+            }
+            else if (o2 instanceof Parameters) {
+                Parameters p = (Parameters) o2;
+                p.getParams().add(0, o);
+                return p;
+            }
+            Parameters p = new Parameters();
+            p.addParam(o);
+            p.addParam(o2);
+            return p;
+        });
+        context.addOperator(param);
     }
     
     @Entity
@@ -112,6 +140,18 @@ public class ShadowCommons extends ShadowAPI {
         context.addOperator(exp);
     }
     
+    @Entity
+    void operatorCompare() {
+        NumberCompareOp lt = new NumberCompareOp("<", OpOrder.COMPARE, (a, b) -> a < b, (a, b) -> a < b, (a, b) -> a < b, (a, b) -> a < b);
+        lt.addTo(context);
+        NumberCompareOp lte = new NumberCompareOp("<=", OpOrder.COMPARE, (a, b) -> a <= b, (a, b) -> a <= b, (a, b) -> a <= b, (a, b) -> a <= b);
+        lte.addTo(context);
+        NumberCompareOp gt = new NumberCompareOp(">", OpOrder.COMPARE, (a, b) -> a > b, (a, b) -> a > b, (a, b) -> a > b, (a, b) -> a > b);
+        gt.addTo(context);
+        NumberCompareOp gte = new NumberCompareOp(">=", OpOrder.COMPARE, (a, b) -> a >= b, (a, b) -> a >= b, (a, b) -> a >= b, (a, b) -> a >= b);
+        gte.addTo(context);
+    }
+    
     // Not added yet
     void operatorBitShift() {
         NumberOperatorType shiftRight = new NumberOperatorType(">>", OpOrder.SHIFT, (a, b) -> a >> b, null, null, (a, b) -> a >> b);
@@ -122,6 +162,8 @@ public class ShadowCommons extends ShadowAPI {
     
     //endregion
     //region Keywords
+    
+    private final Schema<Keyword> INLINE_ONLY = Keyword.inlineOnly();
     
     @Entity
     void keywordPrint() {
@@ -158,10 +200,19 @@ public class ShadowCommons extends ShadowAPI {
     
     @Entity
     void keywordExec() {
-        KeywordType exec = new KeywordType("exec", new Range.LowerBound(1));
+//        KeywordType exec = new KeywordType("exec", new Range.LowerBound(1));
+//        exec.setAction((keyword, stepper, scope) -> {
+//            String name = keyword.getIdentifier(0).getName();
+//            List<Object> params = keyword.argumentValues(scope, 1);
+//            Block block = scope.getContext().findFunction(name, params.size()).orElseThrow(ShadowCodeException.noDef(keyword.getLine(), keyword.getLine().firstToken().getIndex(), "No matching function found."));
+//            return block.execute(stepper, new Scope(scope.getContext(), stepper), params);
+//        });
+        KeywordType exec = new KeywordType("exec", new Range.MinMax(1, 2));
         exec.setAction((keyword, stepper, scope) -> {
             String name = keyword.getIdentifier(0).getName();
-            List<Object> params = keyword.argumentValues(scope, 1);
+            List<Object> params;
+            if (keyword.getArguments().size() == 1) params = Collections.emptyList();
+            else params = keyword.getArgument(1, Parameters.class, scope, "Argument must be function parameters.").getParams();
             Block block = scope.getContext().findFunction(name, params.size()).orElseThrow(ShadowCodeException.noDef(keyword.getLine(), keyword.getLine().firstToken().getIndex(), "No matching function found."));
             return block.execute(stepper, new Scope(scope.getContext(), stepper), params);
         });
@@ -182,9 +233,150 @@ public class ShadowCommons extends ShadowAPI {
     }
     
     @Entity
+    void keywordCount() {
+        KeywordType count = new KeywordType("count", new Range.MinMax(1, 3));
+        count.setAction((keyword, stepper, scope) -> {
+            int args = keyword.getArguments().size();
+            Integer start = keyword.getArgument(0, Integer.class, scope, "First argument must be an integer.");
+            if (args == 1) return IntStream.range(0, start).iterator();
+            Integer stop = keyword.getArgument(1, Integer.class, scope, "Second argument must be an integer.");
+            if (args == 2) return IntStream.range(start, stop).iterator();
+            Integer step = keyword.getArgument(2, Integer.class, scope, "Third argument must be an integer.");
+            return new Iterator<Integer>() {
+                private int value = start;
+                
+                @Override
+                public boolean hasNext() {
+                    return value < stop;
+                }
+    
+                @Override
+                public Integer next() {
+                    int r = value;
+                    value += step;
+                    return r;
+                }
+            };
+        });
+        context.addKeyword(count);
+    }
+    
+    @Entity
     void keywordList() {
         ListKeyword listKeyword = new ListKeyword();
         context.addKeyword(listKeyword);
+    }
+    
+    @Entity
+    void keywordMap() {
+        MapKeyword mapKeyword = new MapKeyword();
+        context.addKeyword(mapKeyword);
+    }
+    
+    @Entity
+    void keywordArray() {
+//        KeywordType array = new KeywordType("array", new Range.MinMax(1, 2));
+//        array.setAction((keyword, stepper, scope) -> {
+//            List<ShadowSection> args = keyword.getArguments();
+//            if (args.size() == 1) {
+//                Object o = keyword.argumentValue(0, scope);
+//                if (o.getClass().isArray()) {
+//                    return Array.getLength(o);
+//                }
+//                Integer size = keyword.getArgument(0, Integer.class, scope, "Argument must be an integer.");
+//                return Array.newInstance(Object.class, size);
+//            }
+//            Object arr = keyword.argumentValue(0, scope);
+//            if (!arr.getClass().isArray()) {
+//                throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(0), "Argument is not an array.");
+//            }
+//            Object action = keyword.argumentValue(1, scope);
+//            if (action instanceof Assignment) {
+//                Assignment aa = (Assignment) action;
+//                Array.set(arr, aa.getIndex(), aa.getValue());
+//            }
+//            else if (action instanceof Integer) {
+//                return Array.get(arr, (Integer) action);
+//            }
+//            else {
+//                throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(0), "Unknown argument value.");
+//            }
+//            return null;
+//        });
+        ArrayKeyword array = new ArrayKeyword();
+    
+        OperatorType<Integer, Object, Assignment> assign = new OperatorType<>("=", OpOrder.ASSIGNMENT, Integer.class, Object.class, Assignment.class, Assignment::new);
+        this.context.addOperator(assign);
+    
+        this.context.addKeyword(array);
+    }
+    
+    @Entity
+    void keywordLen() {
+        KeywordType len = new KeywordType("len", new Range.Single(1));
+        len.setAction((keyword, stepper, scope) -> {
+            Object o = keyword.argumentValue(0, scope);
+            if (o instanceof String) return ((String) o).length();
+            else if (o.getClass().isArray()) return Array.getLength(o);
+            else if (o instanceof Collection) return ((Collection) o).size();
+            else if (o instanceof Map) return ((Map) o).size();
+            throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(0), "Argument must be a string, array, or collection.");
+        });
+        context.addKeyword(len);
+    }
+    
+    @Entity
+    void keywordSleep() {
+        KeywordType sleep = new KeywordType("sleep", new Range.Single(1));
+        sleep.setAction((keyword, stepper, scope) -> {
+            Number n = keyword.getArgument(0, Number.class, scope, "First argument must be a number");
+            long time = n.longValue();
+            try {
+                Thread.sleep(time);
+            } catch (InterruptedException e) {
+                throw new ShadowExecutionError(keyword.getLine(), keyword.getLine().firstToken().getIndex(), "Sleep interrupted.");
+            }
+            return null;
+        });
+        context.addKeyword(sleep);
+    }
+    
+    @Entity
+    void keywordInput() {
+        KeywordType input = new KeywordType("input", new Range.MinMax(0, 1));
+        input.setAction((keyword, stepper, scope) -> {
+            if (keyword.getArguments().size() == 1) {
+                System.out.print(keyword.argumentValue(0, scope));
+            }
+            StringBuilder builder = new StringBuilder();
+            try {
+                char c;
+                while ((c = (char) System.in.read()) != '\n') {
+                    builder.append(c);
+                }
+            } catch (IOException e) {
+                throw new ShadowException(e);
+            }
+            return builder.toString();
+        });
+        context.addKeyword(input);
+    }
+    
+    @Entity
+    void keywordRandom() {
+        KeywordType random = new KeywordType("random", new Range.MinMax(0, 2));
+        random.setAction((keyword, stepper, scope) -> {
+            List<ShadowSection> args = keyword.getArguments();
+            if (args.size() == 0) return ThreadLocalRandom.current().nextDouble();
+            if (args.size() == 1) {
+                Integer bound = keyword.getArgument(0, Integer.class, scope, "Argument must be an integer");
+                return ThreadLocalRandom.current().nextInt(bound);
+            }
+            Integer lower = keyword.getArgument(0, Integer.class, scope, "Argument must be an integer.");
+            Integer upper = keyword.getArgument(1, Integer.class, scope, "Argument must be an integer.");
+            return ThreadLocalRandom.current().nextInt(lower, upper);
+        });
+        context.addKeyword(random);
     }
     
     void keywordFrom() {
@@ -206,6 +398,13 @@ public class ShadowCommons extends ShadowAPI {
     @Entity
     void blockMain() {
         BlockType main = new BlockType("main", new Range.None(), new Range.MinMax(0, 1));
+        main.setEnterCallback((block, stepper, scope, args) -> {
+            List<Identifier> params = block.getParameters();
+            if (params.size() == 1) {
+                if (args == null) scope.set(params.get(0), new String[0]);
+                else scope.set(params.get(0), args.toArray());
+            }
+        });
         context.addBlock(main);
     }
     
@@ -273,7 +472,7 @@ public class ShadowCommons extends ShadowAPI {
         context.addBlock(define);
     
         ShadowContext defineContext = new ShadowContext();
-        define.setContextTransformer((block, topContext, currentContext) -> defineContext);
+        define.setLookupContext(defineContext);
     
         KeywordType aReturn = new KeywordType("return", new Range.Single(1));
         aReturn.setAction((keyword, stepper, scope) -> {
@@ -325,6 +524,22 @@ public class ShadowCommons extends ShadowAPI {
         foreach.setEnterCallback(BlockEnterCallback.iterateParameter(0));
         foreach.setEndCallback(BlockEndCallback.iterateParameter(0));
         context.addBlock(foreach);
+    }
+    
+    @Entity
+    void blockBenchmark() {
+        BlockType benchmark = new BlockType("benchmark", new Range.MinMax(0, 1), new Range.None());
+        benchmark.setEnterCallback((block, stepper, scope, args) -> {
+            scope.setBlockValue(System.nanoTime());
+        });
+        benchmark.setEndCallback((block, stepper, scope) -> {
+            long end = System.nanoTime();
+            long start = (long) scope.getBlockValue();
+            double time = (double) (end - start) / 1e6;
+            if (block.getModifiers().size() == 0) System.out.println(time);
+            else scope.set(block.getIdentifier(0), time);
+        });
+        context.addBlock(benchmark);
     }
     
     void blockUsing() {

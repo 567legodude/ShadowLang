@@ -43,7 +43,11 @@ public abstract class ShadowEntity {
     public abstract ShadowContext getInnerContext();
     
     public ShadowContext getEffectiveContext() {
-        return getFrom() == null ? getTopContext() : getFrom().getInnerContext();
+        ShadowEntity from = getFrom();
+        if (from == null) return getTopContext();
+        ShadowContext ic = getFrom().getInnerContext();
+        if (ic == null) return getFrom().getEffectiveContext();
+        return ic;
     }
     
     public <T> T getArgument(int index, Class<T> type, Scope scope, String err) {
