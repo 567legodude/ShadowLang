@@ -1,0 +1,6 @@
+main {
+
+    if ("foobar" => [contains "bar"]) :: print "yes"
+    else :: print "no"
+
+}
