@@ -3,21 +3,32 @@ This is a parsed scripting language I made as a challenge to myself to see if I 
 
 Every aspect of the language can be represented below:
 
-    block modifier (parameter) {
-        keyword argument replacer{?}
+    block argument -> parameter {
+        keyword argument [inline_keyword]
     }
+    
+    one_line_block :: keyword
 
-Blocks are signified by a line ending with a bracket `{`  
-The first word of the line is the block name, any others are modifiers.
-Blocks can have parameters which are enclosed in parentheses after the modifiers.
-Modifiers should be used to give the block information, and parameters are variables that will be filled and given to the scope of the block.  
-Blocks are defined with: Number of expected modifiers, number of expected parameters, which section parser to use for modifiers, the entry condition to enter the block, what happens when the scope enters the block, what happens when the end of the block is reached.
+Info
+----
 
-Keywords are similar to blocks but do not end with a bracket.  
-The first word of the line is the keyword name, others are arguments.  
-Keywords are defined with: A splitter to split the arguments during parsing, section parser to use for arguments, number of expected sections, how to execute the keyword.
+All entities in the language have a command style, where the first word on the line is the action and everything that follows is input data.  
 
-Replacers have a keyword that is followed by brackets with some data inside `replacer{?}`. Replacers can be used as a way to preprocess some data before it is used as a modifier or argument.
+There are two entities in the language: blocks, and keywords, which contain the sections of input data that allow the code to run.
 
-The language has a built in evaluator which reads evaluator strings from left to right and executes the symbols.
-Currently it is used mostly for parsing Java reflection to give it nearly the full functionality a program could need.
+##### Blocks
+Blocks are lines of code that end with a bracket `{` or contain the block operator `::`.
+Sections that follow the block name are the block arguments, however on blocks these may be called modifiers.
+Blocks can have parameters which are separated from the modifiers using the operator `->` and delimited with commas.
+
+Modifiers should be used to give the block state information that affects if/how it runs, and parameters are variables that will be set and can be used within the block.  
+
+Blocks are used to control the flow of a program or to affect the state of the entities within them, but do not execute actions on their own.
+
+##### Keywords
+Keywords perform the actions of the program.  
+The first token on the line is the action to perform and all following sections are the arguments to that command.
+
+Square brackets are used to access the return value of keywords as input to other entities.  
+Example: `print [type "some string"]`  
+On its own, the `type` keyword has no function, but the square brackets allow using it within another keyword to get the return value, which is `"String"` in this case.
