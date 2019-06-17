@@ -1,6 +1,7 @@
-package com.ssplugins.shadow3.def;
+package com.ssplugins.shadow3.def.custom;
 
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.def.OperatorType;
 import com.ssplugins.shadow3.def.OperatorType.OperatorAction;
 import com.ssplugins.shadow3.def.OperatorType.OperatorMatcher;
 import com.ssplugins.shadow3.section.Operator.OpOrder;

@@ -29,6 +29,7 @@ public class Keyword extends ShadowEntity {
     public Keyword(ShadowEntity parent, TokenReader def, ShadowContext fallback) {
         super(def.getLine(), parent);
         setTopContext((parent == null ? fallback : parent.getTopContext()));
+        setIndex(def.getIndex());
         name = def.readAs(TokenType.IDENTIFIER).getPrimaryToken().getRaw();
     
         definition = findDef(parent, fallback);

@@ -20,6 +20,7 @@ public abstract class ShadowEntity {
     private ShadowEntity next;
     
     private TokenLine line;
+    private int index;
     private ShadowEntity parent;
     
     private ShadowEntity from;
@@ -80,6 +81,7 @@ public abstract class ShadowEntity {
     }
     
     public int argumentIndex(int index) {
+        if (index == -1) return getLine().getTokens().get(getIndex()).getIndex();
         return getArguments().get(index).getPrimaryToken().getIndex();
     }
     
@@ -125,6 +127,14 @@ public abstract class ShadowEntity {
     
     public TokenLine getLine() {
         return line;
+    }
+    
+    public int getIndex() {
+        return index;
+    }
+    
+    protected void setIndex(int index) {
+        this.index = index;
     }
     
     public boolean isInline() {

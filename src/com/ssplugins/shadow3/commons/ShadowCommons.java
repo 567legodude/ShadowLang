@@ -4,6 +4,9 @@ import com.ssplugins.shadow3.api.ShadowAPI;
 import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.def.*;
 import com.ssplugins.shadow3.def.OperatorType.OperatorMatcher;
+import com.ssplugins.shadow3.def.custom.NumberCompareOp;
+import com.ssplugins.shadow3.def.custom.NumberOperatorType;
+import com.ssplugins.shadow3.def.custom.StringPredicate;
 import com.ssplugins.shadow3.entity.Block;
 import com.ssplugins.shadow3.entity.Keyword;
 import com.ssplugins.shadow3.entity.ShadowEntity;
@@ -24,7 +27,6 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
-@SuppressWarnings("WeakerAccess")
 public class ShadowCommons extends ShadowAPI {
     
     public static ShadowContext create() {
@@ -79,6 +81,20 @@ public class ShadowCommons extends ShadowAPI {
             return p;
         });
         context.addOperator(param);
+    }
+    
+    @Entity
+    void operatorInput() {
+        OperatorType<Object, ShadowPredicate, Boolean> input = new OperatorType<>("=>", OpOrder.INPUT, Object.class, ShadowPredicate.class, boolean.class, (o, predicate) -> {
+            Parameters params;
+            if (o instanceof Parameters) params = (Parameters) o;
+            else {
+                params = new Parameters();
+                params.addParam(o);
+            }
+            return predicate.get().test(params);
+        });
+        context.addOperator(input);
     }
     
     @Entity
@@ -379,12 +395,37 @@ public class ShadowCommons extends ShadowAPI {
         context.addKeyword(random);
     }
     
+    //region Predicates
+    
+    @Entity
+    void keywordStartsWith() {
+        StringPredicate startsWith = new StringPredicate("starts_with");
+        startsWith.setTest(String::startsWith);
+        context.addKeyword(startsWith);
+    }
+    
+    @Entity
+    void keywordEndsWith() {
+        StringPredicate endsWith = new StringPredicate("ends_with");
+        endsWith.setTest(String::endsWith);
+        context.addKeyword(endsWith);
+    }
+    
+    @Entity
+    void keywordContains() {
+        StringPredicate contains = new StringPredicate("contains");
+        contains.setTest(String::contains);
+        context.addKeyword(contains);
+    }
+    
+    //endregion
+    
     void keywordFrom() {
         KeywordType from = new KeywordType("from", new Range.LowerBound(3));
         from.setParseCallback((keyword, c) -> {
             Identifier sep = keyword.getIdentifier(1);
             if (!sep.getName().equals("do")) {
-                throw new ShadowParseError(keyword.getLine(), sep.getPrimaryToken().getIndex(), "Expected keyword \"do\" here.");
+                throw new ShadowParseError(keyword.getLine(), sep.getPrimaryToken().getIndex(), "Expected \"do\" here.");
             }
         });
         from.setContextTransformer(ContextTransformer.keywordModule(0));
