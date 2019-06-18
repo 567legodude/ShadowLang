@@ -12,28 +12,21 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 public class TEST {
     
-    public static void main(String[] args) throws IOException {
-        
-        InputStream stream = TEST.class.getResourceAsStream("/com/ssplugins/shadow3/test/testy.shd");
-        List<String> lines = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                lines.add(line);
-            }
-        }
+    public static void main(String[] args) throws IOException, URISyntaxException {
     
-        ShadowParser parser = new ShadowParser(ShadowCommons.create());
-        Shadow shadow = parser.parse(lines);
+        URL url = TEST.class.getResource("/com/ssplugins/shadow3/test/testy.shd");
+        File file = new File(url.toURI());
+    
+        ShadowParser parser = new ShadowParser(ShadowCommons.create(file));
+        Shadow shadow = parser.parse(file);
+        
         shadow.firstBlock("main").ifPresent(block -> {
             block.run();
 //            Compound compound = (Compound) block.getContents().getFirst().getArguments().get(0);

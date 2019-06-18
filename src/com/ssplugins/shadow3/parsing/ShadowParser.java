@@ -7,12 +7,18 @@ import com.ssplugins.shadow3.entity.EntityList;
 import com.ssplugins.shadow3.entity.Keyword;
 import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
+import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.section.*;
 import com.ssplugins.shadow3.util.LineReader;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class ShadowParser {
     
@@ -95,7 +101,15 @@ public class ShadowParser {
         return new Compound(reader.getLine(), sections, reader.getParent().getEffectiveContext());
     }
     
-    public Shadow parse(List<String> lines) {
+    public Shadow parse(File file) {
+        try (Stream<String> lines = Files.lines(file.toPath())) {
+            return parse(lines.iterator());
+        } catch (IOException e) {
+            throw new ShadowException(e);
+        }
+    }
+    
+    public Shadow parse(Iterator<String> lines) {
         List<TokenLine> tokens = new Tokenizer().tokenize(lines, context);
         Shadow shadow = new Shadow();
         EntityList contents = shadow.getContents();

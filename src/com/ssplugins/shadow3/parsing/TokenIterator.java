@@ -1,11 +1,11 @@
 package com.ssplugins.shadow3.parsing;
 
-import java.util.List;
+import java.util.Iterator;
 import java.util.Optional;
 
 public class TokenIterator {
     
-    private List<String> source;
+    private Iterator<String> source;
     private int lineIndex;
     private int charIndex;
     
@@ -19,7 +19,7 @@ public class TokenIterator {
     private boolean escape;
     private int sectionType;
     
-    public TokenIterator(List<String> source) {
+    public TokenIterator(Iterator<String> source) {
         this.source = source;
     }
     
@@ -29,14 +29,15 @@ public class TokenIterator {
     }
     
     public boolean hasNextLine() {
-        return lineIndex < source.size();
+        return source.hasNext();
     }
     
     public String nextLine() {
         charIndex = 0;
         tokenLine = null;
         tokenIndex = 0;
-        line = source.get(lineIndex++);
+        line = source.next();
+        lineIndex++;
         return line;
     }
     
