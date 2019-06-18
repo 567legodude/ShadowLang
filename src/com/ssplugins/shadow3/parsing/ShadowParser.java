@@ -98,7 +98,7 @@ public class ShadowParser {
         reader.consume();
         List<ShadowSection> sections = reader.readTo(end, raw);
         sections.remove(sections.size() - 1);
-        return new Compound(reader.getLine(), sections, reader.getParent().getEffectiveContext());
+        return new Compound(reader.getLine(), sections, reader.getParent());
     }
     
     public Shadow parse(File file) {

@@ -1,6 +1,5 @@
 package com.ssplugins.shadow3.parsing;
 
-import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.section.Compound;
@@ -87,20 +86,20 @@ public class TokenReader extends Reader<Token> {
         return sections;
     }
     
-    public Compound readCompoundValue(TokenType type, ShadowContext context) {
-        return readCompoundValue(type, null, context);
+    public Compound readCompoundValue(TokenType type, ShadowEntity entity) {
+        return readCompoundValue(type, null, entity);
     }
     
-    public Compound readCompoundValue(TokenType type, String raw, ShadowContext context) {
+    public Compound readCompoundValue(TokenType type, String raw, ShadowEntity entity) {
         List<ShadowSection> sections = readTo(type, raw);
         sections.remove(sections.size() - 1);
-        return new Compound(line, sections, context);
+        return new Compound(line, sections, entity);
     }
     
-    public ShadowSection readCompoundValue(Predicate<Token> predicate, String expecting, ShadowContext context) {
+    public ShadowSection readCompoundValue(Predicate<Token> predicate, String expecting, ShadowEntity entity) {
         List<ShadowSection> sections = readTo(predicate, expecting, false);
         if (sections.size() == 1) return sections.get(0);
-        return new Compound(line, sections, context);
+        return new Compound(line, sections, entity);
     }
     
     public ShadowSection readAs(TokenType type) {

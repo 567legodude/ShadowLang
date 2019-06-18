@@ -58,6 +58,10 @@ public class Stepper {
         iterator = content.iterator();
     }
     
+    public void continueToEnd() {
+        while (iterator.hasNext()) iterator.next();
+    }
+    
     public void breakBlock() {
         run = false;
     }
