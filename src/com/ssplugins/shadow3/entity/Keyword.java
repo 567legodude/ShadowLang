@@ -75,7 +75,7 @@ public class Keyword extends ShadowEntity {
             }
             parent = parent.getParent();
         }
-        return fallback.findKeyword(name).orElseThrow(ShadowCodeException.noDef(getLine(), getLine().firstToken().getIndex(), "No definition found for keyword: " + name));
+        return fallback.findKeyword(name).orElseThrow(ShadowCodeException.noDef(getLine(), argumentIndex(-1), "No definition found for keyword: " + name));
     }
     
     public static Schema<Keyword> inlineOnly() {

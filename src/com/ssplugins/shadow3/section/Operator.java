@@ -2,6 +2,7 @@ package com.ssplugins.shadow3.section;
 
 import com.ssplugins.shadow3.api.OperatorMap;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.TokenReader;
@@ -24,15 +25,32 @@ public class Operator extends ShadowSection {
         return getSymbol();
     }
     
-    public void lookup(ShadowContext context) {
-        OperatorMap map = context.getOperatorMap(getSymbol()).orElseThrow(ShadowCodeException.noDef(getLine(), getPrimaryToken().getIndex(), "Operator not found."));
-        setOrder(map.getOrder());
-        setLeftToRight(map.isLeftToRight());
+    public void lookup(ShadowEntity parent) {
+        while (parent != null) {
+            ShadowContext context = parent.getEffectiveContext();
+            Optional<OperatorMap> map = context.getOperatorMap(getSymbol());
+            if (map.isPresent()) {
+                OperatorMap om = map.get();
+                setOrder(om.getOrder());
+                setLeftToRight(om.isLeftToRight());
+                return;
+            }
+            parent = parent.getParent();
+        }
+        throw ShadowCodeException.noDef(getLine(), getPrimaryToken().getIndex(), "Operator not found.").get();
     }
     
-    public void lookupUnary(ShadowContext context) {
-        context.getOperatorMap(getSymbol()).orElseThrow(ShadowCodeException.noDef(getLine(), getPrimaryToken().getIndex(), "Operator not found."));
-        setOrder(OpOrder.UNARY);
+    public void lookupUnary(ShadowEntity parent) {
+        while (parent != null) {
+            ShadowContext context = parent.getEffectiveContext();
+            Optional<OperatorMap> map = context.getOperatorMap(getSymbol());
+            if (map.isPresent()) {
+                setOrder(OpOrder.UNARY);
+                return;
+            }
+            parent = parent.getParent();
+        }
+        throw ShadowCodeException.noDef(getLine(), getPrimaryToken().getIndex(), "Operator not found.").get();
     }
     
     public String getSymbol() {
