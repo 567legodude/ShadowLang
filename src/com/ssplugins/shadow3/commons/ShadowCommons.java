@@ -15,22 +15,25 @@ import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.exception.ShadowExecutionError;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
+import com.ssplugins.shadow3.parsing.ShadowParser;
 import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
 import com.ssplugins.shadow3.section.ShadowSection;
 import com.ssplugins.shadow3.util.Range;
 import com.ssplugins.shadow3.util.Schema;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class ShadowCommons extends ShadowAPI {
     
-    public static ShadowContext create() {
-        ShadowContext context = new ShadowContext();
+    public static ShadowContext create(File file) {
+        ShadowContext context = new ShadowContext(file);
         new ShadowCommons().loadInto(context);
         return context;
     }
@@ -241,7 +244,7 @@ public class ShadowCommons extends ShadowAPI {
         chars.setAction((keyword, stepper, scope) -> {
             Object o = keyword.argumentValue(0, scope);
             if (!(o instanceof String)) {
-                throw new ShadowExecutionError(keyword.getLine(), keyword.getArguments().get(0).getPrimaryToken().getIndex(), "First argument must be a string.");
+                throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(0), "First argument must be a string.");
             }
             return ((String) o).chars().mapToObj(i -> String.valueOf((char) i)).iterator();
         });
@@ -350,7 +353,7 @@ public class ShadowCommons extends ShadowAPI {
             try {
                 Thread.sleep(time);
             } catch (InterruptedException e) {
-                throw new ShadowExecutionError(keyword.getLine(), keyword.getLine().firstToken().getIndex(), "Sleep interrupted.");
+                throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(-1), "Sleep interrupted.");
             }
             return null;
         });
@@ -419,6 +422,38 @@ public class ShadowCommons extends ShadowAPI {
     }
     
     //endregion
+    
+    void keywordImport() {
+        KeywordType anImport = new KeywordType("import", new Range.LowerBound(1));
+        anImport.setAction((keyword, stepper, scope) -> {
+            File source = keyword.getTopContext().getSource();
+            if (source == null) {
+                throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(-1), "Unable to locate source file of code.");
+            }
+            List<ShadowSection> arguments = keyword.getArguments();
+            for (ShadowSection argument : arguments) {
+                if (!(argument instanceof Identifier)) {
+                    throw new ShadowExecutionError(keyword.getLine(), argument.getPrimaryToken().getIndex(), "Argument must be an identifier");
+                }
+            }
+            String name = ((Identifier) arguments.get(arguments.size() - 1)).getName();
+            scope.getContext().findModule(name).ifPresent(c -> {
+                throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(-1), "Module name already exists.");
+            });
+            String path = arguments.stream().map(section -> ((Identifier) section).getName()).collect(Collectors.joining(File.separator));
+            path += ".shd";
+            File module = new File(source.getParent(), path);
+            if (!module.exists()) {
+                throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(-1), "Unable to find specified module.");
+            }
+            ShadowContext context = ShadowCommons.create(module);
+            ShadowParser parser = new ShadowParser(context);
+            parser.parse(module);
+            scope.getContext().addModule(name, context);
+            return null;
+        });
+        context.addKeyword(anImport);
+    }
     
     void keywordFrom() {
         KeywordType from = new KeywordType("from", new Range.LowerBound(3));
@@ -504,7 +539,7 @@ public class ShadowCommons extends ShadowAPI {
         define.setEnterCallback((block, stepper, scope, args) -> {
             List<Identifier> parameters = block.getParameters();
             if (args.size() != parameters.size()) {
-                throw new ShadowExecutionError(block.getLine(), block.getLine().firstToken().getIndex(), "Number of arguments does not equal number of parameters.");
+                throw new ShadowExecutionError(block.getLine(), block.argumentIndex(-1), "Number of arguments does not equal number of parameters.");
             }
             for (int i = 0; i < args.size(); ++i) {
                 scope.set(parameters.get(i), args.get(i));
@@ -560,7 +595,7 @@ public class ShadowCommons extends ShadowAPI {
                 scope.setBlockValue(it);
                 return true;
             }
-            throw new ShadowExecutionError(block.getLine(), block.getModifiers().get(0).getPrimaryToken().getIndex(), "Argument should be an iterator or iterable object.");
+            throw new ShadowExecutionError(block.getLine(), block.argumentIndex(0), "Argument should be an iterator or iterable object.");
         });
         foreach.setEnterCallback(BlockEnterCallback.iterateParameter(0));
         foreach.setEndCallback(BlockEndCallback.iterateParameter(0));
@@ -585,11 +620,6 @@ public class ShadowCommons extends ShadowAPI {
     
     void blockUsing() {
         BlockType using = new BlockType("using", new Range.Single(1), new Range.None());
-//        using.setContextTransformer((block, topContext, currentContext) -> {
-//            Identifier module = block.getIdentifier(0);
-//            String name = module.getName();
-//            return currentContext.findModule(name).orElseThrow(ShadowException.noDef(module.getLine(), module.getPrimaryToken().getIndex(), "No module found named: " + name));
-//        });
         using.setContextTransformer(ContextTransformer.blockModule(0));
         context.addBlock(using);
     }

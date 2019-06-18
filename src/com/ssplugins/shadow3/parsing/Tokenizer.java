@@ -3,10 +3,7 @@ package com.ssplugins.shadow3.parsing;
 import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 
 public class Tokenizer {
@@ -26,8 +23,8 @@ public class Tokenizer {
         else return String.valueOf(PAIRS.charAt(i - 1));
     }
     
-    public List<TokenLine> tokenize(List<String> lines, ShadowContext context) {
-        List<TokenLine> output = new ArrayList<>(lines.size());
+    public List<TokenLine> tokenize(Iterator<String> lines, ShadowContext context) {
+        List<TokenLine> output = new ArrayList<>();
         TokenIterator it = new TokenIterator(lines);
         Set<String> allOps = context.operators();
         Set<String> ops = new HashSet<>(allOps);

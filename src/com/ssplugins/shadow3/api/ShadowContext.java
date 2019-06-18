@@ -7,17 +7,32 @@ import com.ssplugins.shadow3.entity.Block;
 import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
 
+import java.io.File;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public class ShadowContext {
     
+    private File source;
+    
     private Map<String, OperatorMap> operators = new HashMap<>();
     private Map<String, BlockType> blocks = new HashMap<>();
     private Map<String, KeywordType> keywords = new HashMap<>();
     private Map<String, ShadowContext> modules = new HashMap<>();
     private Map<String, FunctionMap> functions = new HashMap<>();
+    
+    public ShadowContext() {
+        this(null);
+    }
+    
+    public ShadowContext(File source) {
+        this.source = source;
+    }
+    
+    public File getSource() {
+        return source;
+    }
     
     private <T> Optional<T> search(List<T> list, Predicate<T> predicate) {
         return list.stream().filter(predicate).findFirst();
@@ -122,7 +137,8 @@ public class ShadowContext {
         if (block.getDefinition() != define) throw new IllegalArgumentException("Block is not a function definition.");
         String name = ((Identifier) block.getModifiers().get(0)).getName();
         FunctionMap map = getOrElse(functions, name, FunctionMap::new);
-        if (map.contains(block.getParameters().size())) throw new IllegalArgumentException("Duplicate function definition.");
+        if (map.contains(block.getParameters().size()))
+            throw new IllegalArgumentException("Duplicate function definition.");
         map.set(block.getParameters().size(), block);
         return true;
     }

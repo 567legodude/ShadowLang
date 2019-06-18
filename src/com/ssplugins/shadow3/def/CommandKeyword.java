@@ -31,7 +31,7 @@ public abstract class CommandKeyword<T, D> extends KeywordType {
             for (int i = 0; i < objects.size(); ++i) {
                 Object object = objects.get(i);
                 if (!dataType.isAssignableFrom(object.getClass())) {
-                    throw new ShadowExecutionError(keyword.getLine(), keyword.getArguments().get(i).getPrimaryToken().getIndex(), "Argument value must be an object specific to this keyword.");
+                    throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(i), "Argument value must be an object specific to this keyword.");
                 }
                 input.add(dataType.cast(object));
             }
