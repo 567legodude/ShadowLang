@@ -72,7 +72,7 @@ public class ShadowCodeException extends ShadowException {
     }
     
     public static Supplier<ShadowExecutionError> exec(Block block, String msg) {
-        return () -> new ShadowExecutionError(block.getLine(), block.getLine().firstToken().getIndex(), msg);
+        return () -> new ShadowExecutionError(block.getLine(), block.argumentIndex(-1), msg);
     }
     
     public String getRaw() {

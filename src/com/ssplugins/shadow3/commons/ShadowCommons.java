@@ -244,7 +244,7 @@ public class ShadowCommons extends ShadowAPI {
         chars.setAction((keyword, stepper, scope) -> {
             Object o = keyword.argumentValue(0, scope);
             if (!(o instanceof String)) {
-                throw new ShadowExecutionError(keyword.getLine(), keyword.getArguments().get(0).getPrimaryToken().getIndex(), "First argument must be a string.");
+                throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(0), "First argument must be a string.");
             }
             return ((String) o).chars().mapToObj(i -> String.valueOf((char) i)).iterator();
         });
@@ -353,7 +353,7 @@ public class ShadowCommons extends ShadowAPI {
             try {
                 Thread.sleep(time);
             } catch (InterruptedException e) {
-                throw new ShadowExecutionError(keyword.getLine(), keyword.getLine().firstToken().getIndex(), "Sleep interrupted.");
+                throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(-1), "Sleep interrupted.");
             }
             return null;
         });
@@ -539,7 +539,7 @@ public class ShadowCommons extends ShadowAPI {
         define.setEnterCallback((block, stepper, scope, args) -> {
             List<Identifier> parameters = block.getParameters();
             if (args.size() != parameters.size()) {
-                throw new ShadowExecutionError(block.getLine(), block.getLine().firstToken().getIndex(), "Number of arguments does not equal number of parameters.");
+                throw new ShadowExecutionError(block.getLine(), block.argumentIndex(-1), "Number of arguments does not equal number of parameters.");
             }
             for (int i = 0; i < args.size(); ++i) {
                 scope.set(parameters.get(i), args.get(i));
@@ -595,7 +595,7 @@ public class ShadowCommons extends ShadowAPI {
                 scope.setBlockValue(it);
                 return true;
             }
-            throw new ShadowExecutionError(block.getLine(), block.getModifiers().get(0).getPrimaryToken().getIndex(), "Argument should be an iterator or iterable object.");
+            throw new ShadowExecutionError(block.getLine(), block.argumentIndex(0), "Argument should be an iterator or iterable object.");
         });
         foreach.setEnterCallback(BlockEnterCallback.iterateParameter(0));
         foreach.setEndCallback(BlockEndCallback.iterateParameter(0));

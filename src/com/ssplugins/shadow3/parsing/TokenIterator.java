@@ -35,7 +35,7 @@ public class TokenIterator {
     public String nextLine() {
         charIndex = 0;
         tokenLine = null;
-        tokenIndex = 0;
+        tokenIndex = -1;
         line = source.next();
         lineIndex++;
         return line;
@@ -52,7 +52,7 @@ public class TokenIterator {
     
     public void append() {
         builder.append(c);
-        if (tokenIndex == -1) tokenIndex = charIndex;
+        if (tokenIndex == -1) tokenIndex = charIndex - 1;
         int len = builder.length();
         String compare = Tokenizer.COMMENT;
         if (len >= compare.length() && builder.substring(len - compare.length()).equals(compare)) {
