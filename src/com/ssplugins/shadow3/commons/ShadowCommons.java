@@ -13,7 +13,6 @@ import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.exception.ShadowExecutionError;
-import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
 import com.ssplugins.shadow3.parsing.ShadowParser;
@@ -40,6 +39,30 @@ public class ShadowCommons extends ShadowAPI {
     }
     
     private ShadowContext context;
+    
+    private static void argsToParams(Block block, Stepper stepper, Scope scope, List<Object> args) {
+        List<Identifier> parameters = block.getParameters();
+        if (args.size() != parameters.size()) {
+            throw new ShadowExecutionError(block.getLine(), block.argumentIndex(-1), "Number of arguments does not equal number of parameters.");
+        }
+        for (int i = 0; i < args.size(); ++i) {
+            scope.set(parameters.get(i), args.get(i));
+        }
+    }
+    
+    private static KeywordAction returnArgument(BlockType def) {
+        return (keyword, stepper, scope) -> {
+            Scope original = scope;
+            while (stepper.getBlock().getDefinition() != def) {
+                stepper.breakBlock();
+                stepper = stepper.getParent();
+                scope = scope.getParent();
+            }
+            scope.setReturnValue(keyword.argumentValue(0, original));
+            stepper.breakBlock();
+            return null;
+        };
+    }
     
     @Override
     public void loadInto(ShadowContext context) throws ShadowException {
@@ -105,10 +128,12 @@ public class ShadowCommons extends ShadowAPI {
     void operatorEquals() {
         OperatorType<Object, Object, Boolean> equals = new OperatorType<>("==", OpOrder.EQUALITY, Object.class, Object.class, boolean.class, Objects::equals);
         context.addOperator(equals);
-        // Covered by above case
-//        OperatorType<String, String, Boolean> stringEquals = new OperatorType<>("==", String.class, String.class, boolean.class, String::equals);
-//        stringEquals.setMatcher(OperatorMatcher.sameType());
-//        context.addOperator(stringEquals);
+    }
+    
+    @Entity
+    void operatorNotEqual() {
+        OperatorType<Object, Object, Boolean> notEqual = new OperatorType<>("!=", OpOrder.EQUALITY, Object.class, Object.class, boolean.class, (o, o2) -> o != o2);
+        context.addOperator(notEqual);
     }
     
     @Entity
@@ -164,6 +189,12 @@ public class ShadowCommons extends ShadowAPI {
         OperatorType<Number, Number, Double> exp = new OperatorType<>("^", Number.class, Number.class, double.class, (a, b) -> Math.pow(a.doubleValue(), b.doubleValue()));
         exp.setLeftToRight(false);
         context.addOperator(exp);
+    }
+    
+    @Entity
+    void operatorModulus() {
+        OperatorType<Number, Number, Double> modulus = new OperatorType<>("%", OpOrder.MUL_DIV, Number.class, Number.class, double.class, (a, b) -> a.doubleValue() % b.doubleValue());
+        context.addOperator(modulus);
     }
     
     @Entity
@@ -256,8 +287,12 @@ public class ShadowCommons extends ShadowAPI {
             String name = keyword.getIdentifier(0).getName();
             List<Object> params;
             if (keyword.getArguments().size() == 1) params = Collections.emptyList();
-            else params = keyword.getArgument(1, Parameters.class, scope, "Argument must be function parameters.").getParams();
-            Block block = scope.getContext().findFunction(name, params.size()).orElseThrow(ShadowCodeException.noDef(keyword.getLine(), keyword.getLine().firstToken().getIndex(), "No matching function found."));
+            else {
+                Object o = keyword.argumentValue(1, scope);
+                if (o instanceof Parameters) params = ((Parameters) o).getParams();
+                else params = Collections.singletonList(o);
+            }
+            Block block = scope.getContext().findFunction(name, params.size()).orElseThrow(ShadowCodeException.noDef(keyword.getLine(), keyword.argumentIndex(0), "No matching function found."));
             return block.execute(stepper, new Scope(scope.getContext(), stepper), params);
         });
         context.addKeyword(exec);
@@ -522,9 +557,10 @@ public class ShadowCommons extends ShadowAPI {
         context.addKeyword(nothing);
     }
     
+    @Entity
     void keywordImport() {
         KeywordType anImport = new KeywordType("import", new Range.LowerBound(1));
-        anImport.setAction((keyword, stepper, scope) -> {
+        anImport.setParseCallback((keyword, context1) -> {
             File source = keyword.getTopContext().getSource();
             if (source == null) {
                 throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(-1), "Unable to locate source file of code.");
@@ -536,7 +572,7 @@ public class ShadowCommons extends ShadowAPI {
                 }
             }
             String name = ((Identifier) arguments.get(arguments.size() - 1)).getName();
-            scope.getContext().findModule(name).ifPresent(c -> {
+            context1.findModule(name).ifPresent(c -> {
                 throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(-1), "Module name already exists.");
             });
             String path = arguments.stream().map(section -> ((Identifier) section).getName()).collect(Collectors.joining(File.separator));
@@ -548,23 +584,12 @@ public class ShadowCommons extends ShadowAPI {
             ShadowContext context = ShadowCommons.create(module);
             ShadowParser parser = new ShadowParser(context);
             parser.parse(module);
-            scope.getContext().addModule(name, context);
-            return null;
-        });
-        context.addKeyword(anImport);
-    }
-    
-    void keywordFrom() {
-        KeywordType from = new KeywordType("from", new Range.LowerBound(3));
-        from.setParseCallback((keyword, c) -> {
-            Identifier sep = keyword.getIdentifier(1);
-            if (!sep.getName().equals("do")) {
-                throw new ShadowParseError(keyword.getLine(), sep.getPrimaryToken().getIndex(), "Expected \"do\" here.");
+            if (!context1.addModule(name, context)) {
+                throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(-1), "Module name already exists.");
             }
         });
-        from.setContextTransformer(ContextTransformer.keywordModule(0));
-        from.setAction((keyword, stepper, scope) -> keyword.argumentValue(2, scope));
-        context.addKeyword(from);
+        anImport.setAction((keyword, stepper, scope) -> null);
+        context.addKeyword(anImport);
     }
     
     //endregion
@@ -674,34 +699,36 @@ public class ShadowCommons extends ShadowAPI {
     void blockDefine() {
         BlockType define = new BlockType("define", new Range.Single(1), new Range.Any());
         define.setParseCallback((block, c) -> c.addFunction(block));
-        define.setPreRunCheck((block, scope, args) -> args != null);
-        define.setEnterCallback((block, stepper, scope, args) -> {
-            List<Identifier> parameters = block.getParameters();
-            if (args.size() != parameters.size()) {
-                throw new ShadowExecutionError(block.getLine(), block.argumentIndex(-1), "Number of arguments does not equal number of parameters.");
-            }
-            for (int i = 0; i < args.size(); ++i) {
-                scope.set(parameters.get(i), args.get(i));
+        setupDefinition(define);
+    
+        BlockType keyword = new BlockType("keyword", new Range.Single(1), new Range.Any());
+        keyword.setParseCallback((b, c) -> {
+            Identifier name = (Identifier) b.getArguments().get(0);
+            KeywordType keywordType = new KeywordType(name.getName(), new Range.Single(1));
+            keywordType.setAction((keyword1, stepper, scope) -> {
+                List<Object> params;
+                Object o = keyword1.argumentValue(0, scope);
+                if (o instanceof Parameters) params = ((Parameters) o).getParams();
+                else params = Collections.singletonList(o);
+                return b.execute(stepper, new Scope(c, stepper), params);
+            });
+            if (!c.addKeyword(keywordType)) {
+                throw new ShadowExecutionError(b.getLine(), b.argumentIndex(-1), "Keyword already exists.");
             }
         });
-        context.addBlock(define);
+        setupDefinition(keyword);
+    }
     
-        ShadowContext defineContext = new ShadowContext();
-        define.setContextTransformer(ContextTransformer.blockUse(defineContext));
-    
-        KeywordType aReturn = new KeywordType("return", new Range.Single(1));
-        aReturn.setAction((keyword, stepper, scope) -> {
-            Scope original = scope;
-            while (stepper.getBlock().getDefinition() != define) {
-                stepper.breakBlock();
-                stepper = stepper.getParent();
-                scope = scope.getParent();
-            }
-            scope.setReturnValue(keyword.argumentValue(0, original));
-            stepper.breakBlock();
-            return null;
-        });
-        defineContext.addKeyword(aReturn);
+    private void setupDefinition(BlockType keyword) {
+        keyword.setPreRunCheck((block, scope, args) -> args != null);
+        keyword.setEnterCallback(ShadowCommons::argsToParams);
+        context.addBlock(keyword);
+        
+        ShadowContext keywordContext = new ShadowContext();
+        keyword.setContextTransformer(ContextTransformer.blockUse(keywordContext));
+        KeywordType aReturn1 = new KeywordType("return", new Range.Single(1));
+        aReturn1.setAction(returnArgument(keyword));
+        keywordContext.addKeyword(aReturn1);
     }
     
     @Entity
@@ -750,7 +777,7 @@ public class ShadowCommons extends ShadowAPI {
             return block.getArgument(0, Boolean.class, scope, "Argument must be a boolean.");
         });
         aWhile.setEndCallback((block, stepper, scope) -> {
-            Boolean argument = block.getArgument(0, Boolean.class, scope, "Argumetn must be a boolean.");
+            Boolean argument = block.getArgument(0, Boolean.class, scope, "Argument must be a boolean.");
             if (argument) stepper.restart();
         });
         context.addBlock(aWhile);
@@ -772,6 +799,7 @@ public class ShadowCommons extends ShadowAPI {
         context.addBlock(benchmark);
     }
     
+    @Entity
     void blockUsing() {
         BlockType using = new BlockType("using", new Range.Single(1), new Range.None());
         using.setContextTransformer(ContextTransformer.blockModule(0));

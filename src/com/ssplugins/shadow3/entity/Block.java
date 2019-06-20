@@ -94,17 +94,18 @@ public class Block extends ShadowEntity {
             }
         }
         while (parent != null) {
-            ShadowContext context = parent.getInnerContext();
-            if (context != null) {
-                Optional<BlockType> block = context.findBlock(name);
-                if (block.isPresent()) {
-                    setFrom(parent);
-                    return block.get();
-                }
+            Optional<BlockType> block = checkContext(parent.getInnerContext());
+            if (block.isPresent()) {
+                setFrom(parent);
+                return block.get();
             }
             parent = (Block) parent.getParent();
         }
         return fallback.findBlock(name).orElseThrow(ShadowCodeException.noDef(getLine(), getLine().firstToken().getIndex(), "No definition found for block: " + name));
+    }
+    
+    private Optional<BlockType> checkContext(ShadowContext context) {
+        return Optional.ofNullable(context).flatMap(c -> c.findBlock(name));
     }
     
     @Override

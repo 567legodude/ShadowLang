@@ -119,7 +119,7 @@ public class ShadowContext {
     //region Modules
     
     public boolean addModule(String name, ShadowContext context) {
-        if (!modules.containsKey(name)) return false;
+        if (modules.containsKey(name)) return false;
         modules.put(name, context);
         return true;
     }

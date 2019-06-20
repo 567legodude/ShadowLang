@@ -46,7 +46,7 @@ public class Stepper {
                 }
             }
             else next.execute(this, scope, null);
-            if (!iterator.hasNext()) {
+            if (run && !iterator.hasNext()) {
                 run = false;
                 if (callback != null) callback.accept(this);
             }
