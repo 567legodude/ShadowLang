@@ -65,17 +65,18 @@ public class Keyword extends ShadowEntity {
             }
         }
         while (parent != null) {
-            ShadowContext context = parent.getInnerContext();
-            if (context != null) {
-                Optional<KeywordType> keyword = context.findKeyword(name);
-                if (keyword.isPresent()) {
-                    setFrom(parent);
-                    return keyword.get();
-                }
+            Optional<KeywordType> keyword = checkContext(parent.getInnerContext());
+            if (keyword.isPresent()) {
+                setFrom(parent);
+                return keyword.get();
             }
             parent = parent.getParent();
         }
         return fallback.findKeyword(name).orElseThrow(ShadowCodeException.noDef(getLine(), argumentIndex(-1), "No definition found for keyword: " + name));
+    }
+    
+    private Optional<KeywordType> checkContext(ShadowContext context) {
+        return Optional.ofNullable(context).flatMap(c -> c.findKeyword(name));
     }
     
     public static Schema<Keyword> inlineOnly() {
@@ -111,6 +112,10 @@ public class Keyword extends ShadowEntity {
     @Override
     public ShadowContext getInnerContext() {
         return innerContext;
+    }
+    
+    public void setInnerContext(ShadowContext innerContext) {
+        this.innerContext = innerContext;
     }
     
     public KeywordType getDefinition() {
