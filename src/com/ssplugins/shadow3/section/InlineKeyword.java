@@ -22,7 +22,7 @@ public class InlineKeyword extends ShadowSection {
         int oldLimit = reader.getLimit();
         int end = (oldLimit == -1 ? reader.size() : oldLimit);
     
-        int groupEnd = ShadowParser.findGroupEnd(reader.getLine().getTokens(), reader.getIndex(), end);
+        int groupEnd = ShadowParser.findGroupEnd(reader.getTokens(), reader.getIndex(), end);
         if (groupEnd == ShadowParser.ERR_NO_CLOSING) {
             throw new ShadowParseError(getLine(), reader.peekNext().getIndex(), "No closing bracket found.");
         }
@@ -30,17 +30,22 @@ public class InlineKeyword extends ShadowSection {
             throw new ShadowParseError(getLine(), reader.peekNext().getIndex(), "Too many closing tokens after bracket.");
         }
     
-        List<Token> tokens = new ArrayList<>();
+        TokenReader keywordReader = reader.subReader(reader.getIndex() + 1, groupEnd);
     
+        List<Token> tokens = new ArrayList<>();
         reader.setLimit(groupEnd);
         tokens.add(reader.expect(TokenType.GROUP_OPEN, "["));
-        keyword = new Keyword(parent, reader, parser.getContext());
-        tokens.addAll(keyword.getLine().getTokens());
+        while (reader.hasNext()) {
+            tokens.add(reader.next());
+        }
         reader.setLimit(oldLimit);
         tokens.add(reader.expect(TokenType.GROUP_CLOSE, "]"));
-        keyword.setInline(true);
-    
         setTokens(tokens.toArray(new Token[0]));
+        
+        parent.addCompleteCallback(() -> {
+            keyword = new Keyword(parent, keywordReader, parser.getContext());
+            keyword.setInline(true);
+        });
     }
     
     @Override

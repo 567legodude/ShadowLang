@@ -65,6 +65,7 @@ public class Block extends ShadowEntity {
         ParseCallback<Block> parseCallback = definition.getParseCallback();
         if (parseCallback != null) parseCallback.onParse(this, getEffectiveContext());
         innerContext = definition.getContextTransformer().get(this, reader.getContext(), getEffectiveContext());
+        runCompleteCallbacks();
         
         contents = new EntityList();
         if (def.hasNext() && def.nextMatches(TokenType.OPERATOR, "::")) {
