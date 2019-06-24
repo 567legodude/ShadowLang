@@ -8,6 +8,7 @@ import com.ssplugins.shadow3.parsing.TokenLine;
 import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.ShadowSection;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,6 +28,8 @@ public abstract class ShadowEntity {
     
     private boolean inline;
     
+    private List<Runnable> completeCallbacks = new LinkedList<>();
+    
     public ShadowEntity(TokenLine line, ShadowEntity parent) {
         this.line = line;
         this.parent = parent;
@@ -42,6 +45,18 @@ public abstract class ShadowEntity {
     public abstract List<ShadowSection> getArguments();
     
     public abstract ShadowContext getInnerContext();
+    
+    protected final void runCompleteCallbacks() {
+        for (Runnable callback : completeCallbacks) {
+            callback.run();
+        }
+        completeCallbacks.clear();
+        completeCallbacks = null;
+    }
+    
+    public final void addCompleteCallback(Runnable runnable) {
+        completeCallbacks.add(runnable);
+    }
     
     public ShadowContext getEffectiveContext() {
         ShadowEntity from = getFrom();
