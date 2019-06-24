@@ -115,6 +115,16 @@ public class TokenReader extends Reader<Token> {
         return parser.readSection(this);
     }
     
+    public TokenReader subReader(int newEnd) {
+        return subReader(getIndex(), newEnd);
+    }
+    
+    public TokenReader subReader(int start, int end) {
+        if (start < 0) start = 0;
+        if (end > line.size()) end = line.size();
+        return new SubTokenReader(this, start, end);
+    }
+    
     public ShadowEntity getParent() {
         return parent;
     }
@@ -129,6 +139,10 @@ public class TokenReader extends Reader<Token> {
     
     public TokenLine getLine() {
         return line;
+    }
+    
+    public List<Token> getTokens() {
+        return getLine().getTokens();
     }
     
 }

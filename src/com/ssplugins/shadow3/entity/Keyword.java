@@ -48,6 +48,7 @@ public class Keyword extends ShadowEntity {
         ParseCallback<Keyword> parseCallback = definition.getParseCallback();
         if (parseCallback != null) parseCallback.onParse(this, getEffectiveContext());
         innerContext = definition.getContextTransformer().get(this, fallback, getEffectiveContext());
+        runCompleteCallbacks();
     }
     
     private KeywordType findDef(ShadowEntity parent, ShadowContext fallback) {

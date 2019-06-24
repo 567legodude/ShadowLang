@@ -13,6 +13,7 @@ import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.exception.ShadowExecutionError;
+import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
 import com.ssplugins.shadow3.parsing.ShadowParser;
@@ -590,6 +591,20 @@ public class ShadowCommons extends ShadowAPI {
         });
         anImport.setAction((keyword, stepper, scope) -> null);
         context.addKeyword(anImport);
+    }
+    
+    @Entity
+    void keywordFrom() {
+        KeywordType from = new KeywordType("from", new Range.LowerBound(3));
+        from.setParseCallback((keyword, c) -> {
+            Identifier sep = keyword.getIdentifier(1);
+            if (!sep.getName().equals("do")) {
+                throw new ShadowParseError(keyword.getLine(), sep.getPrimaryToken().getIndex(), "Expected \"do\" here.");
+            }
+        });
+        from.setContextTransformer(ContextTransformer.keywordModule(0));
+        from.setAction((keyword, stepper, scope) -> keyword.argumentValue(2, scope));
+        context.addKeyword(from);
     }
     
     //endregion
