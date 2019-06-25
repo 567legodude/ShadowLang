@@ -12,6 +12,7 @@ public class ShadowBoolean extends ShadowSection {
     public ShadowBoolean(TokenReader reader) {
         super(reader.getLine());
         Token token = reader.expect(TokenType.BOOLEAN);
+        setToken(token);
         value = Boolean.valueOf(token.getRaw());
     }
     

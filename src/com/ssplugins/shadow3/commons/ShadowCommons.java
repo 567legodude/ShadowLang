@@ -126,6 +126,12 @@ public class ShadowCommons extends ShadowAPI {
     }
     
     @Entity
+    void operatorAssignment() {
+        OperatorType<Integer, Object, IndexAssignment> intAssign = new OperatorType<>("=", OpOrder.ASSIGNMENT, Integer.class, Object.class, IndexAssignment.class, IndexAssignment::new);
+        context.addOperator(intAssign);
+    }
+    
+    @Entity
     void operatorEquals() {
         OperatorType<Object, Object, Boolean> equals = new OperatorType<>("==", OpOrder.EQUALITY, Object.class, Object.class, boolean.class, Objects::equals);
         context.addOperator(equals);
@@ -355,39 +361,7 @@ public class ShadowCommons extends ShadowAPI {
     
     @Entity
     void keywordArray() {
-//        KeywordType array = new KeywordType("array", new Range.MinMax(1, 2));
-//        array.setAction((keyword, stepper, scope) -> {
-//            List<ShadowSection> args = keyword.getArguments();
-//            if (args.size() == 1) {
-//                Object o = keyword.argumentValue(0, scope);
-//                if (o.getClass().isArray()) {
-//                    return Array.getLength(o);
-//                }
-//                Integer size = keyword.getArgument(0, Integer.class, scope, "Argument must be an integer.");
-//                return Array.newInstance(Object.class, size);
-//            }
-//            Object arr = keyword.argumentValue(0, scope);
-//            if (!arr.getClass().isArray()) {
-//                throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(0), "Argument is not an array.");
-//            }
-//            Object action = keyword.argumentValue(1, scope);
-//            if (action instanceof Assignment) {
-//                Assignment aa = (Assignment) action;
-//                Array.set(arr, aa.getIndex(), aa.getValue());
-//            }
-//            else if (action instanceof Integer) {
-//                return Array.get(arr, (Integer) action);
-//            }
-//            else {
-//                throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(0), "Unknown argument value.");
-//            }
-//            return null;
-//        });
         ArrayKeyword array = new ArrayKeyword();
-    
-        OperatorType<Integer, Object, Assignment> assign = new OperatorType<>("=", OpOrder.ASSIGNMENT, Integer.class, Object.class, Assignment.class, Assignment::new);
-        this.context.addOperator(assign);
-    
         this.context.addKeyword(array);
     }
     
@@ -457,6 +431,25 @@ public class ShadowCommons extends ShadowAPI {
             return ThreadLocalRandom.current().nextInt(lower, upper);
         });
         context.addKeyword(random);
+    }
+    
+    @Entity
+    void keywordTry() {
+        KeywordType aTry = new KeywordType("try", new Range.Single(3));
+        aTry.setParseCallback((keyword, context1) -> {
+            Identifier id = keyword.getIdentifier(1);
+            if (!id.getName().equals("or")) {
+                throw new ShadowParseError(keyword.getLine(), keyword.argumentIndex(1), "Expected \"or\" here.");
+            }
+        });
+        aTry.setAction((keyword, stepper, scope) -> {
+            try {
+                return keyword.argumentValue(0, scope);
+            } catch (Exception e) {
+                return keyword.argumentValue(2, scope);
+            }
+        });
+        context.addKeyword(aTry);
     }
     
     //region Predicates
