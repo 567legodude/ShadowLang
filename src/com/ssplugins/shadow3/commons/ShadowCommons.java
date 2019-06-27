@@ -746,16 +746,15 @@ public class ShadowCommons extends ShadowAPI {
         foreach.setContextTransformer(ContextTransformer.blockUse(loopControl(foreach)));
         foreach.setPreRunCheck((block, scope, args) -> {
             Object o = block.argumentValue(0, scope);
+            Iterator it = null;
             if (o instanceof Iterator) {
-                scope.setBlockValue(o);
-                return true;
+                it = (Iterator) o;
             }
             else if (o instanceof Iterable) {
-                scope.setBlockValue(((Iterable) o).iterator());
-                return true;
+                it = ((Iterable) o).iterator();
             }
             else if (o.getClass().isArray()) {
-                Iterator<?> it = new Iterator<Object>() {
+                it = new Iterator<Object>() {
                     private int index;
                     
                     @Override
@@ -768,8 +767,10 @@ public class ShadowCommons extends ShadowAPI {
                         return Array.get(o, index++);
                     }
                 };
+            }
+            if (it != null) {
                 scope.setBlockValue(it);
-                return true;
+                return it.hasNext();
             }
             throw new ShadowExecutionError(block.getLine(), block.argumentIndex(0), "Argument should be an iterator or iterable object.");
         });
