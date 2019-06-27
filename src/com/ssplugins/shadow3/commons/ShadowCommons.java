@@ -406,6 +406,7 @@ public class ShadowCommons extends ShadowAPI {
             try {
                 char c;
                 while ((c = (char) System.in.read()) != '\n') {
+                    if (c == '\r') continue;
                     builder.append(c);
                 }
             } catch (IOException e) {

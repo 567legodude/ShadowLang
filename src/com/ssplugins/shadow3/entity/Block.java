@@ -152,6 +152,13 @@ public class Block extends ShadowEntity {
         stepper.run();
     }
     
+    public Object run(List<Object> params) {
+        ShadowContext context = getTopContext();
+        Stepper stepper = new Stepper(null, context, this);
+        Scope scope = new Scope(context, stepper);
+        return this.execute(stepper, scope, params);
+    }
+    
     public List<ShadowSection> getModifiers() {
         return modifiers;
     }
