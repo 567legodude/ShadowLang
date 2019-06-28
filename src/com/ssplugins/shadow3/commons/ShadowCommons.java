@@ -453,6 +453,16 @@ public class ShadowCommons extends ShadowAPI {
         context.addKeyword(aTry);
     }
     
+    @Entity
+    void keywordMulti() {
+        KeywordType multi = new KeywordType("multi", new Range.LowerBound(1));
+        multi.setAction((keyword, stepper, scope) -> {
+            List<Object> objects = keyword.argumentValues(scope);
+            return objects.get(objects.size() - 1);
+        });
+        context.addKeyword(multi);
+    }
+    
     //region Predicates
     
     @Entity
