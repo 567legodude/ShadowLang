@@ -6,16 +6,18 @@ import com.ssplugins.shadow3.util.Schema;
 
 import java.util.function.Predicate;
 
-public class ShadowPredicate {
+public class ShadowPredicate extends InputModifier<Boolean> {
     
-    private TokenLine line;
-    private int index;
     private Schema<Parameters> schema;
     
     public ShadowPredicate(TokenLine line, int index) {
-        this.line = line;
-        this.index = index;
+        super(line, index);
         schema = new Schema<>();
+        setFunction(p -> schema.test(p));
+    }
+    
+    public static Predicate<Parameters> matchAll(Class<?> type) {
+        return p -> p.getParams().stream().allMatch(type::isInstance);
     }
     
     public static Predicate<Parameters> match(int size, Class<?>... types) {
@@ -35,7 +37,7 @@ public class ShadowPredicate {
     public ShadowPredicate validate(Predicate<Parameters> predicate) {
         schema.require(p -> {
             if (!predicate.test(p)) {
-                throw new ShadowExecutionError(line, index, "Wrong input given for keyword.");
+                throw new ShadowExecutionError(getLine(), getIndex(), "Wrong input given for keyword.");
             }
             return true;
         });

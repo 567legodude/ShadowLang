@@ -16,6 +16,7 @@ import com.ssplugins.shadow3.exception.ShadowExecutionError;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
+import com.ssplugins.shadow3.modules.IO;
 import com.ssplugins.shadow3.modules.SHDMath;
 import com.ssplugins.shadow3.parsing.ShadowParser;
 import com.ssplugins.shadow3.section.Identifier;
@@ -80,6 +81,11 @@ public class ShadowCommons extends ShadowAPI {
         context.addLazyModule("math", new SHDMath());
     }
     
+    @Entity
+    void moduleIO() {
+        context.addLazyModule("io", new IO());
+    }
+    
     //endregion
     
     //region Operators
@@ -133,6 +139,16 @@ public class ShadowCommons extends ShadowAPI {
             return predicate.get().test(params);
         });
         context.addOperator(input);
+        OperatorType<Object, BasicInputModifier, Object> inputMod = new OperatorType<>("=>", OpOrder.INPUT, Object.class, BasicInputModifier.class, Object.class, (o, mod) -> {
+            Parameters params;
+            if (o instanceof Parameters) params = (Parameters) o;
+            else {
+                params = new Parameters();
+                params.addParam(o);
+            }
+            return mod.getFunction().apply(params);
+        });
+        context.addOperator(inputMod);
     }
     
     @Entity
@@ -291,6 +307,20 @@ public class ShadowCommons extends ShadowAPI {
     }
     
     @Entity
+    void keywordPause() {
+        KeywordType pause = new KeywordType("pause", new Range.None());
+        pause.setAction((keyword, stepper, scope) -> {
+            try {
+                System.in.read();
+            } catch (IOException e) {
+                throw new ShadowException(e);
+            }
+            return null;
+        });
+        context.addKeyword(pause);
+    }
+    
+    @Entity
     void keywordExec() {
         KeywordType exec = new KeywordType("exec", new Range.MinMax(1, 2));
         exec.setAction((keyword, stepper, scope) -> {
@@ -303,7 +333,10 @@ public class ShadowCommons extends ShadowAPI {
                 else params = Collections.singletonList(o);
             }
             Block block = scope.getContext().findFunction(name, params.size()).orElseThrow(ShadowCodeException.noDef(keyword.getLine(), keyword.argumentIndex(0), "No matching function found."));
-            return block.execute(stepper, new Scope(scope.getContext(), stepper), params);
+            Scope bs = new Scope(scope.getContext(), stepper);
+            Object value = block.execute(stepper, bs, params);
+            scope.getCallbacks().addAll(bs.getCallbacks());
+            return value;
         });
         context.addKeyword(exec);
     }
@@ -487,6 +520,60 @@ public class ShadowCommons extends ShadowAPI {
         StringPredicate contains = new StringPredicate("contains");
         contains.setTest(String::contains);
         context.addKeyword(contains);
+    }
+    
+    @Entity
+    void keywordSplit() {
+        KeywordType split = new KeywordType("split", new Range.MinMax(1, 2));
+        split.setAction((keyword, stepper, scope) -> {
+            BasicInputModifier bim = new BasicInputModifier(keyword.getLine(), keyword.argumentIndex(-1));
+            bim.setCheck(ShadowPredicate.match(1, String.class));
+            bim.setModifier(p -> {
+                String s = (String) p.getParams().get(0);
+                String regex = keyword.getArgument(0, String.class, scope, "Argument must be a string.");
+                if (keyword.getArguments().size() > 1) {
+                    int limit = keyword.getArgument(1, Integer.class, scope, "Argument must be an integer.");
+                    return s.split(regex, limit);
+                }
+                return s.split(regex);
+            });
+            return bim;
+        });
+        context.addKeyword(split);
+    }
+    
+    @Entity
+    void keywordReplace() {
+        KeywordType replace = new KeywordType("replace", new Range.Single(2));
+        replace.setAction((keyword, stepper, scope) -> {
+            BasicInputModifier bim = new BasicInputModifier(keyword.getLine(), keyword.argumentIndex(-1));
+            bim.setCheck(ShadowPredicate.match(1, String.class));
+            bim.setModifier(p -> {
+                String s = (String) p.getParams().get(0);
+                String find = keyword.getArgument(0, String.class, scope, "Argument must be a string.");
+                String replacement = keyword.getArgument(1, String.class, scope, "Argument must be a string.");
+                return s.replace(find, replacement);
+            });
+            return bim;
+        });
+        context.addKeyword(replace);
+    }
+    
+    @Entity
+    void keywordReplaceAll() {
+        KeywordType replaceAll = new KeywordType("replace_all", new Range.Single(2));
+        replaceAll.setAction((keyword, stepper, scope) -> {
+            BasicInputModifier bim = new BasicInputModifier(keyword.getLine(), keyword.argumentIndex(-1));
+            bim.setCheck(ShadowPredicate.match(1, String.class));
+            bim.setModifier(p -> {
+                String s = (String) p.getParams().get(0);
+                String find = keyword.getArgument(0, String.class, scope, "Argument must be a string.");
+                String replacement = keyword.getArgument(1, String.class, scope, "Argument must be a string.");
+                return s.replaceAll(find, replacement);
+            });
+            return bim;
+        });
+        context.addKeyword(replaceAll);
     }
     
     @Entity
@@ -751,7 +838,10 @@ public class ShadowCommons extends ShadowAPI {
                     if (o instanceof Parameters) params = ((Parameters) o).getParams();
                     else params = Collections.singletonList(o);
                 }
-                return b.execute(stepper, new Scope(c, stepper), params);
+                Scope bs = new Scope(c, stepper);
+                Object value = b.execute(stepper, bs, params);
+                scope.getCallbacks().addAll(bs.getCallbacks());
+                return value;
             });
             if (!c.addKeyword(keywordType)) {
                 throw new ShadowExecutionError(b.getLine(), b.argumentIndex(-1), "Keyword already exists.");
