@@ -16,6 +16,8 @@ import com.ssplugins.shadow3.exception.ShadowExecutionError;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
+import com.ssplugins.shadow3.modules.IO;
+import com.ssplugins.shadow3.modules.SHDMath;
 import com.ssplugins.shadow3.parsing.ShadowParser;
 import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
@@ -28,6 +30,7 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -65,12 +68,49 @@ public class ShadowCommons extends ShadowAPI {
         };
     }
     
+    private static void pauseConsole() {
+        try {
+            char c;
+            while ((c = (char) System.in.read()) != '\n');
+        } catch (IOException e) {
+            throw new ShadowException(e);
+        }
+    }
+    
+    private static String readConsoleLine() {
+        StringBuilder b = new StringBuilder();
+        try {
+            char c;
+            while ((c = (char) System.in.read()) != '\n') {
+                if (c == '\r') continue;
+                b.append(c);
+            }
+        } catch (IOException e) {
+            throw new ShadowException(e);
+        }
+        return b.toString();
+    }
+    
     @Override
     public void loadInto(ShadowContext context) throws ShadowException {
         this.context = context;
         this.callAnnotatedMethods();
         this.context = null;
     }
+    
+    //region Modules
+    
+    @Entity
+    void moduleMath() {
+        context.addLazyModule("math", new SHDMath());
+    }
+    
+    @Entity
+    void moduleIO() {
+        context.addLazyModule("io", new IO());
+    }
+    
+    //endregion
     
     //region Operators
     
@@ -123,6 +163,16 @@ public class ShadowCommons extends ShadowAPI {
             return predicate.get().test(params);
         });
         context.addOperator(input);
+        OperatorType<Object, BasicInputModifier, Object> inputMod = new OperatorType<>("=>", OpOrder.INPUT, Object.class, BasicInputModifier.class, Object.class, (o, mod) -> {
+            Parameters params;
+            if (o instanceof Parameters) params = (Parameters) o;
+            else {
+                params = new Parameters();
+                params.addParam(o);
+            }
+            return mod.getFunction().apply(params);
+        });
+        context.addOperator(inputMod);
     }
     
     @Entity
@@ -281,14 +331,17 @@ public class ShadowCommons extends ShadowAPI {
     }
     
     @Entity
+    void keywordPause() {
+        KeywordType pause = new KeywordType("pause", new Range.None());
+        pause.setAction((keyword, stepper, scope) -> {
+            pauseConsole();
+            return null;
+        });
+        context.addKeyword(pause);
+    }
+    
+    @Entity
     void keywordExec() {
-//        KeywordType exec = new KeywordType("exec", new Range.LowerBound(1));
-//        exec.setAction((keyword, stepper, scope) -> {
-//            String name = keyword.getIdentifier(0).getName();
-//            List<Object> params = keyword.argumentValues(scope, 1);
-//            Block block = scope.getContext().findFunction(name, params.size()).orElseThrow(ShadowCodeException.noDef(keyword.getLine(), keyword.getLine().firstToken().getIndex(), "No matching function found."));
-//            return block.execute(stepper, new Scope(scope.getContext(), stepper), params);
-//        });
         KeywordType exec = new KeywordType("exec", new Range.MinMax(1, 2));
         exec.setAction((keyword, stepper, scope) -> {
             String name = keyword.getIdentifier(0).getName();
@@ -300,7 +353,10 @@ public class ShadowCommons extends ShadowAPI {
                 else params = Collections.singletonList(o);
             }
             Block block = scope.getContext().findFunction(name, params.size()).orElseThrow(ShadowCodeException.noDef(keyword.getLine(), keyword.argumentIndex(0), "No matching function found."));
-            return block.execute(stepper, new Scope(scope.getContext(), stepper), params);
+            Scope bs = new Scope(scope.getContext(), stepper);
+            Object value = block.execute(stepper, bs, params);
+            scope.getCallbacks().addAll(bs.getCallbacks());
+            return value;
         });
         context.addKeyword(exec);
     }
@@ -402,16 +458,7 @@ public class ShadowCommons extends ShadowAPI {
             if (keyword.getArguments().size() == 1) {
                 System.out.print(keyword.argumentValue(0, scope));
             }
-            StringBuilder builder = new StringBuilder();
-            try {
-                char c;
-                while ((c = (char) System.in.read()) != '\n') {
-                    builder.append(c);
-                }
-            } catch (IOException e) {
-                throw new ShadowException(e);
-            }
-            return builder.toString();
+            return readConsoleLine();
         });
         context.addKeyword(input);
     }
@@ -452,7 +499,17 @@ public class ShadowCommons extends ShadowAPI {
         context.addKeyword(aTry);
     }
     
-    //region Predicates
+    @Entity
+    void keywordMulti() {
+        KeywordType multi = new KeywordType("multi", new Range.LowerBound(1));
+        multi.setAction((keyword, stepper, scope) -> {
+            List<Object> objects = keyword.argumentValues(scope);
+            return objects.get(objects.size() - 1);
+        });
+        context.addKeyword(multi);
+    }
+    
+    //region String
     
     @Entity
     void keywordStartsWith() {
@@ -476,6 +533,60 @@ public class ShadowCommons extends ShadowAPI {
     }
     
     @Entity
+    void keywordSplit() {
+        KeywordType split = new KeywordType("split", new Range.MinMax(1, 2));
+        split.setAction((keyword, stepper, scope) -> {
+            BasicInputModifier bim = new BasicInputModifier(keyword.getLine(), keyword.argumentIndex(-1));
+            bim.setCheck(ShadowPredicate.match(1, String.class));
+            bim.setModifier(p -> {
+                String s = (String) p.getParams().get(0);
+                String regex = keyword.getArgument(0, String.class, scope, "Argument must be a string.");
+                if (keyword.getArguments().size() > 1) {
+                    int limit = keyword.getArgument(1, Integer.class, scope, "Argument must be an integer.");
+                    return s.split(regex, limit);
+                }
+                return s.split(regex);
+            });
+            return bim;
+        });
+        context.addKeyword(split);
+    }
+    
+    @Entity
+    void keywordReplace() {
+        KeywordType replace = new KeywordType("replace", new Range.Single(2));
+        replace.setAction((keyword, stepper, scope) -> {
+            BasicInputModifier bim = new BasicInputModifier(keyword.getLine(), keyword.argumentIndex(-1));
+            bim.setCheck(ShadowPredicate.match(1, String.class));
+            bim.setModifier(p -> {
+                String s = (String) p.getParams().get(0);
+                String find = keyword.getArgument(0, String.class, scope, "Argument must be a string.");
+                String replacement = keyword.getArgument(1, String.class, scope, "Argument must be a string.");
+                return s.replace(find, replacement);
+            });
+            return bim;
+        });
+        context.addKeyword(replace);
+    }
+    
+    @Entity
+    void keywordReplaceAll() {
+        KeywordType replaceAll = new KeywordType("replace_all", new Range.Single(2));
+        replaceAll.setAction((keyword, stepper, scope) -> {
+            BasicInputModifier bim = new BasicInputModifier(keyword.getLine(), keyword.argumentIndex(-1));
+            bim.setCheck(ShadowPredicate.match(1, String.class));
+            bim.setModifier(p -> {
+                String s = (String) p.getParams().get(0);
+                String find = keyword.getArgument(0, String.class, scope, "Argument must be a string.");
+                String replacement = keyword.getArgument(1, String.class, scope, "Argument must be a string.");
+                return s.replaceAll(find, replacement);
+            });
+            return bim;
+        });
+        context.addKeyword(replaceAll);
+    }
+    
+    @Entity
     void keywordEmpty() {
         KeywordType empty = new KeywordType("empty", new Range.Single(1));
         empty.setAction((keyword, stepper, scope) -> {
@@ -483,6 +594,20 @@ public class ShadowCommons extends ShadowAPI {
             return argument.isEmpty();
         });
         context.addKeyword(empty);
+    }
+    
+    @Entity
+    void keywordSubstr() {
+        KeywordType substr = new KeywordType("substr", new Range.MinMax(2, 3));
+        substr.setAction((keyword, stepper, scope) -> {
+            String s = keyword.getArgument(0, String.class, scope, "Argument must be a string.");
+            Integer start = keyword.getArgument(0, Integer.class, scope, "Argument must be an integer.");
+            if (keyword.getArguments().size() == 3) {
+                Integer end = keyword.getArgument(0, Integer.class, scope, "Argument must be an integer.");
+                return s.substring(start, end);
+            }
+            return s.substring(start);
+        });
     }
     
     //endregion
@@ -594,6 +719,8 @@ public class ShadowCommons extends ShadowAPI {
             if (!sep.getName().equals("do")) {
                 throw new ShadowParseError(keyword.getLine(), sep.getPrimaryToken().getIndex(), "Expected \"do\" here.");
             }
+            Identifier name = keyword.getIdentifier(0);
+            c.pokeModule(name.getName());
         });
         from.setContextTransformer(ContextTransformer.keywordModule(0));
         from.setAction((keyword, stepper, scope) -> keyword.argumentValue(2, scope));
@@ -605,9 +732,10 @@ public class ShadowCommons extends ShadowAPI {
     
     //region BlockContexts
     
-    Stepper findStepper(Stepper stepper, BlockType def, Keyword keyword) {
+    Stepper findStepper(Stepper stepper, BlockType def, Keyword keyword, Consumer<Stepper> steps) {
         Block block = stepper.getBlock();
         while (block.getDefinition() != def) {
+            steps.accept(stepper);
             stepper = stepper.getParent();
             if (stepper == null) break;
             block = stepper.getBlock();
@@ -623,7 +751,7 @@ public class ShadowCommons extends ShadowAPI {
         
         KeywordType aBreak = new KeywordType("break", new Range.None());
         aBreak.setAction((keyword, stepper, scope) -> {
-            stepper = findStepper(stepper, def, keyword);
+            stepper = findStepper(stepper, def, keyword, Stepper::breakBlock);
             stepper.breakBlock();
             return null;
         });
@@ -631,7 +759,7 @@ public class ShadowCommons extends ShadowAPI {
     
         KeywordType aContinue = new KeywordType("continue", new Range.None());
         aContinue.setAction((keyword, stepper, scope) -> {
-            stepper = findStepper(stepper, def, keyword);
+            stepper = findStepper(stepper, def, keyword, Stepper::breakBlock);
             stepper.continueToEnd();
             return null;
         });
@@ -712,13 +840,19 @@ public class ShadowCommons extends ShadowAPI {
         BlockType keyword = new BlockType("keyword", new Range.Single(1), new Range.Any());
         keyword.setParseCallback((b, c) -> {
             Identifier name = (Identifier) b.getArguments().get(0);
-            KeywordType keywordType = new KeywordType(name.getName(), new Range.Single(1));
+            KeywordType keywordType = new KeywordType(name.getName(), new Range.MinMax(0, 1));
             keywordType.setAction((keyword1, stepper, scope) -> {
                 List<Object> params;
-                Object o = keyword1.argumentValue(0, scope);
-                if (o instanceof Parameters) params = ((Parameters) o).getParams();
-                else params = Collections.singletonList(o);
-                return b.execute(stepper, new Scope(c, stepper), params);
+                if (keyword1.getArguments().size() == 0) params = Collections.emptyList();
+                else {
+                    Object o = keyword1.argumentValue(0, scope);
+                    if (o instanceof Parameters) params = ((Parameters) o).getParams();
+                    else params = Collections.singletonList(o);
+                }
+                Scope bs = new Scope(c, stepper);
+                Object value = b.execute(stepper, bs, params);
+                scope.getCallbacks().addAll(bs.getCallbacks());
+                return value;
             });
             if (!c.addKeyword(keywordType)) {
                 throw new ShadowExecutionError(b.getLine(), b.argumentIndex(-1), "Keyword already exists.");
@@ -745,16 +879,15 @@ public class ShadowCommons extends ShadowAPI {
         foreach.setContextTransformer(ContextTransformer.blockUse(loopControl(foreach)));
         foreach.setPreRunCheck((block, scope, args) -> {
             Object o = block.argumentValue(0, scope);
+            Iterator it = null;
             if (o instanceof Iterator) {
-                scope.setBlockValue(o);
-                return true;
+                it = (Iterator) o;
             }
             else if (o instanceof Iterable) {
-                scope.setBlockValue(((Iterable) o).iterator());
-                return true;
+                it = ((Iterable) o).iterator();
             }
             else if (o.getClass().isArray()) {
-                Iterator<?> it = new Iterator<Object>() {
+                it = new Iterator<Object>() {
                     private int index;
                     
                     @Override
@@ -767,8 +900,10 @@ public class ShadowCommons extends ShadowAPI {
                         return Array.get(o, index++);
                     }
                 };
+            }
+            if (it != null) {
                 scope.setBlockValue(it);
-                return true;
+                return it.hasNext();
             }
             throw new ShadowExecutionError(block.getLine(), block.argumentIndex(0), "Argument should be an iterator or iterable object.");
         });
@@ -810,6 +945,10 @@ public class ShadowCommons extends ShadowAPI {
     @Entity
     void blockUsing() {
         BlockType using = new BlockType("using", new Range.Single(1), new Range.None());
+        using.setParseCallback((block, context1) -> {
+            Identifier name = block.getIdentifier(0);
+            context1.pokeModule(name.getName());
+        });
         using.setContextTransformer(ContextTransformer.blockModule(0));
         context.addBlock(using);
     }

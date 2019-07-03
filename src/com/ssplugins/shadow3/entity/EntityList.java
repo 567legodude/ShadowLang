@@ -74,6 +74,7 @@ public class EntityList implements Iterable<ShadowEntity> {
     
             @Override
             public ShadowEntity next() {
+                if (current == null) return null;
                 ShadowEntity c = current;
                 current = current.getNext();
                 return c;

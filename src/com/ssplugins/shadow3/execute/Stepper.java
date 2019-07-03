@@ -70,6 +70,10 @@ public class Stepper {
         return parent;
     }
     
+    public Scope getScope() {
+        return scope;
+    }
+    
     public Block getBlock() {
         return block;
     }
