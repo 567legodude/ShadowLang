@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -65,6 +66,29 @@ public class ShadowCommons extends ShadowAPI {
             stepper.breakBlock();
             return null;
         };
+    }
+    
+    private static void pauseConsole() {
+        try {
+            char c;
+            while ((c = (char) System.in.read()) != '\n');
+        } catch (IOException e) {
+            throw new ShadowException(e);
+        }
+    }
+    
+    private static String readConsoleLine() {
+        StringBuilder b = new StringBuilder();
+        try {
+            char c;
+            while ((c = (char) System.in.read()) != '\n') {
+                if (c == '\r') continue;
+                b.append(c);
+            }
+        } catch (IOException e) {
+            throw new ShadowException(e);
+        }
+        return b.toString();
     }
     
     @Override
@@ -310,11 +334,7 @@ public class ShadowCommons extends ShadowAPI {
     void keywordPause() {
         KeywordType pause = new KeywordType("pause", new Range.None());
         pause.setAction((keyword, stepper, scope) -> {
-            try {
-                System.in.read();
-            } catch (IOException e) {
-                throw new ShadowException(e);
-            }
+            pauseConsole();
             return null;
         });
         context.addKeyword(pause);
@@ -438,17 +458,7 @@ public class ShadowCommons extends ShadowAPI {
             if (keyword.getArguments().size() == 1) {
                 System.out.print(keyword.argumentValue(0, scope));
             }
-            StringBuilder builder = new StringBuilder();
-            try {
-                char c;
-                while ((c = (char) System.in.read()) != '\n') {
-                    if (c == '\r') continue;
-                    builder.append(c);
-                }
-            } catch (IOException e) {
-                throw new ShadowException(e);
-            }
-            return builder.toString();
+            return readConsoleLine();
         });
         context.addKeyword(input);
     }
@@ -722,9 +732,10 @@ public class ShadowCommons extends ShadowAPI {
     
     //region BlockContexts
     
-    Stepper findStepper(Stepper stepper, BlockType def, Keyword keyword) {
+    Stepper findStepper(Stepper stepper, BlockType def, Keyword keyword, Consumer<Stepper> steps) {
         Block block = stepper.getBlock();
         while (block.getDefinition() != def) {
+            steps.accept(stepper);
             stepper = stepper.getParent();
             if (stepper == null) break;
             block = stepper.getBlock();
@@ -740,7 +751,7 @@ public class ShadowCommons extends ShadowAPI {
         
         KeywordType aBreak = new KeywordType("break", new Range.None());
         aBreak.setAction((keyword, stepper, scope) -> {
-            stepper = findStepper(stepper, def, keyword);
+            stepper = findStepper(stepper, def, keyword, Stepper::breakBlock);
             stepper.breakBlock();
             return null;
         });
@@ -748,7 +759,7 @@ public class ShadowCommons extends ShadowAPI {
     
         KeywordType aContinue = new KeywordType("continue", new Range.None());
         aContinue.setAction((keyword, stepper, scope) -> {
-            stepper = findStepper(stepper, def, keyword);
+            stepper = findStepper(stepper, def, keyword, Stepper::breakBlock);
             stepper.continueToEnd();
             return null;
         });
