@@ -16,6 +16,8 @@ public class ShadowContext {
     
     private File source;
     
+    private List<Runnable> triggers = new LinkedList<>();
+    
     private Map<String, OperatorMap> operators = new HashMap<>();
     private Map<String, BlockType> blocks = new HashMap<>();
     private Map<String, KeywordType> keywords = new HashMap<>();
@@ -45,6 +47,16 @@ public class ShadowContext {
     public void clean() {
         operators.forEach((s, map) -> map.clean());
         operators.clear();
+    }
+    
+    public void addTrigger(Runnable runnable) {
+        triggers.add(runnable);
+    }
+    
+    public void poke() {
+        if (triggers.size() == 0) return;
+        triggers.forEach(Runnable::run);
+        triggers.clear();
     }
     
     //region Operators
@@ -121,6 +133,21 @@ public class ShadowContext {
     public boolean addModule(String name, ShadowContext context) {
         if (modules.containsKey(name)) return false;
         modules.put(name, context);
+        return true;
+    }
+    
+    public boolean addLazyModule(String name, ShadowAPI api) {
+        if (modules.containsKey(name)) return false;
+        ShadowContext context = new ShadowContext();
+        context.addTrigger(() -> api.loadInto(context));
+        modules.put(name, context);
+        return true;
+    }
+    
+    public boolean pokeModule(String name) {
+        ShadowContext context = modules.get(name);
+        if (context == null) return false;
+        context.poke();
         return true;
     }
     

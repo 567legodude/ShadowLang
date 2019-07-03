@@ -3,9 +3,7 @@ package com.ssplugins.shadow3.execute;
 import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.section.Identifier;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public class Scope {
     
@@ -18,10 +16,14 @@ public class Scope {
     private Object blockValue;
     private Object returnValue;
     
+    private List<Runnable> callbacks;
+    
     private Scope(ShadowContext context, Stepper stepper, Scope parent) {
         this.context = context;
         this.stepper = stepper;
         this.parent = parent;
+        
+        if (parent == null) callbacks = new LinkedList<>();
     }
     
     public Scope(ShadowContext context, Stepper stepper) {
@@ -96,6 +98,25 @@ public class Scope {
         parent = null;
         blockValue = null;
         returnValue = null;
+    }
+    
+    public void addCallback(Runnable runnable) {
+        Scope s = this;
+        while (s.parent != null) s = s.parent;
+        s.callbacks.add(runnable);
+    }
+    
+    public void runCallbacks() {
+        Scope s = this;
+        while (s.parent != null) s = s.parent;
+        s.callbacks.forEach(Runnable::run);
+        s.callbacks.clear();
+    }
+    
+    public List<Runnable> getCallbacks() {
+        Scope s = this;
+        while (s.parent != null) s = s.parent;
+        return s.callbacks;
     }
     
     public ShadowContext getContext() {

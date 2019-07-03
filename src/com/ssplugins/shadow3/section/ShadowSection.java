@@ -1,5 +1,6 @@
 package com.ssplugins.shadow3.section;
 
+import com.ssplugins.shadow3.exception.ShadowExecutionError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.Token;
 import com.ssplugins.shadow3.parsing.TokenLine;
@@ -37,6 +38,14 @@ public abstract class ShadowSection {
     
     public String stringValue(Scope scope) {
         return toObject(scope).toString();
+    }
+    
+    public <T> T getValue(Class<T> type, Scope scope, String msg) {
+        Object o = this.toObject(scope);
+        if (!type.isInstance(o)) {
+            throw new ShadowExecutionError(line, tokens[0].getIndex(), msg);
+        }
+        return type.cast(o);
     }
     
 }

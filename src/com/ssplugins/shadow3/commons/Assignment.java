@@ -1,16 +1,16 @@
 package com.ssplugins.shadow3.commons;
 
-public class Assignment {
+public abstract class Assignment<T> {
     
-    private int index;
+    private T index;
     private Object value;
     
-    public Assignment(int index, Object value) {
+    public Assignment(T index, Object value) {
         this.index = index;
         this.value = value;
     }
     
-    public int getIndex() {
+    public T getIndex() {
         return index;
     }
     

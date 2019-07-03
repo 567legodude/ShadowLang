@@ -86,10 +86,10 @@ public class ArrayKeyword extends CommandKeyword<ArrayKeyword.ArrayTransformer, 
         else if (section instanceof Compound) {
             return (ArrayTransformer) input -> {
                 Object o = section.toObject(scope);
-                if (!(o instanceof Assignment)) {
-                    throw new ShadowExecutionError(section.getLine(), section.getPrimaryToken().getIndex(), "Argument is not an assignment.");
+                if (!(o instanceof IndexAssignment)) {
+                    throw new ShadowExecutionError(section.getLine(), section.getPrimaryToken().getIndex(), "Argument is not an index assignment.");
                 }
-                Assignment a = (Assignment) o;
+                IndexAssignment a = (IndexAssignment) o;
                 Array.set(input, a.getIndex(), a.getValue());
                 return input;
             };

@@ -1,5 +1,9 @@
 package com.ssplugins.shadow3.util;
 
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 public abstract class Range {
 
     protected int[] values;
@@ -153,6 +157,25 @@ public abstract class Range {
             return "no";
         }
     
+    }
+    
+    public static class Of extends Range {
+        public Of(int... values) {
+            super(values);
+        }
+    
+        @Override
+        public boolean contains(int value) {
+            for (int i : values) {
+                if (i == value) return true;
+            }
+            return false;
+        }
+    
+        @Override
+        public String amount() {
+            return Arrays.stream(values).mapToObj(Objects::toString).collect(Collectors.joining(", "));
+        }
     }
     
     //endregion

@@ -16,7 +16,11 @@ define select -> prompt, options {
     while true {
         set pick [input]
         if [empty pick] :: continue
-        set pick [int pick]
+        set pick [try [int pick] or false]
+        if (pick == false) {
+            print "Please enter a number."
+            continue
+        }
         if (pick == -1) :: return (-1)
         if (pick > 0 && pick <= [len options]) :: return (pick - 1)
         print "Please select a valid option."
