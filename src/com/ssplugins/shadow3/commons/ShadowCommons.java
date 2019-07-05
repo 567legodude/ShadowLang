@@ -70,8 +70,7 @@ public class ShadowCommons extends ShadowAPI {
     
     private static void pauseConsole() {
         try {
-            char c;
-            while ((c = (char) System.in.read()) != '\n');
+            while (((char) System.in.read()) != '\n');
         } catch (IOException e) {
             throw new ShadowException(e);
         }
@@ -732,10 +731,10 @@ public class ShadowCommons extends ShadowAPI {
     
     //region BlockContexts
     
-    Stepper findStepper(Stepper stepper, BlockType def, Keyword keyword, Consumer<Stepper> steps) {
+    public static Stepper findStepper(Stepper stepper, BlockType def, Keyword keyword, Consumer<Stepper> steps) {
         Block block = stepper.getBlock();
         while (block.getDefinition() != def) {
-            steps.accept(stepper);
+            if (steps != null) steps.accept(stepper);
             stepper = stepper.getParent();
             if (stepper == null) break;
             block = stepper.getBlock();
