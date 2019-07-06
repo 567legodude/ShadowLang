@@ -23,6 +23,12 @@ public class MapKeyword extends CommandKeyword<MapKeyword.MapTransformer, Map> {
         ShadowContext context = new ShadowContext();
         setLookupContext(context);
     
+        KeywordType aNew = new KeywordType("new", new Range.None());
+        aNew.setAction((keyword, stepper, scope) -> {
+            return (MapTransformer) input -> new HashMap<>();
+        });
+        context.addKeyword(aNew);
+    
         KeywordType put = new KeywordType("put", new Range.Single(2));
         put.setAction((keyword, stepper, scope) -> {
             return (MapTransformer) input -> {

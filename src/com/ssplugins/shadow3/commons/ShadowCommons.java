@@ -24,10 +24,14 @@ import com.ssplugins.shadow3.section.Operator.OpOrder;
 import com.ssplugins.shadow3.section.ShadowSection;
 import com.ssplugins.shadow3.util.Range;
 import com.ssplugins.shadow3.util.Schema;
+import com.ssplugins.shadow3.util.ShadowImport;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Consumer;
@@ -695,6 +699,19 @@ public class ShadowCommons extends ShadowAPI {
             });
             String path = arguments.stream().map(section -> ((Identifier) section).getName()).collect(Collectors.joining(File.separator));
             path += ".shd";
+            
+            String jarPath = path + ".jar";
+            File jarModule = new File(source.getParent(), jarPath);
+            if (jarModule.exists()) {
+                try {
+                    ServiceLoader<ShadowImport> loader = ServiceLoader.load(ShadowImport.class, new URLClassLoader(new URL[] {jarModule.toURI().toURL()}, this.getClass().getClassLoader()));
+                    context1.addModule(name, loader.iterator().next().getModuleContext());
+                } catch (MalformedURLException e) {
+                    throw new ShadowException(e);
+                }
+                return;
+            }
+            
             File module = new File(source.getParent(), path);
             if (!module.exists()) {
                 throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(-1), "Unable to find specified module.");
