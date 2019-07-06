@@ -382,11 +382,11 @@ public class ShadowCommons extends ShadowAPI {
         KeywordType count = new KeywordType("count", new Range.MinMax(1, 3));
         count.setAction((keyword, stepper, scope) -> {
             int args = keyword.getArguments().size();
-            Integer start = keyword.getArgument(0, Integer.class, scope, "First argument must be an integer.");
+            int start = keyword.getInt(0, scope);
             if (args == 1) return IntStream.range(0, start).iterator();
-            Integer stop = keyword.getArgument(1, Integer.class, scope, "Second argument must be an integer.");
+            int stop = keyword.getInt(1, scope);
             if (args == 2) return IntStream.range(start, stop).iterator();
-            Integer step = keyword.getArgument(2, Integer.class, scope, "Third argument must be an integer.");
+            Integer step = keyword.getInt(2, scope);
             return new Iterator<Integer>() {
                 private int value = start;
                 
@@ -473,11 +473,11 @@ public class ShadowCommons extends ShadowAPI {
             List<ShadowSection> args = keyword.getArguments();
             if (args.size() == 0) return ThreadLocalRandom.current().nextDouble();
             if (args.size() == 1) {
-                Integer bound = keyword.getArgument(0, Integer.class, scope, "Argument must be an integer");
+                int bound = keyword.getInt(0, scope);
                 return ThreadLocalRandom.current().nextInt(bound);
             }
-            Integer lower = keyword.getArgument(0, Integer.class, scope, "Argument must be an integer.");
-            Integer upper = keyword.getArgument(1, Integer.class, scope, "Argument must be an integer.");
+            int lower = keyword.getInt(0, scope);
+            int upper = keyword.getInt(1, scope);
             return ThreadLocalRandom.current().nextInt(lower, upper);
         });
         context.addKeyword(random);
@@ -543,9 +543,9 @@ public class ShadowCommons extends ShadowAPI {
             bim.setCheck(ShadowPredicate.match(1, String.class));
             bim.setModifier(p -> {
                 String s = (String) p.getParams().get(0);
-                String regex = keyword.getArgument(0, String.class, scope, "Argument must be a string.");
+                String regex = keyword.getString(0, scope);
                 if (keyword.getArguments().size() > 1) {
-                    int limit = keyword.getArgument(1, Integer.class, scope, "Argument must be an integer.");
+                    int limit = keyword.getInt(1, scope);
                     return s.split(regex, limit);
                 }
                 return s.split(regex);
@@ -563,8 +563,8 @@ public class ShadowCommons extends ShadowAPI {
             bim.setCheck(ShadowPredicate.match(1, String.class));
             bim.setModifier(p -> {
                 String s = (String) p.getParams().get(0);
-                String find = keyword.getArgument(0, String.class, scope, "Argument must be a string.");
-                String replacement = keyword.getArgument(1, String.class, scope, "Argument must be a string.");
+                String find = keyword.getString(0, scope);
+                String replacement = keyword.getString(1, scope);
                 return s.replace(find, replacement);
             });
             return bim;
@@ -580,8 +580,8 @@ public class ShadowCommons extends ShadowAPI {
             bim.setCheck(ShadowPredicate.match(1, String.class));
             bim.setModifier(p -> {
                 String s = (String) p.getParams().get(0);
-                String find = keyword.getArgument(0, String.class, scope, "Argument must be a string.");
-                String replacement = keyword.getArgument(1, String.class, scope, "Argument must be a string.");
+                String find = keyword.getString(0, scope);
+                String replacement = keyword.getString(1, scope);
                 return s.replaceAll(find, replacement);
             });
             return bim;
@@ -593,7 +593,7 @@ public class ShadowCommons extends ShadowAPI {
     void keywordEmpty() {
         KeywordType empty = new KeywordType("empty", new Range.Single(1));
         empty.setAction((keyword, stepper, scope) -> {
-            String argument = keyword.getArgument(0, String.class, scope, "Argument must be a string.");
+            String argument = keyword.getString(0, scope);
             return argument.isEmpty();
         });
         context.addKeyword(empty);
@@ -603,10 +603,10 @@ public class ShadowCommons extends ShadowAPI {
     void keywordSubstr() {
         KeywordType substr = new KeywordType("substr", new Range.MinMax(2, 3));
         substr.setAction((keyword, stepper, scope) -> {
-            String s = keyword.getArgument(0, String.class, scope, "Argument must be a string.");
-            Integer start = keyword.getArgument(0, Integer.class, scope, "Argument must be an integer.");
+            String s = keyword.getString(0, scope);
+            int start = keyword.getInt(0, scope);
             if (keyword.getArguments().size() == 3) {
-                Integer end = keyword.getArgument(0, Integer.class, scope, "Argument must be an integer.");
+                int end = keyword.getInt(0, scope);
                 return s.substring(start, end);
             }
             return s.substring(start);
@@ -628,12 +628,12 @@ public class ShadowCommons extends ShadowAPI {
     void keywordInt() {
         KeywordType anInt = new KeywordType("int", new Range.MinMax(1, 2));
         anInt.setAction((keyword, stepper, scope) -> {
-            String argument = keyword.getArgument(0, String.class, scope, "Argument must be a string.");
+            String argument = keyword.getString(0, scope);
             if (keyword.getArguments().size() == 1) {
                 return Integer.parseInt(argument);
             }
             else {
-                Integer radix = keyword.getArgument(1, Integer.class, scope, "Argument must be an integer.");
+                int radix = keyword.getInt(1, scope);
                 return Integer.parseInt(argument, radix);
             }
         });
@@ -643,14 +643,14 @@ public class ShadowCommons extends ShadowAPI {
     @Entity
     void keywordDouble() {
         KeywordType aDouble = new KeywordType("double", new Range.MinMax(1, 2));
-        aDouble.setAction((keyword, stepper, scope) -> Double.parseDouble(keyword.getArgument(0, String.class, scope, "Argument must be a string.")));
+        aDouble.setAction((keyword, stepper, scope) -> Double.parseDouble(keyword.getString(0, scope)));
         context.addKeyword(aDouble);
     }
     
     @Entity
     void keywordFloat() {
         KeywordType aFloat = new KeywordType("float", new Range.MinMax(1, 2));
-        aFloat.setAction((keyword, stepper, scope) -> Float.parseFloat(keyword.getArgument(0, String.class, scope, "Argument must be a string.")));
+        aFloat.setAction((keyword, stepper, scope) -> Float.parseFloat(keyword.getString(0, scope)));
         context.addKeyword(aFloat);
     }
     
@@ -658,12 +658,12 @@ public class ShadowCommons extends ShadowAPI {
     void keywordLong() {
         KeywordType aLong = new KeywordType("long", new Range.MinMax(1, 2));
         aLong.setAction((keyword, stepper, scope) -> {
-            String argument = keyword.getArgument(0, String.class, scope, "Argument must be a string.");
+            String argument = keyword.getString(0, scope);
             if (keyword.getArguments().size() == 1) {
                 return Long.parseLong(argument);
             }
             else {
-                Integer radix = keyword.getArgument(1, Integer.class, scope, "Argument must be an integer.");
+                int radix = keyword.getInt(1, scope);
                 return Long.parseLong(argument, radix);
             }
         });
@@ -804,7 +804,7 @@ public class ShadowCommons extends ShadowAPI {
         BlockType repeat = new BlockType("repeat", new Range.Single(1), new Range.Single(1));
         repeat.setContextTransformer(ContextTransformer.blockUse(loopControl(repeat)));
         repeat.setPreRunCheck((block, scope, args) -> {
-            Integer i = block.getArgument(0, Integer.class, scope, "Modifier should be an integer.");
+            int i = block.getInt(0, scope);
             if (i < 0) throw ShadowCodeException.exec(block, "Repeat count must be positive.").get();
             if (i == 0) return false;
             scope.setBlockValue(IntStream.range(0, i).iterator());
@@ -820,7 +820,7 @@ public class ShadowCommons extends ShadowAPI {
     void blockConditionals() {
         BlockType typeIf = new BlockType("if", new Range.Single(1), new Range.None());
         typeIf.setPreRunCheck((block, scope, args) -> {
-            return block.getArgument(0, Boolean.class, scope, "Modifier should be a boolean.");
+            return block.getBoolean(0, scope);
         });
         Schema<ShadowEntity> skipElse = new Schema<>(e -> e.flow().isBlock("elseif", "else"));
         typeIf.setEnterCallback((block, stepper, scope, args) -> {
@@ -833,7 +833,7 @@ public class ShadowCommons extends ShadowAPI {
         BlockType elseif = new BlockType("elseif", new Range.Single(1), new Range.None());
         elseif.setSchema(condSchema);
         elseif.setPreRunCheck((block, scope, args) -> {
-            return block.getArgument(0, Boolean.class, scope, "Modifier should be a boolean.");
+            return block.getBoolean(0, scope);
         });
         elseif.setEnterCallback((block, stepper, scope, args) -> {
             stepper.setSkipSchema(skipElse);
@@ -933,10 +933,10 @@ public class ShadowCommons extends ShadowAPI {
         BlockType aWhile = new BlockType("while", new Range.Single(1), new Range.None());
         aWhile.setContextTransformer(ContextTransformer.blockUse(loopControl(aWhile)));
         aWhile.setPreRunCheck((block, scope, args) -> {
-            return block.getArgument(0, Boolean.class, scope, "Argument must be a boolean.");
+            return block.getBoolean(0, scope);
         });
         aWhile.setEndCallback((block, stepper, scope) -> {
-            Boolean argument = block.getArgument(0, Boolean.class, scope, "Argument must be a boolean.");
+            Boolean argument = block.getBoolean(0, scope);
             if (argument) stepper.restart();
         });
         context.addBlock(aWhile);

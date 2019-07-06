@@ -83,6 +83,18 @@ public abstract class ShadowEntity {
         return getArgumentSection(index, Identifier.class, "Argument should be an identifier.");
     }
     
+    public String getString(int index, Scope scope) {
+        return getArgument(index, String.class, scope, "Argument must be a string.");
+    }
+    
+    public int getInt(int index, Scope scope) {
+        return getArgument(index, Integer.class, scope, "Argument must be an integer.");
+    }
+    
+    public boolean getBoolean(int index, Scope scope) {
+        return getArgument(index, Boolean.class, scope, "Argument must be a boolean.");
+    }
+    
     public List<Object> argumentValues(Scope scope) {
         return getArguments().stream().map(section -> section.toObject(scope)).collect(Collectors.toList());
     }
