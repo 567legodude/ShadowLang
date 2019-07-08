@@ -20,7 +20,7 @@ public class Identifier extends ShadowSection {
     
     @Override
     public Object toObject(Scope scope) {
-        return scope.get(getName()).orElseThrow(error);
+        return scope.get(getName()).orElseThrow(error).value();
     }
     
     public String getName() {

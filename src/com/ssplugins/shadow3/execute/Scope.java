@@ -2,6 +2,7 @@ package com.ssplugins.shadow3.execute;
 
 import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.section.Identifier;
+import com.ssplugins.shadow3.util.Value;
 
 import java.util.*;
 
@@ -11,7 +12,7 @@ public class Scope {
     private Stepper stepper;
     private Scope parent;
     
-    private Map<String, Object> variables = new HashMap<>();
+    private Map<String, Value> variables = new HashMap<>();
     
     private Object blockValue;
     private Object returnValue;
@@ -50,7 +51,7 @@ public class Scope {
     }
     
     public void setLocal(String key, Object value) {
-        variables.put(key, value);
+        variables.compute(key, (s, v) -> (v == null ? new Value(value) : v.setValue(value)));
     }
     
     public void set(Identifier identifier, Object value) {
@@ -76,7 +77,7 @@ public class Scope {
         }
     }
     
-    public Optional<Object> get(String key) {
+    public Optional<Value> get(String key) {
         return Optional.ofNullable(find(key)).map(scope -> scope.variables.get(key));
     }
     
