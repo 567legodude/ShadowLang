@@ -111,7 +111,7 @@ public class ShadowParser {
     
     public Shadow parse(Iterator<String> lines) {
         List<TokenLine> tokens = new Tokenizer().tokenize(lines, context);
-        Shadow shadow = new Shadow();
+        Shadow shadow = new Shadow(context);
         EntityList contents = shadow.getContents();
         LineReader reader = new LineReader(tokens, this, context);
         while (reader.hasNext()) {

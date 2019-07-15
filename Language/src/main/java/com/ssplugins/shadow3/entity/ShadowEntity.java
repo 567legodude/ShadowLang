@@ -1,6 +1,7 @@
 package com.ssplugins.shadow3.entity;
 
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.JavaComponent;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
@@ -12,7 +13,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public abstract class ShadowEntity {
+public abstract class ShadowEntity implements JavaComponent {
     
     private ShadowContext topContext;
     

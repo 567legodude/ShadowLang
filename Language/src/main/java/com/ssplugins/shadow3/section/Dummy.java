@@ -1,5 +1,8 @@
 package com.ssplugins.shadow3.section;
 
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeSpec;
+import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.TokenReader;
 
@@ -12,6 +15,11 @@ public class Dummy extends ShadowSection {
     
     @Override
     public Object toObject(Scope scope) {
+        return null;
+    }
+    
+    @Override
+    public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder builder) {
         return null;
     }
     

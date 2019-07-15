@@ -1,5 +1,9 @@
 package com.ssplugins.shadow3.util;
 
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeSpec;
+import com.ssplugins.shadow3.compile.GenerateContext;
+import com.ssplugins.shadow3.compile.JavaComponent;
 import com.ssplugins.shadow3.def.OperatorType;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.exception.ShadowParseError;
@@ -107,7 +111,7 @@ public class OperatorTree {
         this.root = root;
     }
     
-    public static abstract class Node<T> {
+    public static abstract class Node<T> implements JavaComponent {
         
         protected T value;
         protected Node parent;
@@ -120,7 +124,7 @@ public class OperatorTree {
         }
         
         public abstract Object objectValue(Scope scope);
-    
+        
         private void replace(Node a, Node b) {
             for (int i = 0; i < children.length; ++i) {
                 if (children[i] == a) {
@@ -200,7 +204,21 @@ public class OperatorTree {
             //noinspection unchecked (Types are known at this point)
             return type.getAction().execute(operands[0], operands[1], type.getLeftWrap(), type.getRightWrap());
         }
-        
+    
+        @Override
+        public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+            StringBuilder builder = new StringBuilder();
+            // Get method name of operator function.
+            builder.append(value.getGeneration(context, type, method));
+            builder.append("(");
+            Node[] c = getChildren();
+            builder.append((c[0] == null ? "null" : c[0].getGeneration(context, type, method)));
+            builder.append(", ");
+            builder.append((c[1] == null ? "null" : c[1].getGeneration(context, type, method)));
+            builder.append(")");
+            return builder.toString();
+        }
+    
     }
     
     public static class UnaryOpNode extends Node<Operator> {
@@ -227,7 +245,18 @@ public class OperatorTree {
             //noinspection unchecked (Type is known at this point)
             return type.getAction().execute(null, operand, Void.class, type.getRightWrap());
         }
-        
+    
+        @Override
+        public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+            StringBuilder builder = new StringBuilder();
+            builder.append(value.getGeneration(context, type, method));
+            builder.append("(null, ");
+            Node[] c = getChildren();
+            builder.append((c[0] == null ? "null" : c[0].getGeneration(context, type, method)));
+            builder.append(")");
+            return builder.toString();
+        }
+    
     }
     
     public static class ValueNode<T> extends Node<T> {
@@ -244,7 +273,12 @@ public class OperatorTree {
         public Object objectValue(Scope scope) {
             return getValue();
         }
-        
+    
+        @Override
+        public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+            return null;
+        }
+    
     }
     
     public static class SectionNode extends ValueNode<Object> {
@@ -268,7 +302,12 @@ public class OperatorTree {
         public Object objectValue(Scope scope) {
             return section.toObject(scope);
         }
-        
+    
+        @Override
+        public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+            return section.getGeneration(context, type, method);
+        }
+    
     }
     
 }

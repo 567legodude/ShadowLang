@@ -16,6 +16,7 @@ public class SHDMath extends ShadowAPI {
     @Override
     public void loadInto(ShadowContext context) {
         this.context = context;
+        context.setName("math");
         callAnnotatedMethods();
         this.context = null;
     }

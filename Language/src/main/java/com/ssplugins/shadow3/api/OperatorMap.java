@@ -56,6 +56,10 @@ public class OperatorMap {
         this.leftToRight = leftToRight;
     }
     
+    public List<OperatorType<?, ?, ?>> getTypes() {
+        return types;
+    }
+    
     public boolean canContain(OperatorType type) {
         return types.stream().noneMatch(t -> type.getLeftWrap() == t.getLeftWrap() && type.getRightWrap() == t.getRightWrap());
     }

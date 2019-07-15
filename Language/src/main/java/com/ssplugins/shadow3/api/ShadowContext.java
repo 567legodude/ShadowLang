@@ -1,9 +1,11 @@
 package com.ssplugins.shadow3.api;
 
+import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.def.BlockType;
 import com.ssplugins.shadow3.def.KeywordType;
 import com.ssplugins.shadow3.def.OperatorType;
 import com.ssplugins.shadow3.entity.Block;
+import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.Operator;
 
@@ -15,6 +17,8 @@ import java.util.function.Supplier;
 public class ShadowContext {
     
     private File source;
+    private String name;
+    private String fileName;
     
     private List<Runnable> triggers = new LinkedList<>();
     
@@ -23,6 +27,8 @@ public class ShadowContext {
     private Map<String, KeywordType> keywords = new HashMap<>();
     private Map<String, ShadowContext> modules = new HashMap<>();
     private Map<String, FunctionMap> functions = new HashMap<>();
+    
+    private GenerateContext generateContext;
     
     public ShadowContext() {
         this(null);
@@ -34,6 +40,35 @@ public class ShadowContext {
     
     public File getSource() {
         return source;
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
+    }
+    
+    public String getFileName() {
+        return fileName;
+    }
+    
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+    
+    public String getComponentName(String part) {
+        if (name == null) throw new ShadowException("Context has no name defined.");
+        return name + "_" + part;
+    }
+    
+    public GenerateContext getGenerateContext() {
+        return generateContext;
+    }
+    
+    public void setGenerateContext(GenerateContext generateContext) {
+        this.generateContext = generateContext;
     }
     
     private <T> Optional<T> search(List<T> list, Predicate<T> predicate) {

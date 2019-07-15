@@ -1,5 +1,8 @@
 package com.ssplugins.shadow3.section;
 
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeSpec;
+import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
@@ -55,6 +58,11 @@ public class Compound extends ShadowSection {
             return value;
         }
         return opTree.getValue(scope);
+    }
+    
+    @Override
+    public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        return opTree.getRoot().getGeneration(context, type, method);
     }
     
     public OperatorTree getOpTree() {

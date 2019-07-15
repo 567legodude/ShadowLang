@@ -1,6 +1,9 @@
 package com.ssplugins.shadow3.entity;
 
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.def.*;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.exception.ShadowParseError;
@@ -160,6 +163,20 @@ public class Block extends ShadowEntity {
         Object value = this.execute(stepper, scope, params);
         scope.runCallbacks();
         return value;
+    }
+    
+    @Override
+    public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        getDefinition().getGenerator().generate(context, this, type, method);
+        return null;
+    }
+    
+    public void generateCode(TypeSpec.Builder type, MethodSpec.Builder method) {
+        getGeneration(new GenerateContext(getEffectiveContext()), type, method);
+    }
+    
+    public void addBody(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        getContents().forEach(entity -> entity.getGeneration(context, type, method));
     }
     
     public List<ShadowSection> getModifiers() {

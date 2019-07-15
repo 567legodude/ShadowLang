@@ -1,19 +1,27 @@
 package com.ssplugins.shadow3.section;
 
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.api.OperatorMap;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
+import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.TokenReader;
 import com.ssplugins.shadow3.parsing.TokenType;
 
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class Operator extends ShadowSection {
     
     private boolean leftToRight = true;
     private OpOrder order;
+    
+    private boolean generated = false;
     
     public Operator(TokenReader reader) {
         super(reader.getLine());
@@ -23,6 +31,20 @@ public class Operator extends ShadowSection {
     @Override
     public Object toObject(Scope scope) {
         return getSymbol();
+    }
+    
+    @Override
+    public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        if (!generated) {
+            OperatorMap map = context.getFullContext().getOperatorMap(getSymbol()).orElseThrow(() -> new ShadowParseError(getLine(), getPrimaryToken().getIndex(), "No operator definition found."));
+            map.getTypes().forEach(operatorType -> operatorType.getGeneration(context, type, method));
+            generated = true;
+        }
+        return context.getComponentName("op_" + componentName(getSymbol()));
+    }
+    
+    public static String componentName(String token) {
+        return token.chars().mapToObj(Objects::toString).collect(Collectors.joining("_"));
     }
     
     public void lookup(ShadowEntity parent) {

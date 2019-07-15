@@ -1,7 +1,12 @@
 package com.ssplugins.shadow3.commons;
 
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.api.ShadowAPI;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.GenerateContext;
+import com.ssplugins.shadow3.compile.JavaGen;
 import com.ssplugins.shadow3.def.*;
 import com.ssplugins.shadow3.def.custom.NumberCompareOp;
 import com.ssplugins.shadow3.def.custom.NumberOperatorType;
@@ -18,6 +23,7 @@ import com.ssplugins.shadow3.execute.Stepper;
 import com.ssplugins.shadow3.modules.IO;
 import com.ssplugins.shadow3.modules.SHDMath;
 import com.ssplugins.shadow3.parsing.ShadowParser;
+import com.ssplugins.shadow3.section.Compound;
 import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
 import com.ssplugins.shadow3.section.ShadowSection;
@@ -25,6 +31,7 @@ import com.ssplugins.shadow3.util.Range;
 import com.ssplugins.shadow3.util.Schema;
 import com.ssplugins.shadow3.util.ShadowImport;
 
+import javax.lang.model.element.Modifier;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -42,6 +49,7 @@ public class ShadowCommons extends ShadowAPI {
     public static ShadowContext create(File file) {
         ShadowContext context = new ShadowContext(file);
         new ShadowCommons().loadInto(context);
+        context.setName("commons");
         return context;
     }
     
@@ -55,6 +63,19 @@ public class ShadowCommons extends ShadowAPI {
         for (int i = 0; i < args.size(); ++i) {
             scope.set(parameters.get(i), args.get(i));
         }
+    }
+    
+    private String generateParameters(GenerateContext c, Keyword keyword, int size, MethodSpec.Builder method, StringBuilder builder, TypeSpec.Builder type) {
+        builder.append("(");
+        if (keyword.getArguments().size() == size) {
+            ShadowSection section = keyword.getArguments().get(size - 1);
+            if (section instanceof Compound) {
+                builder.append(JavaGen.literalParameters((Compound) section, c, type, method));
+            }
+            else builder.append(JavaGen.litArg(c, keyword, size - 1, type, method));
+        }
+        builder.append(")");
+        return builder.toString();
     }
     
     private static KeywordAction returnArgument(BlockType def) {
@@ -307,6 +328,19 @@ public class ShadowCommons extends ShadowAPI {
             System.out.println();
             return null;
         });
+        print.setGenerator((c, keyword, type, method) -> {
+            List<ShadowSection> arguments = keyword.getArguments();
+            if (arguments.size() == 1) {
+                JavaGen.printlnValue(method, arguments.get(0).getGeneration(c, type, method));
+            }
+            else {
+                arguments.forEach(section -> {
+                    JavaGen.printValue(method, section.getGeneration(c, type, method));
+                });
+                JavaGen.println(method);
+            }
+            return null;
+        });
         context.addKeyword(print);
     }
     
@@ -319,6 +353,11 @@ public class ShadowCommons extends ShadowAPI {
             scope.set(name, o);
             return o;
         });
+//        set.setGenerator((c, keyword, type, method) -> {
+//            c.checkName("_vars", s -> {
+//                type.addField()
+//            });
+//        });
         context.addKeyword(set);
     }
     
@@ -328,6 +367,10 @@ public class ShadowCommons extends ShadowAPI {
         type.setAction((keyword, stepper, scope) -> {
             Object o = keyword.argumentValue(0, scope);
             return o.getClass().getSimpleName();
+        });
+        type.setGenerator((c, keyword, type1, method) -> {
+            String value = keyword.getArguments().get(0).getGeneration(c, type1, method);
+            return CodeBlock.of("(($T) $L).getClass().getSimpleName()", Object.class, value).toString();
         });
         context.addKeyword(type);
     }
@@ -360,6 +403,12 @@ public class ShadowCommons extends ShadowAPI {
             scope.getCallbacks().addAll(bs.getCallbacks());
             return value;
         });
+        exec.setGenerator((c, keyword, type, method) -> {
+            StringBuilder builder = new StringBuilder();
+            builder.append(c.getComponentName("def_" + keyword.getIdentifier(0).getName()));
+            return generateParameters(c, keyword, 2, method, builder, type);
+        });
+        exec.setStatementMode(true);
         context.addKeyword(exec);
     }
     
@@ -371,7 +420,22 @@ public class ShadowCommons extends ShadowAPI {
             if (!(o instanceof String)) {
                 throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(0), "First argument must be a string.");
             }
-            return ((String) o).chars().mapToObj(i -> String.valueOf((char) i)).iterator();
+            return ((String) o).chars().mapToObj(i -> String.valueOf((char) i)).toArray();
+        });
+        chars.setGenerator((c, keyword, type, method) -> {
+            String name = c.getComponentName("chars");
+            c.checkName(name, s -> {
+                MethodSpec spec = MethodSpec.methodBuilder(s)
+                                            .returns(Object[].class)
+                                            .addParameter(Object.class, "s")
+                                            .beginControlFlow("if (!(s instanceof String))")
+                                            .addStatement("throw new $T(\"Tried to get characters of non-string.\")", IllegalArgumentException.class)
+                                            .endControlFlow()
+                                            .addStatement(CodeBlock.of("return ((String) s).chars().mapToObj(i -> String.valueOf((char) i)).toArray()", String.class))
+                                            .build();
+                type.addMethod(spec);
+            });
+            return CodeBlock.of("$L($L)", name, JavaGen.litArg(c, keyword, 0, type, method)).toString();
         });
         context.addKeyword(chars);
     }
@@ -462,6 +526,41 @@ public class ShadowCommons extends ShadowAPI {
             }
             return readConsoleLine();
         });
+        input.setGenerator((c, keyword, type, method) -> {
+            String name = c.getComponentName("input");
+            c.checkName(name, s -> {
+                MethodSpec spec = MethodSpec.methodBuilder(s)
+                                            .returns(String.class)
+                                            .addStatement("$1T b = new $1T()", StringBuilder.class)
+                                            .beginControlFlow("try")
+                                            .addStatement("char c")
+                                            .beginControlFlow("while ((c = (char) System.in.read()) != '\\n')")
+                                            .addStatement("if (c == '\\r') continue")
+                                            .addStatement("b.append(c)")
+                                            .endControlFlow()
+                                            .nextControlFlow("catch ($T e)", IOException.class)
+                                            .addStatement("throw new $T(\"Unable to read from console.\")", IllegalStateException.class)
+                                            .endControlFlow()
+                                            .addStatement("return b.toString()")
+                                            .build();
+                type.addMethod(spec);
+                MethodSpec spec2 = MethodSpec.methodBuilder(s)
+                                             .returns(String.class)
+                                             .addParameter(Object.class, "prompt")
+                                             .addStatement("$T.out.print(prompt)", System.class)
+                                             .addStatement("return $L()", s)
+                                             .build();
+                type.addMethod(spec2);
+            });
+            StringBuilder builder = new StringBuilder();
+            builder.append(name).append("(");
+            if (keyword.getArguments().size() == 1) {
+                builder.append(JavaGen.litArg(c, keyword, 0, type, method));
+            }
+            builder.append(")");
+            return builder.toString();
+        });
+        input.setStatementMode(true);
         context.addKeyword(input);
     }
     
@@ -763,6 +862,7 @@ public class ShadowCommons extends ShadowAPI {
     
     ShadowContext loopControl(BlockType def) {
         ShadowContext context = new ShadowContext();
+        context.setName("loopControl");
         
         KeywordType aBreak = new KeywordType("break", new Range.None());
         aBreak.setAction((keyword, stepper, scope) -> {
@@ -794,6 +894,22 @@ public class ShadowCommons extends ShadowAPI {
                 if (args == null) scope.set(params.get(0), new String[0]);
                 else scope.set(params.get(0), args.toArray());
             }
+        });
+        main.setGenerator((c, block, type, method) -> {
+            MethodSpec entry = MethodSpec.methodBuilder("main")
+                                         .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                                         .returns(void.class)
+                                         .addParameter(String[].class, "args")
+                                         .addStatement("new $L()._main(args)", block.getTopContext().getFileName())
+                                         .build();
+            type.addMethod(entry);
+            
+            List<Identifier> params = block.getParameters();
+            MethodSpec.Builder start = MethodSpec.methodBuilder("_main")
+                                                 .returns(void.class)
+                                                 .addParameter(String[].class, (params.size() == 1 ? params.get(0).getName() : "_args"));
+            block.addBody(c, type, start);
+            type.addMethod(start.build());
         });
         context.addBlock(main);
     }
@@ -850,7 +966,7 @@ public class ShadowCommons extends ShadowAPI {
     void blockDefine() {
         BlockType define = new BlockType("define", new Range.Single(1), new Range.Any());
         define.setParseCallback((block, c) -> c.addFunction(block));
-        setupDefinition(define);
+        setupDefinition(define, false);
     
         BlockType keyword = new BlockType("keyword", new Range.Single(1), new Range.Any());
         keyword.setParseCallback((b, c) -> {
@@ -869,21 +985,43 @@ public class ShadowCommons extends ShadowAPI {
                 scope.getCallbacks().addAll(bs.getCallbacks());
                 return value;
             });
+            keywordType.setGenerator((c1, keyword1, type, method) -> {
+                StringBuilder builder = new StringBuilder();
+                builder.append(c1.getComponentName("kdef_" + keyword1.getName()));
+                return generateParameters(c1, keyword1, 1, method, builder, type);
+            });
+            keywordType.setStatementMode(true);
             if (!c.addKeyword(keywordType)) {
                 throw new ShadowExecutionError(b.getLine(), b.argumentIndex(-1), "Keyword already exists.");
             }
         });
-        setupDefinition(keyword);
+        setupDefinition(keyword, true);
     }
     
-    private void setupDefinition(BlockType keyword) {
+    private void setupDefinition(BlockType keyword, boolean direct) {
         keyword.setPreRunCheck((block, scope, args) -> args != null);
         keyword.setEnterCallback(ShadowCommons::argsToParams);
+        keyword.setGenerator((c, block, type, method) -> {
+            String name = c.getComponentName((direct ? "k" : "") + "def_" + block.getIdentifier(0).getName());
+            if (c.nameExists(name)) throw new ShadowParseError(block.getLine(), block.argumentIndex(0), "Duplicate function definition.");
+            c.addName(name);
+            MethodSpec.Builder spec = MethodSpec.methodBuilder(name)
+                                                .returns(void.class);
+            block.getParameters().forEach(id -> spec.addParameter(Object.class, id.getName()));
+            block.addBody(c, type, spec);
+            type.addMethod(spec.build());
+        });
         context.addBlock(keyword);
         
         ShadowContext keywordContext = new ShadowContext();
+        keywordContext.setName("defContext");
         keyword.setContextTransformer(ContextTransformer.blockUse(keywordContext));
         KeywordType aReturn1 = new KeywordType("return", new Range.Single(1));
+        aReturn1.setGenerator((c, keyword1, type, method) -> {
+            method.returns(Object.class);
+            method.addStatement("return $L", JavaGen.litArg(c, keyword1, 0, type, method));
+            return null;
+        });
         aReturn1.setAction(returnArgument(keyword));
         keywordContext.addKeyword(aReturn1);
     }
@@ -924,6 +1062,13 @@ public class ShadowCommons extends ShadowAPI {
         });
         foreach.setEnterCallback(BlockEnterCallback.iterateParameter(0));
         foreach.setEndCallback(BlockEndCallback.iterateParameter(0));
+        foreach.setGenerator((c, block, type, method) -> {
+            String variable = block.getParameters().get(0).getName();
+            String iterable = JavaGen.litArg(c, block, 0, type, method);
+            method.beginControlFlow("for (Object $L : $L)", variable, iterable);
+            block.addBody(c, type, method);
+            method.endControlFlow();
+        });
         context.addBlock(foreach);
     }
     

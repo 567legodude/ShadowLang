@@ -1,6 +1,7 @@
 package com.ssplugins.shadow3.def;
 
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.KeywordGen;
 import com.ssplugins.shadow3.entity.Keyword;
 import com.ssplugins.shadow3.util.Range;
 import com.ssplugins.shadow3.util.Schema;
@@ -13,6 +14,8 @@ public class KeywordType {
     
     private ParseCallback<Keyword> parseCallback;
     private KeywordAction action;
+    private KeywordGen generator;
+    private boolean statementMode;
     
     private ContextTransformer<Keyword> contextTransformer = ContextTransformer.keywordNone();
     private ShadowContext lookupContext;
@@ -52,6 +55,22 @@ public class KeywordType {
     
     public void setAction(KeywordAction action) {
         this.action = action;
+    }
+    
+    public KeywordGen getGenerator() {
+        return generator;
+    }
+    
+    public void setGenerator(KeywordGen generator) {
+        this.generator = generator;
+    }
+    
+    public boolean isStatementMode() {
+        return statementMode;
+    }
+    
+    public void setStatementMode(boolean statementMode) {
+        this.statementMode = statementMode;
     }
     
     public ContextTransformer<Keyword> getContextTransformer() {

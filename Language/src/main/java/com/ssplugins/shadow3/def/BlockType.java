@@ -1,6 +1,7 @@
 package com.ssplugins.shadow3.def;
 
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.BlockGen;
 import com.ssplugins.shadow3.entity.Block;
 import com.ssplugins.shadow3.util.Range;
 import com.ssplugins.shadow3.util.Schema;
@@ -16,6 +17,7 @@ public class BlockType {
     private PreRunCheck preRunCheck;
     private BlockEnterCallback enterCallback;
     private BlockEndCallback endCallback;
+    private BlockGen generator;
     
     private ContextTransformer<Block> contextTransformer = ContextTransformer.blockNone();
     private ShadowContext lookupContext;
@@ -76,6 +78,14 @@ public class BlockType {
     
     public void setEndCallback(BlockEndCallback endCallback) {
         this.endCallback = endCallback;
+    }
+    
+    public BlockGen getGenerator() {
+        return generator;
+    }
+    
+    public void setGenerator(BlockGen generator) {
+        this.generator = generator;
     }
     
     public ContextTransformer<Block> getContextTransformer() {

@@ -1,12 +1,18 @@
 package com.ssplugins.shadow3.def;
 
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.api.OperatorMap;
+import com.ssplugins.shadow3.compile.GenerateContext;
+import com.ssplugins.shadow3.compile.JavaComponent;
+import com.ssplugins.shadow3.compile.OperatorGen;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
+import com.ssplugins.shadow3.section.Operator;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
 
 import java.util.function.BiFunction;
 
-public class OperatorType<L, R, O> {
+public class OperatorType<L, R, O> implements JavaComponent {
     
     private String token;
     private OpOrder order;
@@ -16,6 +22,7 @@ public class OperatorType<L, R, O> {
     private Class<O> outputType;
     private OperatorMatcher matcher = OperatorMatcher.isAssignable();
     private OperatorAction<L, R, O> action;
+    private OperatorGen<L, R> generator;
     
     public OperatorType(String token, Class<L> leftType, Class<R> rightType, Class<O> outputType, OperatorAction<L, R, O> action) {
         this.token = token;
@@ -37,6 +44,18 @@ public class OperatorType<L, R, O> {
     
     public static OpOrder assumeOrder(String token) {
         return OpOrder.get(token).orElseThrow(ShadowCodeException.arg("Cannot assume operator precedence of \"" + token + "\""));
+    }
+    
+    @Override
+    public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        String methodName = context.getComponentName("op_" + Operator.componentName(token));
+        MethodSpec.Builder builder = MethodSpec.methodBuilder(methodName)
+                                               .returns(outputType)
+                                               .addParameter(leftType, "a")
+                                               .addParameter(rightType, "b");
+        generator.generate(builder, leftType, rightType);
+        type.addMethod(builder.build());
+        return null;
     }
     
     public boolean isPlaceholder() {
@@ -89,6 +108,14 @@ public class OperatorType<L, R, O> {
     
     public OperatorAction<L, R, O> getAction() {
         return action;
+    }
+    
+    public void setGenerator(OperatorGen<L, R> generator) {
+        this.generator = generator;
+    }
+    
+    public OperatorGen<L, R> getGenerator() {
+        return generator;
     }
     
     public interface OperatorAction<Left, Right, Output> extends BiFunction<Left, Right, Output> {

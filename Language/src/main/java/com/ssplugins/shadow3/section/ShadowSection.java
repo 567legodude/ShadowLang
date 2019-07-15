@@ -1,11 +1,12 @@
 package com.ssplugins.shadow3.section;
 
+import com.ssplugins.shadow3.compile.JavaComponent;
 import com.ssplugins.shadow3.exception.ShadowExecutionError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.Token;
 import com.ssplugins.shadow3.parsing.TokenLine;
 
-public abstract class ShadowSection {
+public abstract class ShadowSection implements JavaComponent {
     
     private TokenLine line;
     private Token[] tokens;

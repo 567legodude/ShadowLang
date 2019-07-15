@@ -21,6 +21,7 @@ public class IO extends ShadowAPI {
     @Override
     public void loadInto(ShadowContext context) {
         this.context = context;
+        context.setName("io");
         callAnnotatedMethods();
         this.context = null;
     }

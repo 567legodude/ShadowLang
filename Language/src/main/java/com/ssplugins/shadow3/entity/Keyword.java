@@ -1,6 +1,9 @@
 package com.ssplugins.shadow3.entity;
 
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.def.KeywordAction;
 import com.ssplugins.shadow3.def.KeywordType;
 import com.ssplugins.shadow3.def.ParseCallback;
@@ -113,6 +116,13 @@ public class Keyword extends ShadowEntity {
     @Override
     public ShadowContext getInnerContext() {
         return innerContext;
+    }
+    
+    @Override
+    public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        String generate = getDefinition().getGenerator().generate(context, this, type, method);
+        if (!isInline() && getDefinition().isStatementMode()) method.addStatement(generate);
+        return generate;
     }
     
     public void setInnerContext(ShadowContext innerContext) {

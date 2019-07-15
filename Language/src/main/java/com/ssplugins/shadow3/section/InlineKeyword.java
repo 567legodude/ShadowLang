@@ -1,5 +1,8 @@
 package com.ssplugins.shadow3.section;
 
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeSpec;
+import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.entity.Keyword;
 import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowParseError;
@@ -51,6 +54,11 @@ public class InlineKeyword extends ShadowSection {
     @Override
     public Object toObject(Scope scope) {
         return keyword.execute(scope.getStepper(), scope, null);
+    }
+    
+    @Override
+    public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        return keyword.getGeneration(context, type, method);
     }
     
 }
