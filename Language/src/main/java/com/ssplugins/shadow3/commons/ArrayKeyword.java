@@ -1,8 +1,9 @@
 package com.ssplugins.shadow3.commons;
 
 import com.ssplugins.shadow3.api.ShadowContext;
-import com.ssplugins.shadow3.def.CommandKeyword;
 import com.ssplugins.shadow3.def.KeywordType;
+import com.ssplugins.shadow3.def.custom.CommandKeyword;
+import com.ssplugins.shadow3.def.custom.Transformer;
 import com.ssplugins.shadow3.entity.Keyword;
 import com.ssplugins.shadow3.exception.ShadowExecutionError;
 import com.ssplugins.shadow3.execute.Scope;
@@ -16,10 +17,10 @@ import com.ssplugins.shadow3.util.Range;
 import java.lang.reflect.Array;
 import java.util.List;
 
-public class ArrayKeyword extends CommandKeyword<ArrayKeyword.ArrayTransformer, Object> {
+public class ArrayKeyword extends CommandKeyword<Object, ArrayKeyword.ArrayTransformer> {
     
     public ArrayKeyword() {
-        super(ArrayTransformer.class, Object.class, new Range.LowerBound(1), "array");
+        super(Object.class, ArrayTransformer.class, new Range.LowerBound(1), "array");
     
         ShadowContext context = new ShadowContext();
         setLookupContext(context);
@@ -107,10 +108,6 @@ public class ArrayKeyword extends CommandKeyword<ArrayKeyword.ArrayTransformer, 
         return input.transform(data);
     }
     
-    public interface ArrayTransformer {
-    
-        Object transform(Object array);
-        
-    }
+    public interface ArrayTransformer extends Transformer<Object> {}
     
 }

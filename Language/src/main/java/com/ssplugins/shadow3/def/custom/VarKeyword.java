@@ -1,6 +1,8 @@
-package com.ssplugins.shadow3.def;
+package com.ssplugins.shadow3.def.custom;
 
 import com.ssplugins.shadow3.commons.ShadowCommons;
+import com.ssplugins.shadow3.def.BlockType;
+import com.ssplugins.shadow3.def.KeywordType;
 import com.ssplugins.shadow3.entity.Keyword;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.execute.Scope;

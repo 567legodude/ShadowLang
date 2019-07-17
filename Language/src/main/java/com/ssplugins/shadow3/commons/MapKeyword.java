@@ -1,8 +1,9 @@
 package com.ssplugins.shadow3.commons;
 
 import com.ssplugins.shadow3.api.ShadowContext;
-import com.ssplugins.shadow3.def.CommandKeyword;
 import com.ssplugins.shadow3.def.KeywordType;
+import com.ssplugins.shadow3.def.custom.CommandKeyword;
+import com.ssplugins.shadow3.def.custom.Transformer;
 import com.ssplugins.shadow3.entity.Keyword;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
@@ -14,11 +15,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MapKeyword extends CommandKeyword<MapKeyword.MapTransformer, Map> {
+public class MapKeyword extends CommandKeyword<Map, MapKeyword.MapTransformer> {
     
     @SuppressWarnings("unchecked")
     public MapKeyword() {
-        super(MapTransformer.class, Map.class, new Range.Any(), "map");
+        super(Map.class, MapTransformer.class, new Range.Any(), "map");
     
         ShadowContext context = new ShadowContext();
         setLookupContext(context);
@@ -106,10 +107,6 @@ public class MapKeyword extends CommandKeyword<MapKeyword.MapTransformer, Map> {
         return input.transform(data);
     }
     
-    public interface MapTransformer {
-        
-        Object transform(Map input);
-        
-    }
+    public interface MapTransformer extends Transformer<Map> {}
     
 }

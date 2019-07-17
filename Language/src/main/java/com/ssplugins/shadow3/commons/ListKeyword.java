@@ -1,8 +1,9 @@
 package com.ssplugins.shadow3.commons;
 
 import com.ssplugins.shadow3.api.ShadowContext;
-import com.ssplugins.shadow3.def.CommandKeyword;
 import com.ssplugins.shadow3.def.KeywordType;
+import com.ssplugins.shadow3.def.custom.CommandKeyword;
+import com.ssplugins.shadow3.def.custom.Transformer;
 import com.ssplugins.shadow3.entity.Keyword;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
@@ -14,11 +15,11 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ListKeyword extends CommandKeyword<ListKeyword.ListTransformer, List> {
+public class ListKeyword extends CommandKeyword<List, ListKeyword.ListTransformer> {
     
     @SuppressWarnings("unchecked")
     public ListKeyword() {
-        super(ListTransformer.class, List.class, new Range.Any(), "list");
+        super(List.class, ListTransformer.class, new Range.Any(), "list");
     
         ShadowContext context = new ShadowContext();
         setLookupContext(context);
@@ -113,10 +114,6 @@ public class ListKeyword extends CommandKeyword<ListKeyword.ListTransformer, Lis
         return input.transform(data);
     }
     
-    public interface ListTransformer {
-    
-        Object transform(List input);
-        
-    }
+    public interface ListTransformer extends Transformer<List> {}
     
 }
