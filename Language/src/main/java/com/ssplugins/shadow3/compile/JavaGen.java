@@ -84,6 +84,7 @@ public class JavaGen {
             OperatorTree.Node[] c = node.getChildren();
             countNodes(increment, c[0]);
             countNodes(increment, c[1]);
+            return;
         }
         increment.run();
     }
