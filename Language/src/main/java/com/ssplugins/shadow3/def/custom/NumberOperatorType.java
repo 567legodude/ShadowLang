@@ -38,22 +38,22 @@ public class NumberOperatorType {
     
     public void addTo(ShadowContext context) {
         if (intOp != null) {
-            OperatorType<Integer, Integer, Integer> intType = new OperatorType<>(token, order, int.class, int.class, int.class, intOp);
+            OperatorType<Integer, Integer, Integer> intType = new OperatorType<>(token, order, Integer.class, Integer.class, Integer.class, intOp);
             intType.setMatcher(OperatorType.OperatorMatcher.forInt());
             context.addOperator(intType);
         }
         if (doubleOp != null) {
-            OperatorType<Double, Double, Double> doubleType = new OperatorType<>(token, order, double.class, double.class, double.class, doubleOp);
+            OperatorType<Double, Double, Double> doubleType = new OperatorType<>(token, order, Double.class, Double.class, Double.class, doubleOp);
             doubleType.setMatcher(OperatorType.OperatorMatcher.forDouble());
             context.addOperator(doubleType);
         }
         if (floatOp != null) {
-            OperatorType<Float, Float, Float> floatType = new OperatorType<>(token, order, float.class, float.class, float.class, floatOp);
+            OperatorType<Float, Float, Float> floatType = new OperatorType<>(token, order, Float.class, Float.class, Float.class, floatOp);
             floatType.setMatcher(OperatorType.OperatorMatcher.forFloat());
             context.addOperator(floatType);
         }
         if (longOp != null) {
-            OperatorType<Long, Long, Long> longType = new OperatorType<>(token, order, long.class, long.class, long.class, longOp);
+            OperatorType<Long, Long, Long> longType = new OperatorType<>(token, order, Long.class, Long.class, Long.class, longOp);
             longType.setMatcher(OperatorType.OperatorMatcher.forLong());
             context.addOperator(longType);
         }
