@@ -48,6 +48,15 @@ public class ListKeyword extends CommandKeyword<ListKeyword.ListTransformer, Lis
         });
         context.addKeyword(add);
     
+        KeywordType set = new KeywordType("set", new Range.Single(2));
+        set.setAction((keyword, stepper, scope) -> {
+            return (ListTransformer) input -> {
+                input.set(keyword.getInt(0, scope), keyword.argumentValue(1, scope));
+                return input;
+            };
+        });
+        context.addKeyword(set);
+    
         KeywordType remove = new KeywordType("remove", new Range.LowerBound(1));
         remove.setAction((keyword, stepper, scope) -> {
             return (ListTransformer) input -> {
