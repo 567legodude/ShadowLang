@@ -90,7 +90,9 @@ public class ShadowCommons extends ShadowAPI {
                 stepper = stepper.getParent();
                 scope = scope.getParent();
             }
-            scope.setReturnValue(keyword.argumentValue(0, original));
+            if (keyword.getArguments().size() > 0) {
+                scope.setReturnValue(keyword.argumentValue(0, original));
+            }
             stepper.breakBlock();
             return null;
         };
