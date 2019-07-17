@@ -2,6 +2,7 @@ package com.ssplugins.shadow3.util;
 
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
+import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.compile.JavaComponent;
 import com.ssplugins.shadow3.def.OperatorType;
@@ -125,6 +126,8 @@ public class OperatorTree {
         
         public abstract Object objectValue(Scope scope);
         
+        public abstract Class<?> returnType(CompileScope scope);
+        
         private void replace(Node a, Node b) {
             for (int i = 0; i < children.length; ++i) {
                 if (children[i] == a) {
@@ -175,7 +178,10 @@ public class OperatorTree {
         
     }
     
+    @SuppressWarnings("unchecked")
     public static class OpNode extends Node<Operator> {
+        
+        private OperatorType def;
         
         public OpNode(Operator value, Node parent) {
             super(value, parent, 2);
@@ -193,35 +199,57 @@ public class OperatorTree {
             return result;
         }
         
+        private OperatorType getType(ShadowContext context, Class<?> left, Class<?> right) {
+            return context.findOperator(getValue().getSymbol(), left, right)
+                          .orElseThrow(ShadowCodeException.section(getValue(), "OperatorError", "No matching definition for operands: " + left.getSimpleName() + ", " + right.getSimpleName()));
+        }
+        
+        private void findType(CompileScope scope) {
+            if (def != null) return;
+            Node[] c = getChildren();
+            Class left = c[0].returnType(scope);
+            Class right = c[1].returnType(scope);
+            def = scope.getContext().findOperator(getValue().getSymbol(), left, right)
+                       .orElseThrow(ShadowCodeException.section(getValue(), "OperatorError", "No matching definition for operands: " + left.getSimpleName() + ", " + right.getSimpleName()));
+        }
+        
         @Override
         public Object objectValue(Scope scope) {
             Object[] operands = operandValues(scope);
-            Class<?> left = operands[0].getClass();
-            Class<?> right = operands[1].getClass();
-            OperatorType type = scope.getContext()
-                                     .findOperator(getValue().getSymbol(), operands[0], operands[1])
-                                     .orElseThrow(ShadowCodeException.section(getValue(), "OperatorError", "No matching definition for operands: " + left.getSimpleName() + ", " + right.getSimpleName()));
+            OperatorType type = def;
+            if (type == null) {
+                Class<?> left = operands[0].getClass();
+                Class<?> right = operands[1].getClass();
+                type = getType(scope.getContext(), left, right);
+            }
             //noinspection unchecked (Types are known at this point)
             return type.getAction().execute(operands[0], operands[1], type.getLeftWrap(), type.getRightWrap());
         }
-    
+        
+        @Override
+        public Class<?> returnType(CompileScope scope) {
+            Node[] c = getChildren();
+            OperatorType type = getType(scope.getContext(), c[0].returnType(scope), c[1].returnType(scope));
+            this.def = type;
+            return type.getOutputType();
+        }
+        
         @Override
         public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
-            StringBuilder builder = new StringBuilder();
-            // Get method name of operator function.
-            builder.append(value.getGeneration(context, type, method));
-            builder.append("(");
+            findType(context.getScope());
             Node[] c = getChildren();
-            builder.append((c[0] == null ? "null" : c[0].getGeneration(context, type, method)));
-            builder.append(", ");
-            builder.append((c[1] == null ? "null" : c[1].getGeneration(context, type, method)));
-            builder.append(")");
-            return builder.toString();
+            String left = c[0] == null ? "null" : c[0].getGeneration(context, type, method);
+            String right = c[1] == null ? "null" : c[1].getGeneration(context, type, method);
+            String generate = def.getGenerator().generate(left, right, def.getLeftWrap(), def.getRightWrap(), type, method);
+            return "(" + generate + ")";
         }
-    
+        
     }
     
+    @SuppressWarnings("unchecked")
     public static class UnaryOpNode extends Node<Operator> {
+        
+        private OperatorType def;
         
         public UnaryOpNode(Operator value, Node parent) {
             super(value, parent, 1);
@@ -235,31 +263,51 @@ public class OperatorTree {
             return children[0];
         }
         
+        private OperatorType getType(ShadowContext context, Class<?> right) {
+            return context.findOperator(getValue().getSymbol(), Void.class, right)
+                          .orElseThrow(ShadowCodeException.section(getValue(), "OperatorError", "No matching definition for operand: " + right.getSimpleName()));
+        }
+        
+        private void findType(CompileScope scope) {
+            if (def != null) return;
+            Node[] c = getChildren();
+            Class right = c[0].returnType(scope);
+            def = scope.getContext().findOperator(getValue().getSymbol(), Void.class, right)
+                       .orElseThrow(ShadowCodeException.section(getValue(), "OperatorError", "No matching definition for operand: " + right.getSimpleName()));
+        }
+        
         @Override
         public Object objectValue(Scope scope) {
             Object operand = getChild().objectValue(scope);
-            Class<?> opType = operand.getClass();
-            OperatorType type = scope.getContext()
-                                       .findOperator(getValue().getSymbol(), null, operand)
-                                       .orElseThrow(ShadowCodeException.section(getValue(), "OperatorError", "No matching definition for operand: " + opType.getSimpleName()));
+            OperatorType type = def;
+            if (type == null) {
+                Class<?> opType = operand.getClass();
+                type = getType(scope.getContext(), opType);
+            }
             //noinspection unchecked (Type is known at this point)
             return type.getAction().execute(null, operand, Void.class, type.getRightWrap());
         }
-    
+        
+        @Override
+        public Class<?> returnType(CompileScope scope) {
+            Node[] c = getChildren();
+            OperatorType type = getType(scope.getContext(), c[0].returnType(scope));
+            this.def = type;
+            return type.getOutputType();
+        }
+        
         @Override
         public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
-            StringBuilder builder = new StringBuilder();
-            builder.append(value.getGeneration(context, type, method));
-            builder.append("(null, ");
+            findType(context.getScope());
             Node[] c = getChildren();
-            builder.append((c[0] == null ? "null" : c[0].getGeneration(context, type, method)));
-            builder.append(")");
-            return builder.toString();
+            String right = c[0] == null ? "null" : c[0].getGeneration(context, type, method);
+            String generate = def.getGenerator().generate(null, right, Void.class, def.getRightWrap(), type, method);
+            return "(" + generate + ")";
         }
-    
+        
     }
     
-    public static class ValueNode<T> extends Node<T> {
+    public static abstract class ValueNode<T> extends Node<T> {
         
         public ValueNode(T value, Node parent) {
             super(value, parent, 0);
@@ -273,12 +321,17 @@ public class OperatorTree {
         public Object objectValue(Scope scope) {
             return getValue();
         }
-    
+        
+        @Override
+        public Class<?> returnType(CompileScope scope) {
+            return null;
+        }
+        
         @Override
         public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
             return null;
         }
-    
+        
     }
     
     public static class SectionNode extends ValueNode<Object> {
@@ -293,21 +346,26 @@ public class OperatorTree {
         public SectionNode(ShadowSection section) {
             this(section, null);
         }
-    
+        
         public ShadowSection getSection() {
             return section;
         }
-    
+        
         @Override
         public Object objectValue(Scope scope) {
             return section.toObject(scope);
         }
-    
+        
+        @Override
+        public Class<?> returnType(CompileScope scope) {
+            return section.getReturnType(scope);
+        }
+        
         @Override
         public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
             return section.getGeneration(context, type, method);
         }
-    
+        
     }
     
 }

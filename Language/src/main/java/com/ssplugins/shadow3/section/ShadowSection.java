@@ -5,6 +5,7 @@ import com.ssplugins.shadow3.exception.ShadowExecutionError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.Token;
 import com.ssplugins.shadow3.parsing.TokenLine;
+import com.ssplugins.shadow3.util.CompileScope;
 
 public abstract class ShadowSection implements JavaComponent {
     
@@ -17,12 +18,18 @@ public abstract class ShadowSection implements JavaComponent {
     
     public abstract Object toObject(Scope scope);
     
+    public abstract Class<?> getReturnType(CompileScope scope);
+    
     protected void setTokens(Token[] tokens) {
         this.tokens = tokens;
     }
     
     protected void setToken(Token token) {
         setTokens(new Token[] {token});
+    }
+    
+    public int index() {
+        return getPrimaryToken().getIndex();
     }
     
     public Token getPrimaryToken() {

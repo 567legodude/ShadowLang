@@ -1,8 +1,11 @@
 package com.ssplugins.shadow3.modules;
 
+import com.squareup.javapoet.CodeBlock;
 import com.ssplugins.shadow3.api.ShadowAPI;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.JavaGen;
 import com.ssplugins.shadow3.def.KeywordType;
+import com.ssplugins.shadow3.def.Returnable;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.util.Range;
 
@@ -52,11 +55,15 @@ public class SHDMath extends ShadowAPI {
     }
     
     private static class SingleMathKeyword extends KeywordType {
-        public SingleMathKeyword(String name, Function<Double, Object> function) {
+        public SingleMathKeyword(String name, Function<Double, Double> function, String generate) {
             super(name, new Range.Single(1));
             setAction((keyword, stepper, scope) -> {
                 Number n = keyword.getArgument(0, Number.class, scope, "Argument must be a number.");
                 return function.apply(n.doubleValue());
+            });
+            setReturnable(Returnable.of(Double.class));
+            setGenerator((c, keyword, type, method) -> {
+                return CodeBlock.of(generate, Math.class, JavaGen.litArg(c, keyword, 0, type, method)).toString();
             });
         }
     }
@@ -134,31 +141,31 @@ public class SHDMath extends ShadowAPI {
     
     @Entity
     void keywordCbrt() {
-        SingleMathKeyword cbrt = new SingleMathKeyword("cbrt", Math::cbrt);
+        SingleMathKeyword cbrt = new SingleMathKeyword("cbrt", Math::cbrt, null);
         context.addKeyword(cbrt);
     }
     
     @Entity
     void keywordCiel() {
-        SingleMathKeyword ceil = new SingleMathKeyword("ceil", Math::ceil);
+        SingleMathKeyword ceil = new SingleMathKeyword("ceil", Math::ceil, null);
         context.addKeyword(ceil);
     }
     
     @Entity
     void keywordExp() {
-        SingleMathKeyword exp = new SingleMathKeyword("exp", Math::exp);
+        SingleMathKeyword exp = new SingleMathKeyword("exp", Math::exp, null);
         context.addKeyword(exp);
     }
     
     @Entity
     void keywordExpm1() {
-        SingleMathKeyword expm1 = new SingleMathKeyword("expm1", Math::expm1);
+        SingleMathKeyword expm1 = new SingleMathKeyword("expm1", Math::expm1, null);
         context.addKeyword(expm1);
     }
     
     @Entity
     void keywordFloor() {
-        SingleMathKeyword floor = new SingleMathKeyword("floor", Math::floor);
+        SingleMathKeyword floor = new SingleMathKeyword("floor", Math::floor, null);
         context.addKeyword(floor);
     }
     
@@ -170,19 +177,19 @@ public class SHDMath extends ShadowAPI {
     
     @Entity
     void keywordLog() {
-        SingleMathKeyword log = new SingleMathKeyword("log", Math::log);
+        SingleMathKeyword log = new SingleMathKeyword("log", Math::log, null);
         context.addKeyword(log);
     }
     
     @Entity
     void keywordLog10() {
-        SingleMathKeyword log10 = new SingleMathKeyword("log10", Math::log10);
+        SingleMathKeyword log10 = new SingleMathKeyword("log10", Math::log10, null);
         context.addKeyword(log10);
     }
     
     @Entity
     void keywordLog1p() {
-        SingleMathKeyword log1p = new SingleMathKeyword("log1p", Math::log1p);
+        SingleMathKeyword log1p = new SingleMathKeyword("log1p", Math::log1p, null);
         context.addKeyword(log1p);
     }
     
@@ -216,19 +223,19 @@ public class SHDMath extends ShadowAPI {
     
     @Entity
     void keywordSqrt() {
-        SingleMathKeyword sqrt = new SingleMathKeyword("sqrt", Math::sqrt);
+        SingleMathKeyword sqrt = new SingleMathKeyword("sqrt", Math::sqrt, "$T.sqrt($L)");
         context.addKeyword(sqrt);
     }
     
     @Entity
     void keywordDegrees() {
-        SingleMathKeyword degrees = new SingleMathKeyword("degrees", Math::toDegrees);
+        SingleMathKeyword degrees = new SingleMathKeyword("degrees", Math::toDegrees, null);
         context.addKeyword(degrees);
     }
     
     @Entity
     void keywordRadians() {
-        SingleMathKeyword radians = new SingleMathKeyword("radians", Math::toRadians);
+        SingleMathKeyword radians = new SingleMathKeyword("radians", Math::toRadians, null);
         context.addKeyword(radians);
     }
     
@@ -237,19 +244,19 @@ public class SHDMath extends ShadowAPI {
     
     @Entity
     void keywordAcos() {
-        SingleMathKeyword acos = new SingleMathKeyword("acos", Math::acos);
+        SingleMathKeyword acos = new SingleMathKeyword("acos", Math::acos, null);
         context.addKeyword(acos);
     }
     
     @Entity
     void keywordAsin() {
-        SingleMathKeyword asin = new SingleMathKeyword("asin", Math::asin);
+        SingleMathKeyword asin = new SingleMathKeyword("asin", Math::asin, null);
         context.addKeyword(asin);
     }
     
     @Entity
     void keywordAtan() {
-        SingleMathKeyword atan = new SingleMathKeyword("atan", Math::atan);
+        SingleMathKeyword atan = new SingleMathKeyword("atan", Math::atan, null);
         context.addKeyword(atan);
     }
     
@@ -261,37 +268,37 @@ public class SHDMath extends ShadowAPI {
     
     @Entity
     void keywordCos() {
-        SingleMathKeyword cos = new SingleMathKeyword("cos", Math::cos);
+        SingleMathKeyword cos = new SingleMathKeyword("cos", Math::cos, null);
         context.addKeyword(cos);
     }
     
     @Entity
     void keywordCosh() {
-        SingleMathKeyword cosh = new SingleMathKeyword("cosh", Math::cosh);
+        SingleMathKeyword cosh = new SingleMathKeyword("cosh", Math::cosh, null);
         context.addKeyword(cosh);
     }
     
     @Entity
     void keywordSin() {
-        SingleMathKeyword sin = new SingleMathKeyword("sin", Math::sin);
+        SingleMathKeyword sin = new SingleMathKeyword("sin", Math::sin, null);
         context.addKeyword(sin);
     }
     
     @Entity
     void keywordSinh() {
-        SingleMathKeyword sinh = new SingleMathKeyword("sinh", Math::sinh);
+        SingleMathKeyword sinh = new SingleMathKeyword("sinh", Math::sinh, null);
         context.addKeyword(sinh);
     }
     
     @Entity
     void keywordTan() {
-        SingleMathKeyword tan = new SingleMathKeyword("tan", Math::tan);
+        SingleMathKeyword tan = new SingleMathKeyword("tan", Math::tan, null);
         context.addKeyword(tan);
     }
     
     @Entity
     void keywordTanh() {
-        SingleMathKeyword tanh = new SingleMathKeyword("tanh", Math::tanh);
+        SingleMathKeyword tanh = new SingleMathKeyword("tanh", Math::tanh, null);
         context.addKeyword(tanh);
     }
     
@@ -382,7 +389,7 @@ public class SHDMath extends ShadowAPI {
     
     @Entity
     void keywordRint() {
-        SingleMathKeyword rint = new SingleMathKeyword("rint", Math::rint);
+        SingleMathKeyword rint = new SingleMathKeyword("rint", Math::rint, null);
         context.addKeyword(rint);
     }
     

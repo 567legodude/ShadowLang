@@ -44,6 +44,9 @@ public class ShadowCodeException extends ShadowException {
     }
     
     public static ShadowParseError ended(TokenReader reader) {
+        if (reader.getLimit() != -1) {
+            return new ShadowParseError(reader.getLine(), reader.getLine().getTokens().get(reader.getIndex()).getIndex(), "Expected different token here.");
+        }
         return new ShadowParseError(reader.getLine(), reader.getLine().lastToken().indexAfter(), "Unexpected end of line.");
     }
     

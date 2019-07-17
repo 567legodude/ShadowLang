@@ -2,6 +2,7 @@ package com.ssplugins.shadow3.execute;
 
 import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.section.Identifier;
+import com.ssplugins.shadow3.util.Parameter;
 import com.ssplugins.shadow3.util.Value;
 
 import java.util.*;
@@ -46,12 +47,20 @@ public class Scope {
         return s;
     }
     
+    public void setLocal(Parameter parameter, Object value) {
+        setLocal(parameter.getName(), value);
+    }
+    
     public void setLocal(Identifier identifier, Object value) {
         setLocal(identifier.getName(), value);
     }
     
     public void setLocal(String key, Object value) {
         variables.compute(key, (s, v) -> (v == null ? new Value(value) : v.setValue(value)));
+    }
+    
+    public void set(Parameter parameter, Object value) {
+        set(parameter.getName(), value);
     }
     
     public void set(Identifier identifier, Object value) {

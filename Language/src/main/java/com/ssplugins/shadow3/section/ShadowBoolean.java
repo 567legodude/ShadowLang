@@ -8,6 +8,7 @@ import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.Token;
 import com.ssplugins.shadow3.parsing.TokenReader;
 import com.ssplugins.shadow3.parsing.TokenType;
+import com.ssplugins.shadow3.util.CompileScope;
 
 public class ShadowBoolean extends ShadowSection {
     
@@ -23,6 +24,11 @@ public class ShadowBoolean extends ShadowSection {
     @Override
     public Object toObject(Scope scope) {
         return value;
+    }
+    
+    @Override
+    public Class<?> getReturnType(CompileScope scope) {
+        return Boolean.class;
     }
     
     @Override

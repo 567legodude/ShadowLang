@@ -11,6 +11,7 @@ import com.ssplugins.shadow3.parsing.ShadowParser;
 import com.ssplugins.shadow3.parsing.Token;
 import com.ssplugins.shadow3.parsing.TokenReader;
 import com.ssplugins.shadow3.parsing.TokenType;
+import com.ssplugins.shadow3.util.CompileScope;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,6 +55,11 @@ public class InlineKeyword extends ShadowSection {
     @Override
     public Object toObject(Scope scope) {
         return keyword.execute(scope.getStepper(), scope, null);
+    }
+    
+    @Override
+    public Class<?> getReturnType(CompileScope scope) {
+        return keyword.getDefinition().getReturnable().getReturnType(keyword, scope);
     }
     
     @Override

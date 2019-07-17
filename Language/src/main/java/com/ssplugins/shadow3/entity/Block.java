@@ -14,6 +14,7 @@ import com.ssplugins.shadow3.parsing.TokenType;
 import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.ShadowSection;
 import com.ssplugins.shadow3.util.LineReader;
+import com.ssplugins.shadow3.util.Parameter;
 import com.ssplugins.shadow3.util.Range;
 
 import java.util.ArrayList;
@@ -24,7 +25,7 @@ public class Block extends ShadowEntity {
     
     private String name;
     private List<ShadowSection> modifiers;
-    private List<Identifier> parameters;
+    private List<Parameter> parameters;
     private EntityList contents;
     
     private BlockType definition;
@@ -48,10 +49,10 @@ public class Block extends ShadowEntity {
         parameters = new ArrayList<>();
         if (def.nextMatches(TokenType.OPERATOR, "->")) {
             def.consume();
-            parameters.add(def.expectSection(Identifier.class, "identifier"));
+            parameters.add(readParameter(def, reader.getContext()));
             while (def.hasNext()) {
                 def.expect(TokenType.OPERATOR, ",");
-                parameters.add(def.expectSection(Identifier.class, "identifier"));
+                parameters.add(readParameter(def, reader.getContext()));
             }
         }
         def.reset();
@@ -106,6 +107,40 @@ public class Block extends ShadowEntity {
             parent = (Block) parent.getParent();
         }
         return fallback.findBlock(name).orElseThrow(ShadowCodeException.noDef(getLine(), getLine().firstToken().getIndex(), "No definition found for block: " + name));
+    }
+    
+    private Parameter readParameter(TokenReader def, ShadowContext context) {
+        Identifier identifier = def.expectSection(Identifier.class, "identifier");
+        identifier.getValidName();
+        Identifier typeDef = null;
+        int dim = 0;
+        if (def.nextMatches(TokenType.OPERATOR, ":")) {
+            def.consume();
+            typeDef = def.expectSection(Identifier.class, "identifier");
+            while (def.nextMatches(TokenType.GROUP_OPEN, "[")) {
+                def.consume();
+                def.expect(TokenType.GROUP_CLOSE, "]");
+                dim++;
+            }
+        }
+        if (typeDef != null) {
+            Class<?> type = context.findType(typeDef.getName()).orElseThrow(ShadowCodeException.noDef(getLine(), typeDef.getPrimaryToken().getIndex(), "Type not defined."));
+            if (dim > 0) {
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < dim; i++) {
+                    builder.append("[");
+                }
+                builder.append("L").append(type.getName()).append(";");
+                try {
+                    Class<?> arrType = Class.forName(builder.toString());
+                    return new Parameter(identifier, arrType);
+                } catch (ClassNotFoundException e) {
+                    throw new ShadowParseError(getLine(), identifier.getPrimaryToken().getIndex(), "Cannot make array of type: " + type.getName());
+                }
+            }
+            return new Parameter(identifier, type);
+        }
+        return new Parameter(identifier);
     }
     
     private Optional<BlockType> checkContext(ShadowContext context) {
@@ -167,7 +202,10 @@ public class Block extends ShadowEntity {
     
     @Override
     public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        context.newBlock();
+        getParameters().forEach(parameter -> context.getScope().addCheck(parameter.getName(), parameter.getType()));
         getDefinition().getGenerator().generate(context, this, type, method);
+        context.back();
         return null;
     }
     
@@ -176,14 +214,24 @@ public class Block extends ShadowEntity {
     }
     
     public void addBody(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        context.newBlock();
+        ParamLookup lookup = getDefinition().getParamLookup();
+        List<Parameter> identifiers = getParameters();
+        for (int i = 0; i < identifiers.size(); i++) {
+            Parameter param = identifiers.get(i);
+            Class<?> t = param.getType();
+            if (lookup != null) t = lookup.getParamType(i, this);
+            context.getScope().addCheck(param.getName(), t);
+        }
         getContents().forEach(entity -> entity.getGeneration(context, type, method));
+        context.back();
     }
     
     public List<ShadowSection> getModifiers() {
         return modifiers;
     }
     
-    public List<Identifier> getParameters() {
+    public List<Parameter> getParameters() {
         return parameters;
     }
     

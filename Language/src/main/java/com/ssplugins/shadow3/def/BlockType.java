@@ -17,6 +17,7 @@ public class BlockType {
     private PreRunCheck preRunCheck;
     private BlockEnterCallback enterCallback;
     private BlockEndCallback endCallback;
+    private ParamLookup paramLookup;
     private BlockGen generator;
     
     private ContextTransformer<Block> contextTransformer = ContextTransformer.blockNone();
@@ -78,6 +79,14 @@ public class BlockType {
     
     public void setEndCallback(BlockEndCallback endCallback) {
         this.endCallback = endCallback;
+    }
+    
+    public ParamLookup getParamLookup() {
+        return paramLookup;
+    }
+    
+    public void setParamLookup(ParamLookup paramLookup) {
+        this.paramLookup = paramLookup;
     }
     
     public BlockGen getGenerator() {

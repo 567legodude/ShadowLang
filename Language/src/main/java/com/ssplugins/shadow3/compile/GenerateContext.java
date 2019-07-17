@@ -2,6 +2,7 @@ package com.ssplugins.shadow3.compile;
 
 import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.exception.ShadowException;
+import com.ssplugins.shadow3.util.CompileScope;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -10,11 +11,25 @@ import java.util.function.Consumer;
 public class GenerateContext {
     
     private ShadowContext fullContext;
+    private CompileScope compileScope;
     
     private Set<String> identifiers = new HashSet<>();
     
     public GenerateContext(ShadowContext fullContext) {
         this.fullContext = fullContext;
+        compileScope = new CompileScope(fullContext);
+    }
+    
+    public void back() {
+        compileScope = compileScope.parent();
+    }
+    
+    public void newBlock() {
+        compileScope = compileScope.newBlock();
+    }
+    
+    public CompileScope getScope() {
+        return compileScope;
     }
     
     public boolean nameExists(String s) {

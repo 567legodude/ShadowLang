@@ -27,6 +27,7 @@ public class ShadowContext {
     private Map<String, KeywordType> keywords = new HashMap<>();
     private Map<String, ShadowContext> modules = new HashMap<>();
     private Map<String, FunctionMap> functions = new HashMap<>();
+    private Map<String, Class<?>> types = new HashMap<>();
     
     private GenerateContext generateContext;
     
@@ -108,13 +109,7 @@ public class ShadowContext {
         return operators.containsKey(token);
     }
     
-    public Optional<OperatorType> findOperator(String token, Object left, Object right) {
-        OperatorMap map = operators.get(token);
-        if (map == null) return Optional.empty();
-        return map.find(left, right);
-    }
-    
-    public Optional<OperatorType<?, ?, ?>> findOperator(String token, Class<?> left, Class<?> right) {
+    public Optional<OperatorType> findOperator(String token, Class<?> left, Class<?> right) {
         OperatorMap map = operators.get(token);
         if (map == null) return Optional.empty();
         return map.find(left, right);
@@ -207,6 +202,19 @@ public class ShadowContext {
     
     public Optional<Block> findFunction(String name, int i) {
         return Optional.ofNullable(functions.get(name)).flatMap(fMap -> fMap.get(i));
+    }
+    
+    //endregion
+    //region Types
+    
+    public boolean addType(String name, Class<?> type) {
+        if (types.containsKey(name)) return false;
+        types.put(name, type);
+        return true;
+    }
+    
+    public Optional<Class<?>> findType(String name) {
+        return Optional.ofNullable(types.get(name));
     }
     
     //endregion

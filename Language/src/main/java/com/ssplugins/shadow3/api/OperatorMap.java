@@ -74,15 +74,11 @@ public class OperatorMap {
         return true;
     }
     
-    public Optional<OperatorType> find(Object left, Object right) {
+    public Optional<OperatorType> find(Class<?> left, Class<?> right) {
         return findAction(left, right);
     }
     
-    public Optional<OperatorType<?, ?, ?>> find(Class<?> left, Class<?> right) {
-        return types.stream().filter(t -> t.getLeftWrap() == left && t.getRightWrap() == right).findFirst();
-    }
-    
-    private Optional<OperatorType> findAction(Object left, Object right) {
+    private Optional<OperatorType> findAction(Class<?> left, Class<?> right) {
         types.forEach(type -> {
             if (type.isPlaceholder()) return;
             OperatorType.OperatorMatcher matcher = type.getMatcher();

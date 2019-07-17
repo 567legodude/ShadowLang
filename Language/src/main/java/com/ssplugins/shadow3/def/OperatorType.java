@@ -1,18 +1,13 @@
 package com.ssplugins.shadow3.def;
 
-import com.squareup.javapoet.MethodSpec;
-import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.api.OperatorMap;
-import com.ssplugins.shadow3.compile.GenerateContext;
-import com.ssplugins.shadow3.compile.JavaComponent;
 import com.ssplugins.shadow3.compile.OperatorGen;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
-import com.ssplugins.shadow3.section.Operator;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
 
 import java.util.function.BiFunction;
 
-public class OperatorType<L, R, O> implements JavaComponent {
+public class OperatorType<L, R, O> {
     
     private String token;
     private OpOrder order;
@@ -44,18 +39,6 @@ public class OperatorType<L, R, O> implements JavaComponent {
     
     public static OpOrder assumeOrder(String token) {
         return OpOrder.get(token).orElseThrow(ShadowCodeException.arg("Cannot assume operator precedence of \"" + token + "\""));
-    }
-    
-    @Override
-    public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
-        String methodName = context.getComponentName("op_" + Operator.componentName(token));
-        MethodSpec.Builder builder = MethodSpec.methodBuilder(methodName)
-                                               .returns(outputType)
-                                               .addParameter(leftType, "a")
-                                               .addParameter(rightType, "b");
-        generator.generate(builder, leftType, rightType);
-        type.addMethod(builder.build());
-        return null;
     }
     
     public boolean isPlaceholder() {
@@ -139,60 +122,69 @@ public class OperatorType<L, R, O> implements JavaComponent {
     
     public interface OperatorMatcher {
     
-        boolean matches(OperatorType<?, ?, ?> type, Object left, Object right);
+        boolean matches(OperatorType<?, ?, ?> type, Class<?> left, Class<?> right);
     
         static OperatorMatcher isAssignable() {
             return (type, left, right) -> {
-                if (left == null) return type.getRightWrap().isAssignableFrom(right.getClass());
-                return type.getLeftWrap().isAssignableFrom(left.getClass()) && type.getRightWrap().isAssignableFrom(right.getClass());
+                if (left == null) return type.getRightWrap().isAssignableFrom(right);
+                return type.getLeftWrap().isAssignableFrom(left) && type.getRightWrap().isAssignableFrom(right);
             };
         }
     
         static OperatorMatcher sameType() {
             return (type, left, right) -> {
-                if (left == null) return type.getRightWrap() == right.getClass();
-                return type.getLeftWrap() == left.getClass() && type.getRightWrap() == right.getClass();
+                if (left == null) return type.getRightWrap() == right;
+                return type.getLeftWrap() == left && type.getRightWrap() == right;
             };
         }
     
-        static boolean notNumbers(Object left, Object right) {
-            return !(left instanceof Number) || !(right instanceof Number);
+        static boolean numberType(Class<?> type) {
+            return type == Byte.class ||
+                    type == Short.class ||
+                    type == Integer.class ||
+                    type == Long.class ||
+                    type == Float.class ||
+                    type == Double.class;
+        }
+    
+        static boolean notNumbers(Class<?> left, Class<?> right) {
+            return !numberType(left) || !numberType(right);
         }
     
         static OperatorMatcher numbers() {
             return (type, left, right) -> {
-                return left instanceof Number && right instanceof Number;
+                return !notNumbers(left, right);
             };
         }
     
         static OperatorMatcher forDouble() {
             return (type, left, right) -> {
                 if (notNumbers(left, right)) return false;
-                return left instanceof Double || right instanceof Double;
+                return left == Double.class || right == Double.class;
             };
         }
     
         static OperatorMatcher forFloat() {
             return (type, left, right) -> {
                 if (notNumbers(left, right)) return false;
-                if (left instanceof Double || right instanceof Double) return false;
-                return left instanceof Float || right instanceof Float;
+                if (left == Double.class || right == Double.class) return false;
+                return left == Float.class || right == Float.class;
             };
         }
     
         static OperatorMatcher forLong() {
             return (type, left, right) -> {
                 if (notNumbers(left, right)) return false;
-                if (left instanceof Double || right instanceof Double) return false;
-                if (left instanceof Float || right instanceof Float) return false;
-                return left instanceof Long || right instanceof Long;
+                if (left == Double.class || right == Double.class) return false;
+                if (left == Float.class || right == Float.class) return false;
+                return left == Long.class || right == Long.class;
             };
         }
     
         static OperatorMatcher forInt() {
             return (type, left, right) -> {
                 if (notNumbers(left, right)) return false;
-                return left instanceof Integer && right instanceof Integer;
+                return left == Integer.class || right == Integer.class;
             };
         }
     

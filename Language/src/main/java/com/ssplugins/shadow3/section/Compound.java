@@ -8,6 +8,7 @@ import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.Token;
 import com.ssplugins.shadow3.parsing.TokenLine;
+import com.ssplugins.shadow3.util.CompileScope;
 import com.ssplugins.shadow3.util.OperatorTree;
 
 import java.util.List;
@@ -58,6 +59,11 @@ public class Compound extends ShadowSection {
             return value;
         }
         return opTree.getValue(scope);
+    }
+    
+    @Override
+    public Class<?> getReturnType(CompileScope scope) {
+        return opTree.getRoot().returnType(scope);
     }
     
     @Override

@@ -14,6 +14,7 @@ public class KeywordType {
     
     private ParseCallback<Keyword> parseCallback;
     private KeywordAction action;
+    private Returnable returnable = Returnable.none();
     private KeywordGen generator;
     private boolean statementMode;
     
@@ -55,6 +56,14 @@ public class KeywordType {
     
     public void setAction(KeywordAction action) {
         this.action = action;
+    }
+    
+    public Returnable getReturnable() {
+        return returnable;
+    }
+    
+    public void setReturnable(Returnable returnType) {
+        this.returnable = returnType;
     }
     
     public KeywordGen getGenerator() {

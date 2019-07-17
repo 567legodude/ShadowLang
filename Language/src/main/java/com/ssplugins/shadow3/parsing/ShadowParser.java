@@ -10,6 +10,7 @@ import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.section.*;
+import com.ssplugins.shadow3.util.CompileScope;
 import com.ssplugins.shadow3.util.LineReader;
 
 import java.io.File;
@@ -117,7 +118,22 @@ public class ShadowParser {
         while (reader.hasNext()) {
             contents.add(reader.nextEntity(null, null));
         }
+        CompileScope compileScope = new CompileScope(context);
+        contents.forEach(entity -> checkType(entity, compileScope));
         return shadow;
+    }
+    
+    private void checkType(ShadowEntity entity, CompileScope scope) {
+        if (entity instanceof Block) checkTypes((Block) entity, scope.newBlock());
+        else {
+            Keyword keyword = (Keyword) entity;
+            keyword.getDefinition().getReturnable().getReturnType(keyword, scope);
+        }
+    }
+    
+    private void checkTypes(Block block, CompileScope scope) {
+        block.getParameters().forEach(parameter -> scope.addCheck(parameter.getName(), parameter.getType()));
+        block.getContents().forEach(entity -> checkType(entity, scope));
     }
     
     public ShadowContext getContext() {

@@ -7,6 +7,7 @@ import com.ssplugins.shadow3.api.ShadowAPI;
 import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.compile.JavaGen;
+import com.ssplugins.shadow3.compile.OperatorGen;
 import com.ssplugins.shadow3.def.*;
 import com.ssplugins.shadow3.def.custom.NumberCompareOp;
 import com.ssplugins.shadow3.def.custom.NumberOperatorType;
@@ -27,9 +28,7 @@ import com.ssplugins.shadow3.section.Compound;
 import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
 import com.ssplugins.shadow3.section.ShadowSection;
-import com.ssplugins.shadow3.util.Range;
-import com.ssplugins.shadow3.util.Schema;
-import com.ssplugins.shadow3.util.ShadowImport;
+import com.ssplugins.shadow3.util.*;
 
 import javax.lang.model.element.Modifier;
 import java.io.File;
@@ -56,12 +55,17 @@ public class ShadowCommons extends ShadowAPI {
     private ShadowContext context;
     
     private static void argsToParams(Block block, Stepper stepper, Scope scope, List<Object> args) {
-        List<Identifier> parameters = block.getParameters();
+        List<Parameter> parameters = block.getParameters();
         if (args.size() != parameters.size()) {
             throw new ShadowExecutionError(block.getLine(), block.argumentIndex(-1), "Number of arguments does not equal number of parameters.");
         }
         for (int i = 0; i < args.size(); ++i) {
-            scope.set(parameters.get(i), args.get(i));
+            Parameter p = parameters.get(i);
+            Object o = args.get(i);
+            if (!p.getType().isInstance(o)) {
+                throw new ShadowExecutionError(block.getLine(), p.getIdentifier().index(), "Parameter should be " + p.getType().getSimpleName() + ", got " + o.getClass().getSimpleName());
+            }
+            scope.set(p, o);
         }
     }
     
@@ -94,7 +98,7 @@ public class ShadowCommons extends ShadowAPI {
     
     private static void pauseConsole() {
         try {
-            while (((char) System.in.read()) != '\n');
+            while (((char) System.in.read()) != '\n') ;
         } catch (IOException e) {
             throw new ShadowException(e);
         }
@@ -131,6 +135,22 @@ public class ShadowCommons extends ShadowAPI {
     @Entity
     void moduleIO() {
         context.addLazyModule("io", new IO());
+    }
+    
+    //endregion
+    
+    //region Types
+    
+    @Entity
+    void commonTypes() {
+        context.addType("obj", Object.class);
+        context.addType("str", String.class);
+        context.addType("bool", Boolean.class);
+        context.addType("char", Character.class);
+        context.addType("int", Integer.class);
+        context.addType("long", Long.class);
+        context.addType("float", Float.class);
+        context.addType("double", Double.class);
     }
     
     //endregion
@@ -237,11 +257,13 @@ public class ShadowCommons extends ShadowAPI {
     @Entity
     void operatorAdd() {
         OperatorType<String, Object, String> addString = new OperatorType<>("+", String.class, Object.class, String.class, (a, b) -> a + b.toString());
+        addString.setGenerator(OperatorGen.between("+"));
         context.addOperator(addString);
         OperatorType<Object, String, String> addString2 = new OperatorType<>("+", Object.class, String.class, String.class, (a, b) -> a.toString() + b);
         addString2.setMatcher(OperatorType.OperatorMatcher.sameType());
+        addString2.setGenerator(OperatorGen.between("+"));
         context.addOperator(addString2);
-    
+        
         NumberOperatorType numberAdd = new NumberOperatorType("+", Integer::sum, Double::sum, Float::sum, Long::sum);
         numberAdd.addTo(context);
     }
@@ -353,11 +375,30 @@ public class ShadowCommons extends ShadowAPI {
             scope.set(name, o);
             return o;
         });
-//        set.setGenerator((c, keyword, type, method) -> {
-//            c.checkName("_vars", s -> {
-//                type.addField()
-//            });
-//        });
+        set.setReturnable((keyword, scope) -> {
+            Identifier name = keyword.getIdentifier(0);
+            Class<?> expected = keyword.getArguments().get(1).getReturnType(scope);
+            Pair<Boolean, Class<?>> result = scope.addCheck(name.getValidName(), expected);
+            if (!result.getLeft()) {
+                throw new ShadowParseError(keyword.getLine(), keyword.argumentIndex(1), "Invalid assignment. Expected type: " + result.getRight().getSimpleName());
+            }
+            return result.getRight();
+        });
+        set.setGenerator((c, keyword, type, method) -> {
+            CompileScope scope = c.getScope();
+            StringBuilder builder = new StringBuilder();
+            String name = keyword.getIdentifier(0).getValidName();
+            String value = JavaGen.litArg(c, keyword, 1, type, method);
+            if (name.equals(value)) return name;
+            if (!scope.isMarked(name)) {
+                scope.mark(name);
+                Class<?> returnType = keyword.getDefinition().getReturnable().getReturnType(keyword, scope);
+                builder.append(CodeBlock.of("$T ", returnType));
+            }
+            builder.append(name).append(" = ").append(value);
+            method.addStatement(builder.toString());
+            return name;
+        });
         context.addKeyword(set);
     }
     
@@ -368,6 +409,7 @@ public class ShadowCommons extends ShadowAPI {
             Object o = keyword.argumentValue(0, scope);
             return o.getClass().getSimpleName();
         });
+        type.setReturnable(Returnable.of(String.class));
         type.setGenerator((c, keyword, type1, method) -> {
             String value = keyword.getArguments().get(0).getGeneration(c, type1, method);
             return CodeBlock.of("(($T) $L).getClass().getSimpleName()", Object.class, value).toString();
@@ -403,6 +445,20 @@ public class ShadowCommons extends ShadowAPI {
             scope.getCallbacks().addAll(bs.getCallbacks());
             return value;
         });
+        exec.setReturnable((keyword, scope) -> {
+            Optional<DefineBlock> define = scope.getContext().findBlock("define").filter(type -> type instanceof DefineBlock).map(type -> (DefineBlock) type);
+            if (!define.isPresent()) throw new ShadowException("The function definition block has not been added.");
+            int size = 0;
+            if (keyword.getArguments().size() == 2) {
+                ShadowSection section = keyword.getArguments().get(1);
+                if (section instanceof Compound) size = JavaGen.countParameters((Compound) section);
+                else size = 1;
+            }
+            Identifier target = keyword.getIdentifier(0);
+            Block block = scope.getContext().findFunction(target.getName(), size).orElseThrow(ShadowCodeException.noDef(keyword.getLine(), keyword.argumentIndex(0), "No matching function found."));
+            DefineBlock defineBlock = define.get();
+            return defineBlock.getReturnType(block, scope).orElse(Returnable.empty());
+        });
         exec.setGenerator((c, keyword, type, method) -> {
             StringBuilder builder = new StringBuilder();
             builder.append(c.getComponentName("def_" + keyword.getIdentifier(0).getName()));
@@ -420,18 +476,16 @@ public class ShadowCommons extends ShadowAPI {
             if (!(o instanceof String)) {
                 throw new ShadowExecutionError(keyword.getLine(), keyword.argumentIndex(0), "First argument must be a string.");
             }
-            return ((String) o).chars().mapToObj(i -> String.valueOf((char) i)).toArray();
+            return ((String) o).chars().mapToObj(i -> (char) i).toArray(Character[]::new);
         });
+        chars.setReturnable(Returnable.of(Character[].class));
         chars.setGenerator((c, keyword, type, method) -> {
             String name = c.getComponentName("chars");
             c.checkName(name, s -> {
                 MethodSpec spec = MethodSpec.methodBuilder(s)
-                                            .returns(Object[].class)
-                                            .addParameter(Object.class, "s")
-                                            .beginControlFlow("if (!(s instanceof String))")
-                                            .addStatement("throw new $T(\"Tried to get characters of non-string.\")", IllegalArgumentException.class)
-                                            .endControlFlow()
-                                            .addStatement(CodeBlock.of("return ((String) s).chars().mapToObj(i -> String.valueOf((char) i)).toArray()", String.class))
+                                            .returns(Character[].class)
+                                            .addParameter(String.class, "s")
+                                            .addStatement(CodeBlock.of("return ((String) s).chars().mapToObj(i -> (char) i).toArray($T[]::new)", Character.class))
                                             .build();
                 type.addMethod(spec);
             });
@@ -457,7 +511,7 @@ public class ShadowCommons extends ShadowAPI {
                 public boolean hasNext() {
                     return value < stop;
                 }
-    
+                
                 @Override
                 public Integer next() {
                     int r = value;
@@ -608,6 +662,36 @@ public class ShadowCommons extends ShadowAPI {
             return objects.get(objects.size() - 1);
         });
         context.addKeyword(multi);
+    }
+    
+    @Entity
+    void keywordJava() {
+        KeywordType java = new KeywordType("java", new Range.LowerBound(2));
+        java.setParseCallback((keyword, context1) -> {
+            Identifier name = keyword.getIdentifier(0);
+            List<ShadowSection> args = keyword.getArguments();
+            StringBuilder identifier = new StringBuilder(args.stream().skip(1).map(section -> section.getPrimaryToken().getRaw()).collect(Collectors.joining()));
+            int dim = 0;
+            while (identifier.substring(identifier.length() - 2).equals("[]")) {
+                dim++;
+                identifier.setLength(identifier.length() - 2);
+            }
+            if (dim > 0) {
+                identifier.insert(0, "L");
+                while (dim-- > 0) {
+                    identifier.insert(0, "[");
+                }
+                identifier.append(";");
+            }
+            try {
+                Class<?> type = Class.forName(identifier.toString());
+                context1.addType(name.getName(), type);
+            } catch (ClassNotFoundException e) {
+                throw new ShadowParseError(keyword.getLine(), keyword.argumentIndex(1), "Class not found.");
+            }
+        });
+        java.setAction((keyword, stepper, scope) -> null);
+        context.addKeyword(java);
     }
     
     //region String
@@ -838,6 +922,12 @@ public class ShadowCommons extends ShadowAPI {
         });
         from.setContextTransformer(ContextTransformer.keywordModule(0));
         from.setAction((keyword, stepper, scope) -> keyword.argumentValue(2, scope));
+        from.setReturnable((keyword, scope) -> {
+            return keyword.getArguments().get(2).getReturnType(scope);
+        });
+        from.setGenerator((c, keyword, type, method) -> {
+            return keyword.getArguments().get(2).getGeneration(c, type, method);
+        });
         context.addKeyword(from);
     }
     
@@ -871,7 +961,7 @@ public class ShadowCommons extends ShadowAPI {
             return null;
         });
         context.addKeyword(aBreak);
-    
+        
         KeywordType aContinue = new KeywordType("continue", new Range.None());
         aContinue.setAction((keyword, stepper, scope) -> {
             stepper = findStepper(stepper, def, keyword, Stepper::breakBlock);
@@ -879,7 +969,7 @@ public class ShadowCommons extends ShadowAPI {
             return null;
         });
         context.addKeyword(aContinue);
-    
+        
         return context;
     }
     
@@ -889,12 +979,13 @@ public class ShadowCommons extends ShadowAPI {
     void blockMain() {
         BlockType main = new BlockType("main", new Range.None(), new Range.MinMax(0, 1));
         main.setEnterCallback((block, stepper, scope, args) -> {
-            List<Identifier> params = block.getParameters();
+            List<Parameter> params = block.getParameters();
             if (params.size() == 1) {
                 if (args == null) scope.set(params.get(0), new String[0]);
                 else scope.set(params.get(0), args.toArray());
             }
         });
+        main.setParamLookup(ParamLookup.of(String[].class));
         main.setGenerator((c, block, type, method) -> {
             MethodSpec entry = MethodSpec.methodBuilder("main")
                                          .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
@@ -904,7 +995,7 @@ public class ShadowCommons extends ShadowAPI {
                                          .build();
             type.addMethod(entry);
             
-            List<Identifier> params = block.getParameters();
+            List<Parameter> params = block.getParameters();
             MethodSpec.Builder start = MethodSpec.methodBuilder("_main")
                                                  .returns(void.class)
                                                  .addParameter(String[].class, (params.size() == 1 ? params.get(0).getName() : "_args"));
@@ -941,7 +1032,7 @@ public class ShadowCommons extends ShadowAPI {
         typeIf.setEnterCallback((block, stepper, scope, args) -> {
             stepper.setSkipSchema(skipElse);
         });
-    
+        
         Schema<Block> condSchema = new Schema<>(block -> block.flow().prevIsBlock("if", "elseif"));
         condSchema.setSituation("Block must follow an if or elseif block.");
         
@@ -953,10 +1044,10 @@ public class ShadowCommons extends ShadowAPI {
         elseif.setEnterCallback((block, stepper, scope, args) -> {
             stepper.setSkipSchema(skipElse);
         });
-    
+        
         BlockType typeElse = new BlockType("else", new Range.None(), new Range.None());
         typeElse.setSchema(condSchema);
-    
+        
         context.addBlock(typeIf);
         context.addBlock(elseif);
         context.addBlock(typeElse);
@@ -964,11 +1055,11 @@ public class ShadowCommons extends ShadowAPI {
     
     @Entity
     void blockDefine() {
-        BlockType define = new BlockType("define", new Range.Single(1), new Range.Any());
+        BlockType define = new DefineBlock();
         define.setParseCallback((block, c) -> c.addFunction(block));
         setupDefinition(define, false);
-    
-        BlockType keyword = new BlockType("keyword", new Range.Single(1), new Range.Any());
+        
+        BlockType keyword = new DefineBlock();
         keyword.setParseCallback((b, c) -> {
             Identifier name = (Identifier) b.getArguments().get(0);
             KeywordType keywordType = new KeywordType(name.getName(), new Range.MinMax(0, 1));
@@ -1003,11 +1094,13 @@ public class ShadowCommons extends ShadowAPI {
         keyword.setEnterCallback(ShadowCommons::argsToParams);
         keyword.setGenerator((c, block, type, method) -> {
             String name = c.getComponentName((direct ? "k" : "") + "def_" + block.getIdentifier(0).getName());
-            if (c.nameExists(name)) throw new ShadowParseError(block.getLine(), block.argumentIndex(0), "Duplicate function definition.");
+            if (c.nameExists(name))
+                throw new ShadowParseError(block.getLine(), block.argumentIndex(0), "Duplicate function definition.");
             c.addName(name);
+            Optional<Class<?>> returnType = ((DefineBlock) block.getDefinition()).getReturnType(block, c.getScope());
             MethodSpec.Builder spec = MethodSpec.methodBuilder(name)
-                                                .returns(void.class);
-            block.getParameters().forEach(id -> spec.addParameter(Object.class, id.getName()));
+                                                .returns(returnType.orElse(void.class));
+            block.getParameters().forEach(param -> spec.addParameter(param.getType(), param.getName()));
             block.addBody(c, type, spec);
             type.addMethod(spec.build());
         });
@@ -1017,8 +1110,10 @@ public class ShadowCommons extends ShadowAPI {
         keywordContext.setName("defContext");
         keyword.setContextTransformer(ContextTransformer.blockUse(keywordContext));
         KeywordType aReturn1 = new KeywordType("return", new Range.Single(1));
+        aReturn1.setReturnable((keyword1, scope) -> {
+            return keyword1.getArguments().get(0).getReturnType(scope);
+        });
         aReturn1.setGenerator((c, keyword1, type, method) -> {
-            method.returns(Object.class);
             method.addStatement("return $L", JavaGen.litArg(c, keyword1, 0, type, method));
             return null;
         });
@@ -1047,7 +1142,7 @@ public class ShadowCommons extends ShadowAPI {
                     public boolean hasNext() {
                         return index < Array.getLength(o);
                     }
-        
+                    
                     @Override
                     public Object next() {
                         return Array.get(o, index++);
@@ -1062,10 +1157,14 @@ public class ShadowCommons extends ShadowAPI {
         });
         foreach.setEnterCallback(BlockEnterCallback.iterateParameter(0));
         foreach.setEndCallback(BlockEndCallback.iterateParameter(0));
+        foreach.setParamLookup(ParamLookup.constant(String.class));
         foreach.setGenerator((c, block, type, method) -> {
-            String variable = block.getParameters().get(0).getName();
+            Parameter p = block.getParameters().get(0);
+            Class<?> loopType = Object.class;
+            Class<?> arg = block.getArguments().get(0).getReturnType(c.getScope());
+            if (arg.isArray()) loopType = arg.getComponentType();
             String iterable = JavaGen.litArg(c, block, 0, type, method);
-            method.beginControlFlow("for (Object $L : $L)", variable, iterable);
+            method.beginControlFlow("for ($T $L : $L)", loopType, p.getName(), iterable);
             block.addBody(c, type, method);
             method.endControlFlow();
         });
@@ -1110,6 +1209,11 @@ public class ShadowCommons extends ShadowAPI {
             context1.pokeModule(name.getName());
         });
         using.setContextTransformer(ContextTransformer.blockModule(0));
+        using.setGenerator((c, block, type, method) -> {
+            method.beginControlFlow("");
+            block.addBody(c, type, method);
+            method.endControlFlow();
+        });
         context.addBlock(using);
     }
     

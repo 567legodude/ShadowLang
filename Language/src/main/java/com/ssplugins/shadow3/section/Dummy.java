@@ -5,6 +5,7 @@ import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.TokenReader;
+import com.ssplugins.shadow3.util.CompileScope;
 
 public class Dummy extends ShadowSection {
     
@@ -15,6 +16,11 @@ public class Dummy extends ShadowSection {
     
     @Override
     public Object toObject(Scope scope) {
+        return null;
+    }
+    
+    @Override
+    public Class<?> getReturnType(CompileScope scope) {
         return null;
     }
     

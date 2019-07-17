@@ -8,6 +8,7 @@ import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.section.Compound;
 import com.ssplugins.shadow3.util.OperatorTree;
 
+import javax.lang.model.SourceVersion;
 import javax.tools.*;
 import javax.tools.JavaCompiler.CompilationTask;
 import java.io.File;
@@ -17,23 +18,14 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 // Helper methods for compiling Java
 public class JavaGen {
     
     public static String checkName(String name) {
-        if (!isValidIdentifier(name)) throw new ShadowException("Invalid module name: " + name);
+        if (!SourceVersion.isName(name)) throw new ShadowException("Invalid module name: " + name);
         return name;
-    }
-    
-    public static boolean isValidIdentifier(String name) {
-        int len = name.length();
-        if (len == 0) return false;
-        if (!Character.isJavaIdentifierStart(name.charAt(0))) return false;
-        for (int i = 1; i < len; ++i) {
-            if (!Character.isJavaIdentifierPart(name.charAt(i))) return false;
-        }
-        return true;
     }
     
     public static File compile(JavaFile javaFile) throws IOException {
@@ -78,6 +70,24 @@ public class JavaGen {
         return entity.getArguments().get(arg).getGeneration(context, type, method);
     }
     
+    public static int countParameters(Compound compound) {
+        AtomicInteger counter = new AtomicInteger(0);
+        countNodes(counter::getAndIncrement, compound.getOpTree().getRoot());
+        return counter.get();
+    }
+    
+    private static void countNodes(Runnable increment, OperatorTree.Node node) {
+        if (node instanceof OperatorTree.OpNode) {
+            if (!((OperatorTree.OpNode) node).getValue().getSymbol().equals(",")) {
+                throw new ShadowException("Invalid parameters.");
+            }
+            OperatorTree.Node[] c = node.getChildren();
+            countNodes(increment, c[0]);
+            countNodes(increment, c[1]);
+        }
+        increment.run();
+    }
+    
     public static String literalParameters(Compound compound, GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
         StringBuilder builder = new StringBuilder();
         addNode(builder, compound.getOpTree().getRoot(), context, type, method);
@@ -85,11 +95,11 @@ public class JavaGen {
     }
     
     private static void addNode(StringBuilder builder, OperatorTree.Node node, GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
-        OperatorTree.Node[] c = node.getChildren();
         if (node instanceof OperatorTree.OpNode) {
             if (!((OperatorTree.OpNode) node).getValue().getSymbol().equals(",")) {
                 throw new ShadowException("Invalid parameters.");
             }
+            OperatorTree.Node[] c = node.getChildren();
             addNode(builder, c[0], context, type, method);
             builder.append(", ");
             addNode(builder, c[1], context, type, method);

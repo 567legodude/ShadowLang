@@ -10,6 +10,11 @@ public class ListReader<T> extends Reader<T> {
         this.list = list;
     }
     
+    public ListReader(List<T> list, int start) {
+        this(list);
+        while (start-- > 0) consume();
+    }
+    
     @Override
     protected T get(int index) {
         return list.get(index);

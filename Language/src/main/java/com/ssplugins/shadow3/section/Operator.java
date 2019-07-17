@@ -7,10 +7,10 @@ import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
-import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.TokenReader;
 import com.ssplugins.shadow3.parsing.TokenType;
+import com.ssplugins.shadow3.util.CompileScope;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -34,13 +34,13 @@ public class Operator extends ShadowSection {
     }
     
     @Override
+    public Class<?> getReturnType(CompileScope scope) {
+        return null;
+    }
+    
+    @Override
     public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
-        if (!generated) {
-            OperatorMap map = context.getFullContext().getOperatorMap(getSymbol()).orElseThrow(() -> new ShadowParseError(getLine(), getPrimaryToken().getIndex(), "No operator definition found."));
-            map.getTypes().forEach(operatorType -> operatorType.getGeneration(context, type, method));
-            generated = true;
-        }
-        return context.getComponentName("op_" + componentName(getSymbol()));
+        return null;
     }
     
     public static String componentName(String token) {
