@@ -1109,12 +1109,15 @@ public class ShadowCommons extends ShadowAPI {
         ShadowContext keywordContext = new ShadowContext();
         keywordContext.setName("defContext");
         keyword.setContextTransformer(ContextTransformer.blockUse(keywordContext));
-        KeywordType aReturn1 = new KeywordType("return", new Range.Single(1));
+        KeywordType aReturn1 = new KeywordType("return", new Range.MinMax(0, 1));
         aReturn1.setReturnable((keyword1, scope) -> {
-            return keyword1.getArguments().get(0).getReturnType(scope);
+            List<ShadowSection> args = keyword1.getArguments();
+            if (args.size() == 0) return Returnable.empty();
+            return args.get(0).getReturnType(scope);
         });
         aReturn1.setGenerator((c, keyword1, type, method) -> {
-            method.addStatement("return $L", JavaGen.litArg(c, keyword1, 0, type, method));
+            if (keyword1.getArguments().size() == 0) method.addStatement("return");
+            else method.addStatement("return $L", JavaGen.litArg(c, keyword1, 0, type, method));
             return null;
         });
         aReturn1.setAction(returnArgument(keyword));

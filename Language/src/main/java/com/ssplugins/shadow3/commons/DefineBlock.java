@@ -13,6 +13,7 @@ import com.ssplugins.shadow3.util.Range;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.ssplugins.shadow3.def.OperatorType.OperatorMatcher.numberType;
 
@@ -26,19 +27,25 @@ public class DefineBlock extends BlockType {
         if (block.getDefinition() != this) throw new IllegalArgumentException("Block is not a definition block.");
         KeywordType returnDef = block.getInnerContext().findKeyword("return").orElseThrow(() -> new ShadowException("Could not find definition for return keyword."));
         List<Class<?>> types = new ArrayList<>();
-        addTypes(block, types, returnDef, scope);
-        if (types.size() == 0) return Optional.empty();
+        boolean hasValue = addTypes(block, types, returnDef, scope);
+        if (types.size() == 0 || !hasValue) return Optional.empty();
         if (types.size() == 1) return Optional.of(types.get(0));
         return types.stream().reduce((a, b) -> commonType(a, b, block));
     }
     
-    private void addTypes(ShadowEntity entity, List<Class<?>> types, KeywordType def, CompileScope scope) {
-        if (entity instanceof Block) ((Block) entity).getContents().forEach(e -> addTypes(e, types, def, scope));
+    private boolean addTypes(ShadowEntity entity, List<Class<?>> types, KeywordType def, CompileScope scope) {
+        AtomicBoolean hasValue = new AtomicBoolean(true);
+        if (entity instanceof Block) ((Block) entity).getContents().forEach(e -> {
+            if (!addTypes(e, types, def, scope)) hasValue.set(false);
+        });
         else if (entity instanceof Keyword) {
-            if (((Keyword) entity).getDefinition() == def) {
+            Keyword keyword = (Keyword) entity;
+            if (keyword.getDefinition() == def) {
+                if (keyword.getArguments().size() == 0) return false;
                 types.add(def.getReturnable().getReturnType((Keyword) entity, scope));
             }
         }
+        return hasValue.get();
     }
     
     private Class<?> commonType(Class<?> a, Class<?> b, Block block) {
