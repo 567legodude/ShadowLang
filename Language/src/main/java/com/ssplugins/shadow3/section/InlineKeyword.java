@@ -67,4 +67,8 @@ public class InlineKeyword extends ShadowSection {
         return keyword.getGeneration(context, type, method);
     }
     
+    public Keyword getKeyword() {
+        return keyword;
+    }
+    
 }

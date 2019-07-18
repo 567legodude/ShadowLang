@@ -6,6 +6,7 @@ import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.section.Compound;
+import com.ssplugins.shadow3.section.ShadowSection;
 import com.ssplugins.shadow3.util.OperatorTree;
 
 import javax.lang.model.SourceVersion;
@@ -19,6 +20,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 // Helper methods for compiling Java
 public class JavaGen {
@@ -107,6 +109,10 @@ public class JavaGen {
             return;
         }
         builder.append(node.getGeneration(context, type, method));
+    }
+    
+    public static String toArgs(List<ShadowSection> list, GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        return list.stream().map(section -> section.getGeneration(context, type, method)).collect(Collectors.joining(", "));
     }
     
     //endregion

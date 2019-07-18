@@ -21,6 +21,9 @@ public class Identifier extends ShadowSection {
     public Identifier(TokenReader reader) {
         super(reader.getLine());
         setToken(reader.expect(TokenType.IDENTIFIER));
+        if (getName().startsWith("_")) {
+            throw new ShadowParseError(getLine(), index(), "Variables may not begin with an underscore.");
+        }
         error = ShadowCodeException.section(this, "VariableError", "No variable defined named \"" + getName() + "\"");
     }
     

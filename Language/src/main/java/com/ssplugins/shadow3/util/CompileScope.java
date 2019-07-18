@@ -11,14 +11,16 @@ public class CompileScope {
     
     private Map<String, Class<?>> types = new HashMap<>();
     private Set<String> marks = new HashSet<>();
+    private int temp = 0;
     
     public CompileScope(ShadowContext context) {
         this.context = context;
     }
     
     private CompileScope(ShadowContext context, CompileScope parent) {
-        this.context = context;
+        this(context);
         this.parent = parent;
+        this.temp = parent.temp;
     }
     
     private CompileScope find(String key) {
@@ -62,6 +64,10 @@ public class CompileScope {
     
     public void mark(String s) {
         marks.add(s);
+    }
+    
+    public String nextTemp() {
+        return "_tmp" + temp++;
     }
     
     public ShadowContext getContext() {

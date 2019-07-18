@@ -1,11 +1,18 @@
 package com.ssplugins.shadow3.def.custom;
 
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.TypeSpec;
+import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.def.KeywordType;
+import com.ssplugins.shadow3.def.Returnable;
 import com.ssplugins.shadow3.entity.Keyword;
 import com.ssplugins.shadow3.exception.ShadowExecutionError;
+import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
+import com.ssplugins.shadow3.section.InlineKeyword;
 import com.ssplugins.shadow3.section.ShadowSection;
+import com.ssplugins.shadow3.util.CompileScope;
 import com.ssplugins.shadow3.util.Range;
 
 import java.util.ArrayList;
@@ -38,6 +45,8 @@ public abstract class CommandKeyword<I, T extends Transformer<I>> extends Keywor
             }
             return onExecute(keyword, stepper, scope, input);
         });
+        super.setReturnable((keyword, scope) -> getReturnType(keyword.getArguments(), scope));
+        super.setGenerator(this::generate);
     }
     
     protected abstract Object onExecute(Keyword keyword, Stepper stepper, Scope scope, List<T> input);
@@ -52,6 +61,43 @@ public abstract class CommandKeyword<I, T extends Transformer<I>> extends Keywor
         return null;
     }
     
+    protected Class<?> getReturnType(List<ShadowSection> args, CompileScope scope) {
+        if (args.size() == 0) return Returnable.empty();
+        return args.get(args.size() - 1).getReturnType(scope);
+    }
+    
+    protected String generate(GenerateContext context, Keyword keyword, TypeSpec.Builder type, MethodSpec.Builder method) {
+        if (keyword.getArguments().size() == 0) {
+            return generateNoArgs(context, keyword, type, method);
+        }
+        String value = null;
+        for (ShadowSection section : keyword.getArguments()) {
+            value = generateSingle(context, value, section, type, method);
+        }
+        if (value == null) {
+            throw new ShadowParseError(keyword.getLine(), keyword.argumentIndex(-1), "Keyword did not generate any code.");
+        }
+        return value;
+    }
+    
+    protected String generateSingle(GenerateContext context, String value, ShadowSection section, TypeSpec.Builder type, MethodSpec.Builder method) {
+        if (!(section instanceof InlineKeyword)) {
+            throw new ShadowParseError(section.getLine(), section.index(), "Unsupported input type.");
+        }
+        Keyword k = ((InlineKeyword) section).getKeyword();
+        KeywordType def = getLookupContext().findKeyword(k.getName())
+                                            .filter(t -> t == k.getDefinition())
+                                            .orElseThrow(() -> new ShadowParseError(section.getLine(), section.index(), "Unknown command keyword."));
+        if (!(def instanceof SubKeyword)) {
+            throw new ShadowParseError(section.getLine(), section.index(), "Invalid keyword definition.");
+        }
+        return ((SubKeyword) def).getCommandGen().generate(value, context, k, type, method);
+    }
+    
+    protected String generateNoArgs(GenerateContext context, Keyword keyword, TypeSpec.Builder type, MethodSpec.Builder method) {
+        throw new ShadowParseError(keyword.getLine(), keyword.argumentIndex(-1), "Keyword action is undefined.");
+    }
+    
     protected final Object useTransform(Keyword keyword, List<T> input) {
         Object value = null;
         for (int i = 0; i < input.size(); i++) {
@@ -61,6 +107,12 @@ public abstract class CommandKeyword<I, T extends Transformer<I>> extends Keywor
             value = transformInput(input.get(i), inputType.cast(value));
         }
         return value;
+    }
+    
+    protected void requireValue(String input, Keyword keyword) {
+        if (input == null) {
+            throw new ShadowParseError(keyword.getLine(), keyword.argumentIndex(-1), "Argument received no input.");
+        }
     }
     
 }

@@ -15,6 +15,10 @@ public interface Returnable {
         return (keyword, scope) -> Void.class;
     }
     
+    static Returnable any() {
+        return (keyword, scope) -> Object.class;
+    }
+    
     static Returnable of(Class<?> type) {
         return (keyword, scope) -> type;
     }
