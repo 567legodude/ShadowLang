@@ -37,9 +37,7 @@ public class ListKeyword extends CommandKeyword<List, ListKeyword.ListTransforme
     
         SubKeyword arraylist = new SubKeyword("arraylist", new Range.None());
         arraylist.setAction((keyword, stepper, scope) -> {
-            return (ListTransformer) input -> {
-                return new ArrayList<>();
-            };
+            return (ListTransformer) input -> new ArrayList<>();
         });
         arraylist.setReturnable(listReturn);
         arraylist.setCommandGen((input, c, keyword, type, method) -> {
@@ -51,9 +49,7 @@ public class ListKeyword extends CommandKeyword<List, ListKeyword.ListTransforme
     
         SubKeyword linkedlist = new SubKeyword("linkedlist", new Range.None());
         linkedlist.setAction((keyword, stepper, scope) -> {
-            return (ListTransformer) input -> {
-                return new LinkedList<>();
-            };
+            return (ListTransformer) input -> new LinkedList<>();
         });
         linkedlist.setReturnable(listReturn);
         linkedlist.setCommandGen((input, c, keyword, type, method) -> {
@@ -163,6 +159,21 @@ public class ListKeyword extends CommandKeyword<List, ListKeyword.ListTransforme
             return CodeBlock.of("$L.size()", input).toString();
         });
         context.addKeyword(size);
+    
+        SubKeyword clear = new SubKeyword("clear", new Range.None());
+        clear.setAction((keyword, stepper, scope) -> {
+            return (ListTransformer) input -> {
+                input.clear();
+                return input;
+            };
+        });
+        clear.setReturnable(listReturn);
+        clear.setCommandGen((input, c, keyword, type, method) -> {
+            requireValue(input, keyword);
+            method.addStatement("$L.clear()", input);
+            return input;
+        });
+        context.addKeyword(clear);
     }
     
     @Override
@@ -181,11 +192,6 @@ public class ListKeyword extends CommandKeyword<List, ListKeyword.ListTransforme
     @Override
     protected Object onExecute(Keyword keyword, Stepper stepper, Scope scope, List<ListTransformer> input) {
         return useTransform(keyword, input);
-    }
-    
-    @Override
-    protected Object transformInput(ListTransformer input, List data) {
-        return input.transform(data);
     }
     
     @Override

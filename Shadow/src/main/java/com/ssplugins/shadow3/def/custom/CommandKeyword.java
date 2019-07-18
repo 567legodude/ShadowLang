@@ -10,6 +10,7 @@ import com.ssplugins.shadow3.exception.ShadowExecutionError;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
+import com.ssplugins.shadow3.parsing.TokenLine;
 import com.ssplugins.shadow3.section.InlineKeyword;
 import com.ssplugins.shadow3.section.ShadowSection;
 import com.ssplugins.shadow3.util.CompileScope;
@@ -17,6 +18,7 @@ import com.ssplugins.shadow3.util.Range;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 public abstract class CommandKeyword<I, T extends Transformer<I>> extends KeywordType {
     
@@ -51,7 +53,9 @@ public abstract class CommandKeyword<I, T extends Transformer<I>> extends Keywor
     
     protected abstract Object onExecute(Keyword keyword, Stepper stepper, Scope scope, List<T> input);
     
-    protected Object transformInput(T input, I data) {return null;}
+    protected Object transformInput(T input, I data) {
+        return input.transform(data);
+    }
     
     protected Object processArgument(ShadowSection section, int index, Scope scope) {
         return section.toObject(scope);
@@ -109,10 +113,18 @@ public abstract class CommandKeyword<I, T extends Transformer<I>> extends Keywor
         return value;
     }
     
-    protected void requireValue(String input, Keyword keyword) {
+    private void requireValue(String input, Supplier<TokenLine> line, Supplier<Integer> index) {
         if (input == null) {
-            throw new ShadowParseError(keyword.getLine(), keyword.argumentIndex(-1), "Argument received no input.");
+            throw new ShadowParseError(line.get(), index.get(), "Argument received no input.");
         }
+    }
+    
+    protected void requireValue(String input, Keyword keyword) {
+        requireValue(input, keyword::getLine, () -> keyword.argumentIndex(-1));
+    }
+    
+    protected void requireValue(String input, ShadowSection section) {
+        requireValue(input, section::getLine, section::index);
     }
     
 }

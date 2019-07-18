@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.ssplugins.shadow3.execute</groupId>
-    <artifactId>Execute</artifactId>
+    <artifactId>Executable</artifactId>
     <version>1.0.0</version>
 
     <build>

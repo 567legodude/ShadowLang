@@ -544,6 +544,12 @@ public class ShadowCommons extends ShadowAPI {
     }
     
     @Entity
+    void keywordHSet() {
+        HSetKeyword hSet = new HSetKeyword();
+        context.addKeyword(hSet);
+    }
+    
+    @Entity
     void keywordLen() {
         KeywordType len = new KeywordType("len", new Range.Single(1));
         len.setAction((keyword, stepper, scope) -> {

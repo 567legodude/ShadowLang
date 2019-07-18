@@ -25,6 +25,16 @@ public class TypeChecker {
         TypeChecker.check(scope, section).is(type).orError();
     }
     
+    public TypeChecker type(Class<?> type) {
+        this.type = type;
+        return this;
+    }
+    
+    public TypeChecker isArray() {
+        valid = section.getReturnType(scope).isArray();
+        return this;
+    }
+    
     // Will be false for different number types.
     public TypeChecker is(Class<?> type) {
         this.type = type;
@@ -35,6 +45,10 @@ public class TypeChecker {
     public Class<?> orError() {
         if (valid) return type;
         throw new ShadowParseError(section.getLine(), section.index(), "Expected type \"" + type.getSimpleName() + "\" here.");
+    }
+    
+    public boolean check() {
+        return valid;
     }
     
 }
