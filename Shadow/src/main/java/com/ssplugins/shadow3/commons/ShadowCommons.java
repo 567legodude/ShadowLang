@@ -11,7 +11,6 @@ import com.ssplugins.shadow3.compile.OperatorGen;
 import com.ssplugins.shadow3.def.*;
 import com.ssplugins.shadow3.def.custom.NumberCompareOp;
 import com.ssplugins.shadow3.def.custom.NumberOperatorType;
-import com.ssplugins.shadow3.def.custom.StringPredicate;
 import com.ssplugins.shadow3.entity.Block;
 import com.ssplugins.shadow3.entity.Keyword;
 import com.ssplugins.shadow3.entity.ShadowEntity;
@@ -194,30 +193,6 @@ public class ShadowCommons extends ShadowAPI {
             return p;
         });
         context.addOperator(param);
-    }
-    
-    @Entity
-    void operatorInput() {
-        OperatorType<Object, ShadowPredicate, Boolean> input = new OperatorType<>("=>", OpOrder.INPUT, Object.class, ShadowPredicate.class, boolean.class, (o, predicate) -> {
-            Parameters params;
-            if (o instanceof Parameters) params = (Parameters) o;
-            else {
-                params = new Parameters();
-                params.addParam(o);
-            }
-            return predicate.get().test(params);
-        });
-        context.addOperator(input);
-        OperatorType<Object, BasicInputModifier, Object> inputMod = new OperatorType<>("=>", OpOrder.INPUT, Object.class, BasicInputModifier.class, Object.class, (o, mod) -> {
-            Parameters params;
-            if (o instanceof Parameters) params = (Parameters) o;
-            else {
-                params = new Parameters();
-                params.addParam(o);
-            }
-            return mod.getFunction().apply(params);
-        });
-        context.addOperator(inputMod);
     }
     
     @Entity
@@ -706,75 +681,66 @@ public class ShadowCommons extends ShadowAPI {
     
     @Entity
     void keywordStartsWith() {
-        StringPredicate startsWith = new StringPredicate("starts_with");
-        startsWith.setTest(String::startsWith);
+        KeywordType startsWith = new KeywordType("starts_with", new Range.Single(2));
+        startsWith.setAction((keyword, stepper, scope) -> {
+            return keyword.getString(0, scope).startsWith(keyword.getString(1, scope));
+        });
         context.addKeyword(startsWith);
     }
     
     @Entity
     void keywordEndsWith() {
-        StringPredicate endsWith = new StringPredicate("ends_with");
-        endsWith.setTest(String::endsWith);
+        KeywordType endsWith = new KeywordType("ends_with", new Range.Single(2));
+        endsWith.setAction((keyword, stepper, scope) -> {
+            return keyword.getString(0, scope).endsWith(keyword.getString(1, scope));
+        });
         context.addKeyword(endsWith);
     }
     
     @Entity
     void keywordContains() {
-        StringPredicate contains = new StringPredicate("contains");
-        contains.setTest(String::contains);
+        KeywordType contains = new KeywordType("contains", new Range.Single(2));
+        contains.setAction((keyword, stepper, scope) -> {
+            return keyword.getString(0, scope).contains(keyword.getString(1, scope));
+        });
         context.addKeyword(contains);
     }
     
     @Entity
     void keywordSplit() {
-        KeywordType split = new KeywordType("split", new Range.MinMax(1, 2));
+        KeywordType split = new KeywordType("split", new Range.MinMax(2, 3));
         split.setAction((keyword, stepper, scope) -> {
-            BasicInputModifier bim = new BasicInputModifier(keyword.getLine(), keyword.argumentIndex(-1));
-            bim.setCheck(ShadowPredicate.match(1, String.class));
-            bim.setModifier(p -> {
-                String s = (String) p.getParams().get(0);
-                String regex = keyword.getString(0, scope);
-                if (keyword.getArguments().size() > 1) {
-                    int limit = keyword.getInt(1, scope);
-                    return s.split(regex, limit);
-                }
-                return s.split(regex);
-            });
-            return bim;
+            String string = keyword.getString(0, scope);
+            String s = keyword.getString(1, scope);
+            if (keyword.getArguments().size() > 1) {
+                int limit = keyword.getInt(1, scope);
+                return string.split(s, limit);
+            }
+            else return string.split(s);
         });
         context.addKeyword(split);
     }
     
     @Entity
     void keywordReplace() {
-        KeywordType replace = new KeywordType("replace", new Range.Single(2));
+        KeywordType replace = new KeywordType("replace", new Range.Single(3));
         replace.setAction((keyword, stepper, scope) -> {
-            BasicInputModifier bim = new BasicInputModifier(keyword.getLine(), keyword.argumentIndex(-1));
-            bim.setCheck(ShadowPredicate.match(1, String.class));
-            bim.setModifier(p -> {
-                String s = (String) p.getParams().get(0);
-                String find = keyword.getString(0, scope);
-                String replacement = keyword.getString(1, scope);
-                return s.replace(find, replacement);
-            });
-            return bim;
+            String string = keyword.getString(0, scope);
+            String find = keyword.getString(1, scope);
+            String rep = keyword.getString(2, scope);
+            return string.replace(find, rep);
         });
         context.addKeyword(replace);
     }
     
     @Entity
     void keywordReplaceAll() {
-        KeywordType replaceAll = new KeywordType("replace_all", new Range.Single(2));
+        KeywordType replaceAll = new KeywordType("replace_all", new Range.Single(3));
         replaceAll.setAction((keyword, stepper, scope) -> {
-            BasicInputModifier bim = new BasicInputModifier(keyword.getLine(), keyword.argumentIndex(-1));
-            bim.setCheck(ShadowPredicate.match(1, String.class));
-            bim.setModifier(p -> {
-                String s = (String) p.getParams().get(0);
-                String find = keyword.getString(0, scope);
-                String replacement = keyword.getString(1, scope);
-                return s.replaceAll(find, replacement);
-            });
-            return bim;
+            String string = keyword.getString(0, scope);
+            String find = keyword.getString(1, scope);
+            String rep = keyword.getString(2, scope);
+            return string.replaceAll(find, rep);
         });
         context.addKeyword(replaceAll);
     }
