@@ -1,6 +1,7 @@
 package com.ssplugins.shadow3.def;
 
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.BlockEffector;
 import com.ssplugins.shadow3.compile.BlockGen;
 import com.ssplugins.shadow3.entity.Block;
 import com.ssplugins.shadow3.util.Range;
@@ -19,6 +20,8 @@ public class BlockType {
     private BlockEndCallback endCallback;
     private ParamLookup paramLookup;
     private BlockGen generator;
+    private boolean effectsScope;
+    private BlockEffector effector;
     
     private ContextTransformer<Block> contextTransformer = ContextTransformer.blockNone();
     private ShadowContext lookupContext;
@@ -95,6 +98,22 @@ public class BlockType {
     
     public void setGenerator(BlockGen generator) {
         this.generator = generator;
+    }
+    
+    public boolean effectsScope() {
+        return effectsScope;
+    }
+    
+    public void setEffectsScope(boolean effectsScope) {
+        this.effectsScope = effectsScope;
+    }
+    
+    public BlockEffector getEffector() {
+        return effector;
+    }
+    
+    public void setEffector(BlockEffector effector) {
+        this.effector = effector;
     }
     
     public ContextTransformer<Block> getContextTransformer() {

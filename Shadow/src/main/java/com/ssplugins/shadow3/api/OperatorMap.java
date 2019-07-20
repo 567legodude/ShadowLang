@@ -10,7 +10,7 @@ import java.util.Optional;
 public class OperatorMap {
     
     private Operator.OpOrder order;
-    private boolean leftToRight = true;
+    private boolean leftToRight;
     private List<OperatorType<?, ?, ?>> types;
     private List<OperatorType<?, ?, ?>> search;
     
@@ -61,7 +61,7 @@ public class OperatorMap {
     }
     
     public boolean canContain(OperatorType type) {
-        return types.stream().noneMatch(t -> type.getLeftWrap() == t.getLeftWrap() && type.getRightWrap() == t.getRightWrap());
+        return types.stream().noneMatch(t -> type.getLeftType() == t.getLeftType() && type.getRightType() == t.getRightType());
     }
     
     public boolean insert(OperatorType action) {

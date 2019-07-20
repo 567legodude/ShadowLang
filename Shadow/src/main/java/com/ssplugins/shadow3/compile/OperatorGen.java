@@ -9,7 +9,7 @@ public interface OperatorGen<L, R> {
     
     static <L, R> OperatorGen<L, R> between(String s) {
         return (leftGen, rightGen, left, right, type, method) -> {
-            if (leftGen == null) return s + " " + rightGen;
+            if (leftGen == null) return s + rightGen;
             return leftGen + " " + s + " " + rightGen;
         };
     }

@@ -7,7 +7,9 @@ import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.section.Compound;
 import com.ssplugins.shadow3.section.ShadowSection;
+import com.ssplugins.shadow3.util.CompileScope;
 import com.ssplugins.shadow3.util.OperatorTree;
+import com.ssplugins.shadow3.util.Pair;
 
 import javax.lang.model.SourceVersion;
 import javax.tools.*;
@@ -17,9 +19,11 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 // Helper methods for compiling Java
@@ -72,43 +76,59 @@ public class JavaGen {
         return entity.getArguments().get(arg).getGeneration(context, type, method);
     }
     
-    public static int countParameters(Compound compound) {
-        AtomicInteger counter = new AtomicInteger(0);
-        countNodes(counter::getAndIncrement, compound.getOpTree().getRoot());
-        return counter.get();
+    public static List<Pair<Class<?>, Integer>> parameterTypeIndex(Compound compound, CompileScope scope) {
+        List<Pair<Class<?>, Integer>> types = new ArrayList<>();
+        getNodes(node -> types.add(new Pair<Class<?>, Integer>(node.returnType(scope), leftmostIndex(node))), null, compound.getOpTree().getRoot());
+        return types;
     }
     
-    private static void countNodes(Runnable increment, OperatorTree.Node node) {
+    public static List<Class<?>> parameterTypes(Compound compound, CompileScope scope) {
+        List<Class<?>> types = new ArrayList<>();
+        getNodes(node -> types.add(node.returnType(scope)), null, compound.getOpTree().getRoot());
+        return types;
+    }
+    
+    public static int parameterIndex(Compound compound, int index) {
+        List<OperatorTree.Node> nodes = new ArrayList<>();
+        getNodes(nodes::add, null, compound.getOpTree().getRoot());
+        return leftmostIndex(nodes.get(index));
+    }
+    
+    private static int leftmostIndex(OperatorTree.Node node) {
         if (node instanceof OperatorTree.OpNode) {
-            if (!((OperatorTree.OpNode) node).getValue().getSymbol().equals(",")) {
-                throw new ShadowException("Invalid parameters.");
-            }
-            OperatorTree.Node[] c = node.getChildren();
-            countNodes(increment, c[0]);
-            countNodes(increment, c[1]);
-            return;
+            return leftmostIndex(node.getChildren()[0]);
         }
-        increment.run();
+        if (node instanceof OperatorTree.UnaryOpNode) {
+            return leftmostIndex(node.getChildren()[0]);
+        }
+        return ((OperatorTree.SectionNode) node).getSection().index();
+    }
+    
+    public static int countParameters(Compound compound) {
+        AtomicInteger counter = new AtomicInteger(0);
+        getNodes(node -> counter.getAndIncrement(), null, compound.getOpTree().getRoot());
+        return counter.get();
     }
     
     public static String literalParameters(Compound compound, GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
         StringBuilder builder = new StringBuilder();
-        addNode(builder, compound.getOpTree().getRoot(), context, type, method);
+        getNodes(node -> builder.append(node.getGeneration(context, type, method)), () -> builder.append(", "), compound.getOpTree().getRoot());
         return builder.toString();
     }
     
-    private static void addNode(StringBuilder builder, OperatorTree.Node node, GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+    private static void getNodes(Consumer<OperatorTree.Node> consumer, Runnable between, OperatorTree.Node node) {
         if (node instanceof OperatorTree.OpNode) {
             if (!((OperatorTree.OpNode) node).getValue().getSymbol().equals(",")) {
-                throw new ShadowException("Invalid parameters.");
+                consumer.accept(node);
+                return;
             }
             OperatorTree.Node[] c = node.getChildren();
-            addNode(builder, c[0], context, type, method);
-            builder.append(", ");
-            addNode(builder, c[1], context, type, method);
+            getNodes(consumer, between, c[0]);
+            if (between != null) between.run();
+            getNodes(consumer, between, c[1]);
             return;
         }
-        builder.append(node.getGeneration(context, type, method));
+        consumer.accept(node);
     }
     
     public static String toArgs(List<ShadowSection> list, GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {

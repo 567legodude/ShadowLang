@@ -38,7 +38,7 @@ public class ArrayKeyword extends CommandKeyword<Object, ArrayKeyword.ArrayTrans
         SubKeyword aNew = new SubKeyword("new", new Range.Single(1));
         aNew.setAction((keyword, stepper, scope) -> {
             return (ArrayTransformer) input -> {
-                Integer size = keyword.getArgument(0, Integer.class, scope, "Argument must be an integer.");
+                int size = keyword.getInt(0, scope);
                 return Array.newInstance(Object.class, size);
             };
         });
@@ -55,7 +55,7 @@ public class ArrayKeyword extends CommandKeyword<Object, ArrayKeyword.ArrayTrans
         SubKeyword get = new SubKeyword("get", new Range.Single(1));
         get.setAction((keyword, stepper, scope) -> {
             return (ArrayTransformer) input -> {
-                Integer index = keyword.getArgument(0, Integer.class, scope, "Argument must be an integer.");
+                int index = keyword.getInt(0, scope);
                 return Array.get(input, index);
             };
         });
@@ -71,8 +71,8 @@ public class ArrayKeyword extends CommandKeyword<Object, ArrayKeyword.ArrayTrans
         SubKeyword swap = new SubKeyword("swap", new Range.Single(2));
         swap.setAction((keyword, stepper, scope) -> {
             return (ArrayTransformer) input -> {
-                Integer i1 = keyword.getArgument(0, Integer.class, scope, "Argument must be an integer.");
-                Integer i2 = keyword.getArgument(1, Integer.class, scope, "Argument must be an integer.");
+                int i1 = keyword.getInt(0, scope);
+                int i2 = keyword.getInt(1, scope);
                 Object v = Array.get(input, i1);
                 Array.set(input, i1, Array.get(input, i2));
                 Array.set(input, i2, v);

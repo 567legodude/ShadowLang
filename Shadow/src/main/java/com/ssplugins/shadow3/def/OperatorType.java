@@ -4,6 +4,7 @@ import com.ssplugins.shadow3.api.OperatorMap;
 import com.ssplugins.shadow3.compile.OperatorGen;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
+import com.ssplugins.shadow3.util.NumberType;
 
 import java.util.function.BiFunction;
 
@@ -19,21 +20,23 @@ public class OperatorType<L, R, O> {
     private OperatorAction<L, R, O> action;
     private OperatorGen<L, R> generator;
     
+    @SuppressWarnings("unchecked")
     public OperatorType(String token, Class<L> leftType, Class<R> rightType, Class<O> outputType, OperatorAction<L, R, O> action) {
         this.token = token;
-        this.leftType = leftType;
-        this.rightType = rightType;
-        this.outputType = outputType;
+        this.leftType = (Class<L>) OperatorMap.wrap(leftType);
+        this.rightType = (Class<R>) OperatorMap.wrap(rightType);
+        this.outputType = (Class<O>) OperatorMap.wrap(outputType);
         this.action = action;
         order = assumeOrder(token);
     }
     
+    @SuppressWarnings("unchecked")
     public OperatorType(String token, OpOrder order, Class<L> leftType, Class<R> rightType, Class<O> outputType, OperatorAction<L, R, O> action) {
         this.token = token;
         this.order = order;
-        this.leftType = leftType;
-        this.rightType = rightType;
-        this.outputType = outputType;
+        this.leftType = (Class<L>) OperatorMap.wrap(leftType);
+        this.rightType = (Class<R>) OperatorMap.wrap(rightType);
+        this.outputType = (Class<O>) OperatorMap.wrap(outputType);
         this.action = action;
     }
     
@@ -61,20 +64,12 @@ public class OperatorType<L, R, O> {
         this.leftToRight = leftToRight;
     }
     
-    public Class<L> getLeftType() {
+    public Class<?> getLeftType() {
         return leftType;
     }
     
-    public Class<?> getLeftWrap() {
-        return OperatorMap.wrap(leftType);
-    }
-    
-    public Class<R> getRightType() {
+    public Class<?> getRightType() {
         return rightType;
-    }
-    
-    public Class<?> getRightWrap() {
-        return OperatorMap.wrap(rightType);
     }
     
     public Class<O> getOutputType() {
@@ -126,25 +121,20 @@ public class OperatorType<L, R, O> {
     
         static OperatorMatcher isAssignable() {
             return (type, left, right) -> {
-                if (left == null) return type.getRightWrap().isAssignableFrom(right);
-                return type.getLeftWrap().isAssignableFrom(left) && type.getRightWrap().isAssignableFrom(right);
+                if (left == null) return type.getRightType().isAssignableFrom(right);
+                return type.getLeftType().isAssignableFrom(left) && type.getRightType().isAssignableFrom(right);
             };
         }
     
         static OperatorMatcher sameType() {
             return (type, left, right) -> {
-                if (left == null) return type.getRightWrap() == right;
-                return type.getLeftWrap() == left && type.getRightWrap() == right;
+                if (left == null) return type.getRightType() == right;
+                return type.getLeftType() == left && type.getRightType() == right;
             };
         }
     
         static boolean numberType(Class<?> type) {
-            return type == Byte.class ||
-                    type == Short.class ||
-                    type == Integer.class ||
-                    type == Long.class ||
-                    type == Float.class ||
-                    type == Double.class;
+            return NumberType.from(type) != null;
         }
     
         static boolean notNumbers(Class<?> left, Class<?> right) {

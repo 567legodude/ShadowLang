@@ -1,6 +1,7 @@
 package com.ssplugins.shadow3.def.custom;
 
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.OperatorGen;
 import com.ssplugins.shadow3.def.OperatorType;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
 
@@ -40,21 +41,25 @@ public class NumberCompareOp {
         if (intOp != null) {
             OperatorType<Integer, Integer, Boolean> intType = new OperatorType<>(token, order, int.class, int.class, boolean.class, intOp);
             intType.setMatcher(OperatorType.OperatorMatcher.forInt());
+            intType.setGenerator(OperatorGen.between(token));
             context.addOperator(intType);
         }
         if (doubleOp != null) {
             OperatorType<Double, Double, Boolean> doubleType = new OperatorType<>(token, order, double.class, double.class, boolean.class, doubleOp);
             doubleType.setMatcher(OperatorType.OperatorMatcher.forDouble());
+            doubleType.setGenerator(OperatorGen.between(token));
             context.addOperator(doubleType);
         }
         if (floatOp != null) {
             OperatorType<Float, Float, Boolean> floatType = new OperatorType<>(token, order, float.class, float.class, boolean.class, floatOp);
             floatType.setMatcher(OperatorType.OperatorMatcher.forFloat());
+            floatType.setGenerator(OperatorGen.between(token));
             context.addOperator(floatType);
         }
         if (longOp != null) {
             OperatorType<Long, Long, Boolean> longType = new OperatorType<>(token, order, long.class, long.class, boolean.class, longOp);
             longType.setMatcher(OperatorType.OperatorMatcher.forLong());
+            longType.setGenerator(OperatorGen.between(token));
             context.addOperator(longType);
         }
     }

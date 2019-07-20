@@ -223,7 +223,7 @@ public class OperatorTree {
                 type = getType(scope.getContext(), left, right);
             }
             //noinspection unchecked (Types are known at this point)
-            return type.getAction().execute(operands[0], operands[1], type.getLeftWrap(), type.getRightWrap());
+            return type.getAction().execute(operands[0], operands[1], type.getLeftType(), type.getRightType());
         }
         
         @Override
@@ -240,7 +240,7 @@ public class OperatorTree {
             Node[] c = getChildren();
             String left = c[0] == null ? "null" : c[0].getGeneration(context, type, method);
             String right = c[1] == null ? "null" : c[1].getGeneration(context, type, method);
-            String generate = def.getGenerator().generate(left, right, def.getLeftWrap(), def.getRightWrap(), type, method);
+            String generate = def.getGenerator().generate(left, right, def.getLeftType(), def.getRightType(), type, method);
             return "(" + generate + ")";
         }
         
@@ -285,7 +285,7 @@ public class OperatorTree {
                 type = getType(scope.getContext(), opType);
             }
             //noinspection unchecked (Type is known at this point)
-            return type.getAction().execute(null, operand, Void.class, type.getRightWrap());
+            return type.getAction().execute(null, operand, Void.class, type.getRightType());
         }
         
         @Override
@@ -301,7 +301,7 @@ public class OperatorTree {
             findType(context.getScope());
             Node[] c = getChildren();
             String right = c[0] == null ? "null" : c[0].getGeneration(context, type, method);
-            String generate = def.getGenerator().generate(null, right, Void.class, def.getRightWrap(), type, method);
+            String generate = def.getGenerator().generate(null, right, Void.class, def.getRightType(), type, method);
             return "(" + generate + ")";
         }
         

@@ -97,8 +97,6 @@ public class Operator extends ShadowSection {
     
     public enum OpOrder {
         
-        COMMA,
-        INPUT,
         UNARY,
         EXPONENT,
         MUL_DIV,
@@ -111,7 +109,8 @@ public class Operator extends ShadowSection {
         B_OR,
         AND,
         OR,
-        ASSIGNMENT;
+        ASSIGNMENT,
+        COMMA;
     
         public static Optional<OpOrder> get(String token) {
             switch (token) {

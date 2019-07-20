@@ -8,6 +8,7 @@ import com.ssplugins.shadow3.execute.Stepper;
 import com.ssplugins.shadow3.parsing.TokenLine;
 import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.ShadowSection;
+import com.ssplugins.shadow3.util.NumberType;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -70,7 +71,7 @@ public abstract class ShadowEntity implements JavaComponent {
     public <T> T getArgument(int index, Class<T> type, Scope scope, String err) {
         ShadowSection section = getArguments().get(index);
         Object o = section.toObject(scope);
-        if (!type.isInstance(o)) throw ShadowCodeException.sectionExec(section, err).get();
+        if (!NumberType.isAssignableFrom(type, o.getClass())) throw ShadowCodeException.sectionExec(section, err).get();
         return type.cast(o);
     }
     
@@ -84,12 +85,32 @@ public abstract class ShadowEntity implements JavaComponent {
         return getArgumentSection(index, Identifier.class, "Argument should be an identifier.");
     }
     
+    public Number getNumber(int index, Class<? extends Number> type, Scope scope) {
+        ShadowSection section = getArguments().get(index);
+        Object o = section.toObject(scope);
+        NumberType t = NumberType.from(type);
+        if (t == null || !t.validValue(o.getClass())) throw ShadowCodeException.sectionExec(section, "Argument must be a number.").get();
+        return (Number) o;
+    }
+    
+    public Number getNumber(int index, Scope scope) {
+        return getNumber(index, Double.class, scope);
+    }
+    
     public String getString(int index, Scope scope) {
         return getArgument(index, String.class, scope, "Argument must be a string.");
     }
     
     public int getInt(int index, Scope scope) {
         return getArgument(index, Integer.class, scope, "Argument must be an integer.");
+    }
+    
+    public long getLong(int index, Scope scope) {
+        return getArgument(index, Long.class, scope, "Argument must be a long.");
+    }
+    
+    public double getDouble(int index, Scope scope) {
+        return getArgument(index, Double.class, scope, "Argument must be a double.");
     }
     
     public boolean getBoolean(int index, Scope scope) {

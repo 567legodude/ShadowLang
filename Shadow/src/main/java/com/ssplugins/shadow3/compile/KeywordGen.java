@@ -8,4 +8,8 @@ public interface KeywordGen {
     
     String generate(GenerateContext c, Keyword keyword, TypeSpec.Builder type, MethodSpec.Builder method);
     
+    static KeywordGen none() {
+        return (c, keyword, type, method) -> null;
+    }
+    
 }

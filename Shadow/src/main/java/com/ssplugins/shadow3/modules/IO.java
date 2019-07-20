@@ -1,11 +1,15 @@
 package com.ssplugins.shadow3.modules;
 
+import com.squareup.javapoet.CodeBlock;
 import com.ssplugins.shadow3.api.ShadowAPI;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.TypeChecker;
 import com.ssplugins.shadow3.def.KeywordType;
+import com.ssplugins.shadow3.def.Returnable;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
 import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.execute.Scope;
+import com.ssplugins.shadow3.section.ShadowSection;
 import com.ssplugins.shadow3.util.Range;
 
 import java.io.*;
@@ -41,8 +45,14 @@ public class IO extends ShadowAPI {
     void keywordFile() {
         KeywordType file = new KeywordType("file", new Range.Single(1));
         file.setAction((keyword, stepper, scope) -> {
-            String path = keyword.getArgument(0, String.class, scope, "Argument must be a string.");
+            String path = keyword.getString(0, scope);
             return new File(path);
+        });
+        file.setReturnable(Returnable.of(File.class));
+        file.setGenerator((c, keyword, type, method) -> {
+            ShadowSection section = keyword.getArguments().get(0);
+            TypeChecker.require(c.getScope(), section, String.class);
+            return CodeBlock.of("new $T($L)", File.class, section.getGeneration(c, type, method)).toString();
         });
         context.addKeyword(file);
     }
@@ -53,6 +63,12 @@ public class IO extends ShadowAPI {
         exists.setAction((keyword, stepper, scope) -> {
             File f = keyword.getArgument(0, File.class, scope, "Argument must be a file.");
             return f.exists();
+        });
+        exists.setReturnable(Returnable.of(Boolean.class));
+        exists.setGenerator((c, keyword, type, method) -> {
+            ShadowSection section = keyword.getArguments().get(0);
+            TypeChecker.require(c.getScope(), section, File.class);
+            return CodeBlock.of("$L.exists()", section.getGeneration(c, type, method)).toString();
         });
         context.addKeyword(exists);
     }
@@ -65,7 +81,7 @@ public class IO extends ShadowAPI {
             try {
                 String mode = "r";
                 if (keyword.getArguments().size() > 1) {
-                    mode = keyword.getArgument(1, String.class, scope, "Argument must be a string.");
+                    mode = keyword.getString(1, scope);
                     mode = mode.toLowerCase();
                     if (mode.endsWith("+")) {
                         mode = mode.substring(0, mode.length() - 1);
@@ -154,7 +170,7 @@ public class IO extends ShadowAPI {
         KeywordType write = new KeywordType("write", new Range.LowerBound(2));
         write.setAction((keyword, stepper, scope) -> {
             Writer writer = keyword.getArgument(0, Writer.class, scope, "Argument must be a writer.");
-            String content = keyword.getArgument(1, String.class, scope, "Argument must be a string.");
+            String content = keyword.getString(1, scope);
             try {
                 writer.write(content);
             } catch (IOException e) {
@@ -170,7 +186,7 @@ public class IO extends ShadowAPI {
         KeywordType writeLine = new KeywordType("write_line", new Range.LowerBound(2));
         writeLine.setAction((keyword, stepper, scope) -> {
             Writer writer = keyword.getArgument(0, Writer.class, scope, "Argument must be a writer.");
-            String content = keyword.getArgument(1, String.class, scope, "Argument must be a string.");
+            String content = keyword.getString(1, scope);
             try {
                 writer.write(content + "\n");
             } catch (IOException e) {

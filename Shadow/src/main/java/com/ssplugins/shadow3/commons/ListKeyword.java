@@ -123,7 +123,7 @@ public class ListKeyword extends CommandKeyword<List, ListKeyword.ListTransforme
         SubKeyword get = new SubKeyword("get", new Range.Single(1));
         get.setAction((keyword, stepper, scope) -> {
             return (ListTransformer) input -> {
-                Integer i = keyword.getArgument(0, Integer.class, scope, "Argument must be an integer.");
+                int i = keyword.getInt(0, scope);
                 return input.get(i);
             };
         });

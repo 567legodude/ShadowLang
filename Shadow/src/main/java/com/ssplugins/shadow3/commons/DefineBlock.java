@@ -19,12 +19,13 @@ import static com.ssplugins.shadow3.def.OperatorType.OperatorMatcher.numberType;
 
 public class DefineBlock extends BlockType {
     
-    public DefineBlock() {
-        super("define", new Range.Single(1), new Range.Any());
+    public DefineBlock(String name) {
+        super(name, new Range.Single(1), new Range.Any());
     }
     
     public Optional<Class<?>> getReturnType(Block block, CompileScope scope) {
         if (block.getDefinition() != this) throw new IllegalArgumentException("Block is not a definition block.");
+        block.getParameters().forEach(p -> scope.addCheck(p.getName(), p.getType()));
         KeywordType returnDef = block.getInnerContext().findKeyword("return").orElseThrow(() -> new ShadowException("Could not find definition for return keyword."));
         List<Class<?>> types = new ArrayList<>();
         boolean hasValue = addTypes(block, types, returnDef, scope);
@@ -35,12 +36,23 @@ public class DefineBlock extends BlockType {
     
     private boolean addTypes(ShadowEntity entity, List<Class<?>> types, KeywordType def, CompileScope scope) {
         AtomicBoolean hasValue = new AtomicBoolean(true);
-        if (entity instanceof Block) ((Block) entity).getContents().forEach(e -> {
-            if (!addTypes(e, types, def, scope)) hasValue.set(false);
-        });
+        if (entity instanceof Block) {
+            Block b = (Block) entity;
+            if (b.getDefinition().effectsScope()) {
+                b.getDefinition().getEffector().apply(b, scope);
+            }
+            CompileScope compileScope = scope.newBlock();
+            b.getContents().forEach(e -> {
+                if (!addTypes(e, types, def, compileScope)) hasValue.set(false);
+            });
+        }
         else if (entity instanceof Keyword) {
             Keyword keyword = (Keyword) entity;
-            if (keyword.getDefinition() == def) {
+            KeywordType kt = keyword.getDefinition();
+            if (kt.effectsScope()) {
+                kt.getEffector().apply(keyword, scope);
+            }
+            if (kt == def) {
                 if (keyword.getArguments().size() == 0) return false;
                 types.add(def.getReturnable().getReturnType((Keyword) entity, scope));
             }

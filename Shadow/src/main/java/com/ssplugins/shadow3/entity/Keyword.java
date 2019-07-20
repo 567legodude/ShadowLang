@@ -45,7 +45,7 @@ public class Keyword extends ShadowEntity {
     
         Range args = definition.getArguments();
         if (!args.contains(arguments.size())) {
-            throw new NamedShadowException("", getLine(), getLine().firstToken().getIndex(), "Keyword expects " + args.toString("argument") + ", found " + arguments.size());
+            throw new NamedShadowException("", getLine(), argumentIndex(-1), "Keyword expects " + args.toString("argument") + ", found " + arguments.size());
         }
     
         ParseCallback<Keyword> parseCallback = definition.getParseCallback();
