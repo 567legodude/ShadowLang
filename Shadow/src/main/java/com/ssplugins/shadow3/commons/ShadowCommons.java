@@ -302,8 +302,13 @@ public class ShadowCommons extends ShadowAPI {
     @Entity
     void operatorDivide() {
         OperatorType<Number, Number, Double> div = new OperatorType<>("/", Number.class, Number.class, double.class, (a, b) -> a.doubleValue() / b.doubleValue());
-        div.setGenerator(OperatorGen.between("/"));
+        div.setGenerator(OperatorGen.between("/ (double)"));
         context.addOperator(div);
+        OperatorType<Number, Number, Integer> intDiv = new OperatorType<>("/.", OpOrder.MUL_DIV, Number.class, Number.class, int.class, (a, b) -> a.intValue() / b.intValue());
+        intDiv.setGenerator((leftGen, rightGen, left, right, type, method) -> {
+            return CodeBlock.of("(int) $L / (int) $L", leftGen, rightGen).toString();
+        });
+        context.addOperator(intDiv);
     }
     
     @Entity
@@ -366,9 +371,9 @@ public class ShadowCommons extends ShadowAPI {
             return null;
         });
         exit.setGenerator((c, keyword, type, method) -> {
-            return CodeBlock.of("$T.exit(0)", System.class).toString();
+            method.addStatement("$T.exit(0)", System.class);
+            return null;
         });
-        exit.setStatementMode(true);
         context.addKeyword(exit);
     }
     

@@ -21,6 +21,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DefineBlock extends BlockType {
     
+    private static class Self {}
+    
     public DefineBlock(String name) {
         super(name, new Range.Of(1, 3), new Range.Any());
     }
@@ -37,7 +39,8 @@ public class DefineBlock extends BlockType {
         if (block.isChecked()) {
             if (block.getReturnType() == null) {
                 if (block.getDeclaredType() == null) {
-                    throw new ShadowParseError(block.getLine(), block.argumentIndex(-1), "Recursive function detected, cannot infer return type.");
+//                    throw new ShadowParseError(block.getLine(), block.argumentIndex(-1), "Recursive function detected, cannot infer return type.");
+                    return Optional.of(Self.class);
                 }
                 block.setReturnType(block.getDeclaredType());
             }
@@ -62,7 +65,11 @@ public class DefineBlock extends BlockType {
         else {
             output = types.stream().reduce((a, b) -> commonType(a, b, block));
         }
-        block.setReturnType(output.get());
+        Class<?> returnType = output.get();
+        if (returnType == Self.class) {
+            throw new ShadowParseError(block.getLine(), block.argumentIndex(-1), "Recursive function detected, cannot infer return type.");
+        }
+        block.setReturnType(returnType);
         if (block.getDeclaredType() != null && !NumberType.isAssignableFrom(block.getDeclaredType(), block.getReturnType())) {
             throw new ShadowParseError(block.getLine(), block.argumentIndex(2), "Inferred return type doesn't match declared type.");
         }
@@ -89,6 +96,8 @@ public class DefineBlock extends BlockType {
     }
     
     private Class<?> commonType(Class<?> a, Class<?> b, Block block) {
+        if (a == Self.class) return b;
+        if (b == Self.class) return a;
         if (a == b) return a;
         if (NumberType.isAssignableFrom(a, b)) return a;
         if (NumberType.isAssignableFrom(b, a)) return b;
