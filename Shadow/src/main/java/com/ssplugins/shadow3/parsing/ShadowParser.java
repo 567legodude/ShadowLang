@@ -2,7 +2,6 @@ package com.ssplugins.shadow3.parsing;
 
 import com.ssplugins.shadow3.Shadow;
 import com.ssplugins.shadow3.api.ShadowContext;
-import com.ssplugins.shadow3.def.ParamLookup;
 import com.ssplugins.shadow3.entity.Block;
 import com.ssplugins.shadow3.entity.EntityList;
 import com.ssplugins.shadow3.entity.Keyword;
@@ -13,7 +12,6 @@ import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.section.*;
 import com.ssplugins.shadow3.util.CompileScope;
 import com.ssplugins.shadow3.util.LineReader;
-import com.ssplugins.shadow3.util.Parameter;
 
 import java.io.File;
 import java.io.IOException;
@@ -120,27 +118,20 @@ public class ShadowParser {
         while (reader.hasNext()) {
             contents.add(reader.nextEntity(null, null));
         }
-        CompileScope compileScope = new CompileScope(context);
-        contents.forEach(entity -> checkType(entity, compileScope));
+        contents.forEach(entity -> checkType(entity, new CompileScope(context)));
         return shadow;
     }
     
     public static void checkType(ShadowEntity entity, CompileScope scope) {
-        if (entity instanceof Block) checkTypes((Block) entity, scope.newBlock());
+        if (entity instanceof Block) {
+            CompileScope cs = scope.newBlock();
+            Block b = (Block) entity;
+            b.findParameterTypes(cs);
+            b.getContents().forEach(e -> checkType(e, cs));
+        }
         else {
-            Keyword keyword = (Keyword) entity;
-            keyword.getDefinition().getReturnable().getReturnType(keyword, scope);
+            ((Keyword) entity).findReturnType(scope);
         }
-    }
-    
-    public static void checkTypes(Block block, CompileScope scope) {
-        ParamLookup lookup = block.getDefinition().getParamLookup();
-        List<Parameter> parameters = block.getParameters();
-        for (int i = 0; i < parameters.size(); i++) {
-            Parameter parameter = parameters.get(i);
-            scope.addCheck(parameter.getName(), (lookup != null ? lookup.getParamType(i, block) : parameter.getType()));
-        }
-        block.getContents().forEach(entity -> checkType(entity, scope));
     }
     
     public ShadowContext getContext() {

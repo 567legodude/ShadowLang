@@ -4,6 +4,7 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.compile.GenerateContext;
+import com.ssplugins.shadow3.compile.KeywordEffector;
 import com.ssplugins.shadow3.def.KeywordAction;
 import com.ssplugins.shadow3.def.KeywordType;
 import com.ssplugins.shadow3.def.ParseCallback;
@@ -14,6 +15,7 @@ import com.ssplugins.shadow3.execute.Stepper;
 import com.ssplugins.shadow3.parsing.TokenReader;
 import com.ssplugins.shadow3.parsing.TokenType;
 import com.ssplugins.shadow3.section.ShadowSection;
+import com.ssplugins.shadow3.util.CompileScope;
 import com.ssplugins.shadow3.util.Range;
 import com.ssplugins.shadow3.util.Schema;
 
@@ -28,6 +30,9 @@ public class Keyword extends ShadowEntity {
     
     private KeywordType definition;
     private ShadowContext innerContext;
+    
+    private Class<?> returnType;
+    private KeywordEffector effector;
     
     public Keyword(ShadowEntity parent, TokenReader def, ShadowContext fallback) {
         super(def.getLine(), parent);
@@ -121,8 +126,22 @@ public class Keyword extends ShadowEntity {
     @Override
     public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
         String generate = getDefinition().getGenerator().generate(context, this, type, method);
+        if (effector != null) effector.apply(this, context.getScope());
         if (!isInline() && getDefinition().isStatementMode()) method.addStatement(generate);
         return generate;
+    }
+    
+    public void findReturnType(CompileScope scope) {
+//        if (returnType != null) return;
+        returnType = definition.getReturnable().getReturnType(this, scope);
+    }
+    
+    public Class<?> getReturnType() {
+        return returnType;
+    }
+    
+    public void setEffector(KeywordEffector effector) {
+        this.effector = effector;
     }
     
     public void setInnerContext(ShadowContext innerContext) {

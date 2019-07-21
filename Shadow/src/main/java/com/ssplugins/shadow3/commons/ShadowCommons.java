@@ -19,11 +19,8 @@ import com.ssplugins.shadow3.execute.Stepper;
 import com.ssplugins.shadow3.modules.IO;
 import com.ssplugins.shadow3.modules.SHDMath;
 import com.ssplugins.shadow3.parsing.ShadowParser;
-import com.ssplugins.shadow3.section.Compound;
-import com.ssplugins.shadow3.section.Identifier;
-import com.ssplugins.shadow3.section.Operator;
+import com.ssplugins.shadow3.section.*;
 import com.ssplugins.shadow3.section.Operator.OpOrder;
-import com.ssplugins.shadow3.section.ShadowSection;
 import com.ssplugins.shadow3.util.*;
 
 import javax.lang.model.element.Modifier;
@@ -96,7 +93,6 @@ public class ShadowCommons extends ShadowAPI {
                     size = 1;
                 }
             }
-//            Block block = scope.getContext().findFunction(target.apply(keyword), size).orElseThrow(ShadowCodeException.noDef(keyword.getLine(), keyword.argumentIndex(0), "No matching function found."));
             Block block = search.find(target.apply(keyword), scope, size).orElseThrow(ShadowCodeException.noDef(keyword.getLine(), keyword.argumentIndex(0), "No matching function found."));
             if (size > 0) {
                 List<Parameter> parameters = block.getParameters();
@@ -182,6 +178,7 @@ public class ShadowCommons extends ShadowAPI {
     
     @Entity
     void commonTypes() {
+        context.addType("void", Void.class);
         context.addType("obj", Object.class);
         context.addType("str", String.class);
         context.addType("bool", Boolean.class);
@@ -409,12 +406,9 @@ public class ShadowCommons extends ShadowAPI {
                 scope.set(name, o);
                 return o;
             }
-            Operator op = keyword.getArgumentSection(1, Operator.class, "Expecting \":\" here.");
-            if (!op.getSymbol().equals(":")) {
-                throw new ShadowParseError(op.getLine(), op.index(), "Expecting \":\" here.");
-            }
+            Operator.requireComma(keyword, 1);
             Identifier type = keyword.getIdentifier(2);
-            Class<?> c = scope.getContext().findType(type.getName()).orElseThrow(() -> new ShadowParseError(type.getLine(), type.index(), "Type not defined."));
+            Class<?> c = scope.getContext().getType(keyword, type.getName());
             Object o = keyword.argumentValue(3, scope);
             if (!NumberType.isAssignableFrom(c, o.getClass())) {
                 throw new ShadowParseError(keyword.getLine(), keyword.argumentIndex(3), "Argument type doesn't match declared type.");
@@ -423,15 +417,27 @@ public class ShadowCommons extends ShadowAPI {
             return o;
         });
         set.setReturnable((keyword, scope) -> {
-            Pair<Boolean, Class<?>> result = validateVariable(keyword, scope);
+            Identifier name = keyword.getIdentifier(0);
+            Class<?> expected;
+            if (keyword.getArguments().size() == 2) {
+                expected = keyword.getArguments().get(1).getReturnType(scope);
+            }
+            else {
+                expected = scope.getContext().findType(keyword.getIdentifier(2).getName()).orElseThrow(() -> new ShadowParseError(keyword.getLine(), keyword.argumentIndex(2), "Type not defined."));
+            }
+            scope.checkMark(name.getValidName(), keyword);
+            Pair<Boolean, Class<?>> result = scope.addCheck(name.getName(), expected);
+            if (!result.getLeft()) {
+                throw new ShadowParseError(keyword.getLine(), keyword.argumentIndex(1), "Invalid assignment. Expected type: " + result.getRight().getSimpleName());
+            }
             return result.getRight();
         });
         set.setGenerator((c, keyword, type, method) -> {
             CompileScope scope = c.getScope();
-            String name = keyword.getIdentifier(0).getValidName();
+            String name = keyword.getIdentifier(0).getName();
             String value;
             String cast = "";
-            Class<?> returnType = keyword.getDefinition().getReturnable().getReturnType(keyword, scope);
+            Class<?> returnType = keyword.getReturnType();
             if (keyword.getArguments().size() == 2) {
                 value = JavaGen.litArg(c, keyword, 1, type, method);
             }
@@ -440,34 +446,16 @@ public class ShadowCommons extends ShadowAPI {
                 cast = CodeBlock.of(" ($T)", returnType).toString();
             }
             if (name.equals(value)) return name;
-            if (!scope.isMarked(name)) {
-                scope.mark(name);
-                method.addStatement("$T $L =" + cast + " $L", returnType, name, value);
-            }
-            else {
-                method.addStatement("$L =" + cast + " $L", name, value);
-            }
+            CodeBlock.Builder code = CodeBlock.builder();
+            if (!scope.isMarked(name)) code.add("$T ", returnType);
+            code.add("$L = ", name);
+            if (!cast.isEmpty()) code.add("($T) ", returnType);
+            code.add("$L", value);
+            scope.addCheck(name, returnType);
+            method.addStatement(code.build());
             return name;
         });
-        set.setEffectsScope(true);
-        set.setEffector(this::validateVariable);
         context.addKeyword(set);
-    }
-    
-    private Pair<Boolean, Class<?>> validateVariable(Keyword keyword, CompileScope scope) {
-        Identifier name = keyword.getIdentifier(0);
-        Class<?> expected;
-        if (keyword.getArguments().size() == 2) {
-            expected = keyword.getArguments().get(1).getReturnType(scope);
-        }
-        else {
-            expected = scope.getContext().findType(keyword.getIdentifier(2).getName()).orElseThrow(() -> new ShadowParseError(keyword.getLine(), keyword.argumentIndex(2), "Type not defined."));
-        }
-        Pair<Boolean, Class<?>> result = scope.addCheck(name.getValidName(), expected);
-        if (!result.getLeft()) {
-            throw new ShadowParseError(keyword.getLine(), keyword.argumentIndex(1), "Invalid assignment. Expected type: " + result.getRight().getSimpleName());
-        }
-        return result;
     }
     
     @Entity
@@ -847,7 +835,7 @@ public class ShadowCommons extends ShadowAPI {
         });
         aTry.setGenerator((c, keyword, type, method) -> {
             List<ShadowSection> args = keyword.getArguments();
-            Class<?> returnType = keyword.getDefinition().getReturnable().getReturnType(keyword, c.getScope());
+            Class<?> returnType = keyword.getReturnType();
             String tmp = c.getScope().nextTemp();
             method.addStatement("$T $L", returnType, tmp)
                   .beginControlFlow("try");
@@ -855,8 +843,17 @@ public class ShadowCommons extends ShadowAPI {
             method.addStatement("$L = $L", tmp, value)
                   .nextControlFlow("catch ($T $L)", Exception.class, c.getScope().nextTemp());
             value = args.get(2).getGeneration(c, type, method);
-            method.addStatement("$L = $L", tmp, value)
-                  .endControlFlow();
+            Class<?> errType = args.get(2).getReturnType(c.getScope());
+            if (errType != Void.class) {
+                method.addStatement("$L = $L", tmp, value);
+            }
+            else if (args.get(2) instanceof InlineKeyword) {
+                if (((InlineKeyword) args.get(2)).getKeyword().getDefinition().isStatementMode()) {
+                    method.addStatement(value);
+                }
+                method.addStatement("$L = null", tmp);
+            }
+            method.endControlFlow();
             return tmp;
         });
         context.addKeyword(aTry);
@@ -916,6 +913,24 @@ public class ShadowCommons extends ShadowAPI {
         java.setAction((keyword, stepper, scope) -> null);
         java.setGenerator(KeywordGen.none());
         context.addKeyword(java);
+    }
+    
+    @Entity
+    void keywordCast() {
+        KeywordType cast = new KeywordType("cast", new Range.Single(3));
+        cast.setAction((keyword, stepper, scope) -> {
+            Operator.requireComma(keyword, 1);
+            return keyword.argumentValue(2, scope);
+        });
+        cast.setReturnable((keyword, scope) -> {
+            return scope.getContext().getType(keyword, keyword.getIdentifier(0).getName());
+        });
+        cast.setGenerator((c, keyword, type, method) -> {
+            Class<?> t = c.getFullContext().getType(keyword, keyword.getIdentifier(0).getName());
+            ShadowSection section = keyword.getArguments().get(2);
+            return CodeBlock.of("(($T) $L)", t, section.getGeneration(c, type, method)).toString();
+        });
+        context.addKeyword(cast);
     }
     
     //region String
@@ -1401,11 +1416,15 @@ public class ShadowCommons extends ShadowAPI {
     @Entity
     void blockDefine() {
         BlockType define = new DefineBlock("define");
-        define.setParseCallback((block, c) -> c.addFunction(block));
+        define.setParseCallback((block, c) -> {
+            DefineBlock.getDeclaredType(block, c);
+            c.addFunction(block);
+        });
         setupDefinition(define, false);
         
         BlockType keyword = new DefineBlock("keyword");
         keyword.setParseCallback((b, c) -> {
+            DefineBlock.getDeclaredType(b, c);
             Identifier name = (Identifier) b.getArguments().get(0);
             KeywordType keywordType = new KeywordType(name.getName(), new Range.MinMax(0, 1));
             keywordType.setAction((keyword1, stepper, scope) -> {
@@ -1440,24 +1459,16 @@ public class ShadowCommons extends ShadowAPI {
         keyword.setEnterCallback(ShadowCommons::argsToParams);
         keyword.setGenerator((c, block, type, method) -> {
             String name = c.getComponentName((direct ? "k" : "") + "def_" + block.getIdentifier(0).getName());
-            if (c.nameExists(name))
+            if (c.nameExists(name)) {
                 throw new ShadowParseError(block.getLine(), block.argumentIndex(0), "Duplicate function definition.");
+            }
             c.addName(name);
             Optional<Class<?>> returnType = ((DefineBlock) block.getDefinition()).getReturnType(block, new CompileScope(c.getFullContext()));
             MethodSpec.Builder spec = MethodSpec.methodBuilder(name)
-                                                .returns(returnType.orElse(void.class));
+                                                .returns(returnType.filter(rt -> rt != Void.class).orElse(void.class));
             block.getParameters().forEach(param -> spec.addParameter(param.getType(), param.getName()));
             block.addBody(c, type, spec);
             type.addMethod(spec.build());
-        });
-        keyword.setEffectsScope(true);
-        keyword.setEffector((block, scope) -> {
-            if (block.getArguments().size() > 0) {
-                Pair<Boolean, Class<?>> result = scope.addCheck(block.getIdentifier(0).getValidName(), Double.class);
-                if (!result.getLeft()) {
-                    throw new ShadowParseError(block.getLine(), block.argumentIndex(1), "Invalid assignment. Expected type: " + result.getRight().getSimpleName());
-                }
-            }
         });
         context.addBlock(keyword);
         
@@ -1518,15 +1529,21 @@ public class ShadowCommons extends ShadowAPI {
         foreach.setGenerator((c, block, type, method) -> {
             ShadowSection input = block.getArguments().get(0);
             Parameter p = block.getParameters().get(0);
-            Class<?> loopType = Object.class;
+            Class<?> loopType = p.getType();
             Class<?> arg = input.getReturnType(c.getScope());
             if (arg.isArray()) loopType = arg.getComponentType();
             String iterable = JavaGen.litArg(c, block, 0, type, method);
             if (Iterator.class.isAssignableFrom(input.getReturnType(c.getScope()))) {
-                String name = c.getScope().nextTemp();
+                String name = c.getScope().parent().nextTemp();
                 method.addStatement("$T $L = $L", arg, name, iterable);
-                method.beginControlFlow("while ($L.hasNext())", name)
-                      .addStatement("$T $L = $L.next()", loopType, p.getName(), name);
+                method.beginControlFlow("while ($L.hasNext())", name);
+                CodeBlock.Builder code = CodeBlock.builder();
+                code.add("$T $L = ", loopType, p.getName());
+                if (loopType != Object.class) {
+                    code.add("($T) ", loopType);
+                }
+                code.add("$L.next()", name);
+                method.addStatement(code.build());
                 block.addBody(c, type, method);
             }
             else {
@@ -1589,6 +1606,7 @@ public class ShadowCommons extends ShadowAPI {
                 }
                 else {
                     c.getScope().mark(v.getName());
+                    c.getScope().addCheck(v.getName(), Double.class);
                     method.addStatement("double $L = $L", v.getName(), t);
                 }
             }

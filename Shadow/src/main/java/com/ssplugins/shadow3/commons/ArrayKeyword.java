@@ -167,7 +167,7 @@ public class ArrayKeyword extends CommandKeyword<Object, ArrayKeyword.ArrayTrans
     @Override
     protected String generateSingle(GenerateContext context, String value, ShadowSection section, TypeSpec.Builder type, MethodSpec.Builder method) {
         if (section instanceof Identifier) {
-            TypeChecker.check(context.getScope(), section).isArray().orError();
+            TypeChecker.check(context.getScope(), section).type(Object[].class).isArray().orError();
             return section.getGeneration(context, type, method);
         }
         if (section instanceof ShadowNumber) {

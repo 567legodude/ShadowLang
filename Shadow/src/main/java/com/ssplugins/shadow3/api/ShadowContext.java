@@ -5,7 +5,9 @@ import com.ssplugins.shadow3.def.BlockType;
 import com.ssplugins.shadow3.def.KeywordType;
 import com.ssplugins.shadow3.def.OperatorType;
 import com.ssplugins.shadow3.entity.Block;
+import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowException;
+import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.Operator;
 
@@ -215,6 +217,10 @@ public class ShadowContext {
     
     public Optional<Class<?>> findType(String name) {
         return Optional.ofNullable(types.get(name));
+    }
+    
+    public Class<?> getType(ShadowEntity entity, String name) {
+        return findType(name).orElseThrow(() -> new ShadowParseError(entity.getLine(), entity.argumentIndex(2), "Type not defined."));
     }
     
     //endregion

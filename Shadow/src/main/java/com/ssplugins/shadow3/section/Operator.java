@@ -7,6 +7,7 @@ import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
+import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.TokenReader;
 import com.ssplugins.shadow3.parsing.TokenType;
@@ -26,6 +27,13 @@ public class Operator extends ShadowSection {
     public Operator(TokenReader reader) {
         super(reader.getLine());
         setToken(reader.expect(TokenType.OPERATOR));
+    }
+    
+    public static void requireComma(ShadowEntity entity, int index) {
+        Operator op = entity.getArgumentSection(index, Operator.class, "Expecting \":\" here.");
+        if (!op.getSymbol().equals(":")) {
+            throw new ShadowParseError(op.getLine(), op.index(), "Expecting \":\" here.");
+        }
     }
     
     @Override

@@ -51,7 +51,6 @@ public class TypeChecker {
         return this;
     }
     
-    // Will be false for different number types.
     public TypeChecker is(Class<?> type) {
         this.type = type;
         valid = NumberType.isAssignableFrom(type, section.getReturnType(scope));

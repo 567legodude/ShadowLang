@@ -1,7 +1,6 @@
 package com.ssplugins.shadow3.def;
 
 import com.ssplugins.shadow3.api.ShadowContext;
-import com.ssplugins.shadow3.compile.KeywordEffector;
 import com.ssplugins.shadow3.compile.KeywordGen;
 import com.ssplugins.shadow3.entity.Keyword;
 import com.ssplugins.shadow3.util.Range;
@@ -18,8 +17,6 @@ public class KeywordType {
     private Returnable returnable = Returnable.none();
     private KeywordGen generator;
     private boolean statementMode;
-    private boolean effectsScope;
-    private KeywordEffector effector;
     
     private ContextTransformer<Keyword> contextTransformer = ContextTransformer.keywordNone();
     private ShadowContext lookupContext;
@@ -83,22 +80,6 @@ public class KeywordType {
     
     public void setStatementMode(boolean statementMode) {
         this.statementMode = statementMode;
-    }
-    
-    public boolean effectsScope() {
-        return effectsScope;
-    }
-    
-    public void setEffectsScope(boolean effectsScope) {
-        this.effectsScope = effectsScope;
-    }
-    
-    public KeywordEffector getEffector() {
-        return effector;
-    }
-    
-    public void setEffector(KeywordEffector effector) {
-        this.effector = effector;
     }
     
     public ContextTransformer<Keyword> getContextTransformer() {

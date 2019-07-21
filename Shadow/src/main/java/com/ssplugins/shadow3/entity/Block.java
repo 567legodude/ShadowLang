@@ -3,6 +3,7 @@ package com.ssplugins.shadow3.entity;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.BlockEffector;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.def.*;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
@@ -13,6 +14,7 @@ import com.ssplugins.shadow3.parsing.TokenReader;
 import com.ssplugins.shadow3.parsing.TokenType;
 import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.ShadowSection;
+import com.ssplugins.shadow3.util.CompileScope;
 import com.ssplugins.shadow3.util.LineReader;
 import com.ssplugins.shadow3.util.Parameter;
 import com.ssplugins.shadow3.util.Range;
@@ -30,6 +32,11 @@ public class Block extends ShadowEntity {
     
     private BlockType definition;
     private ShadowContext innerContext;
+    
+    private BlockEffector effector;
+    private boolean checked;
+    private Class<?> declaredType;
+    private Class<?> returnType;
     
     public Block(Block parent, LineReader reader) {
         super(reader.next(), parent);
@@ -203,10 +210,24 @@ public class Block extends ShadowEntity {
     @Override
     public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
         context.newBlock();
-        getParameters().forEach(parameter -> context.getScope().addCheck(parameter.getName(), parameter.getType()));
+        if (effector != null) effector.apply(this, context.getScope());
         getDefinition().getGenerator().generate(context, this, type, method);
         context.back();
         return null;
+    }
+    
+    public void findParameterTypes(CompileScope scope) {
+        ParamLookup lookup = definition.getParamLookup();
+        if (lookup != null) {
+            List<Parameter> parameterList = getParameters();
+            for (int i = 0; i < parameterList.size(); i++) {
+                Parameter p = parameterList.get(i);
+                Class<?> paramType = lookup.getParamType(i, this);
+                if (paramType == null || paramType == Object.class) continue;
+                p.setType(paramType);
+            }
+        }
+        getParameters().forEach(p -> scope.addCheck(p.getName(), p.getType()));
     }
     
     public void generateCode(TypeSpec.Builder type, MethodSpec.Builder method) {
@@ -215,14 +236,10 @@ public class Block extends ShadowEntity {
     
     public void addBody(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
         context.newBlock();
-        ParamLookup lookup = getDefinition().getParamLookup();
-        List<Parameter> identifiers = getParameters();
-        for (int i = 0; i < identifiers.size(); i++) {
-            Parameter param = identifiers.get(i);
-            Class<?> t = param.getType();
-            if (lookup != null) t = lookup.getParamType(i, this);
-            context.getScope().addCheck(param.getName(), t);
-        }
+        getParameters().forEach(p -> {
+            context.getScope().mark(p.getName());
+            context.getScope().addCheck(p.getName(), p.getType());
+        });
         getContents().forEach(entity -> entity.getGeneration(context, type, method));
         context.back();
     }
@@ -241,6 +258,34 @@ public class Block extends ShadowEntity {
     
     public BlockType getDefinition() {
         return definition;
+    }
+    
+    public void setEffector(BlockEffector effector) {
+        this.effector = effector;
+    }
+    
+    public boolean isChecked() {
+        return checked;
+    }
+    
+    public void setChecked(boolean checked) {
+        this.checked = checked;
+    }
+    
+    public Class<?> getDeclaredType() {
+        return declaredType;
+    }
+    
+    public void setDeclaredType(Class<?> declaredType) {
+        this.declaredType = declaredType;
+    }
+    
+    public Class<?> getReturnType() {
+        return returnType;
+    }
+    
+    public void setReturnType(Class<?> returnType) {
+        this.returnType = returnType;
     }
     
 }

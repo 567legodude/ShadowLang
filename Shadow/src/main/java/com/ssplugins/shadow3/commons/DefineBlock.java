@@ -1,13 +1,17 @@
 package com.ssplugins.shadow3.commons;
 
+import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.def.BlockType;
 import com.ssplugins.shadow3.def.KeywordType;
+import com.ssplugins.shadow3.def.Returnable;
 import com.ssplugins.shadow3.entity.Block;
 import com.ssplugins.shadow3.entity.Keyword;
 import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowException;
 import com.ssplugins.shadow3.exception.ShadowParseError;
+import com.ssplugins.shadow3.section.ShadowSection;
 import com.ssplugins.shadow3.util.CompileScope;
+import com.ssplugins.shadow3.util.NumberType;
 import com.ssplugins.shadow3.util.Range;
 
 import java.util.ArrayList;
@@ -15,46 +19,70 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.ssplugins.shadow3.def.OperatorType.OperatorMatcher.numberType;
-
 public class DefineBlock extends BlockType {
     
     public DefineBlock(String name) {
-        super(name, new Range.Single(1), new Range.Any());
+        super(name, new Range.Of(1, 3), new Range.Any());
+    }
+    
+    public static void getDeclaredType(Block block, ShadowContext context) {
+        List<ShadowSection> args = block.getArguments();
+        if (args.size() == 1) return;
+        Class<?> type = context.getType(block, block.getIdentifier(2).getName());
+        block.setDeclaredType(type);
     }
     
     public Optional<Class<?>> getReturnType(Block block, CompileScope scope) {
         if (block.getDefinition() != this) throw new IllegalArgumentException("Block is not a definition block.");
-        block.getParameters().forEach(p -> scope.addCheck(p.getName(), p.getType()));
+        if (block.isChecked()) {
+            if (block.getReturnType() == null) {
+                if (block.getDeclaredType() == null) {
+                    throw new ShadowParseError(block.getLine(), block.argumentIndex(-1), "Recursive function detected, cannot infer return type.");
+                }
+                block.setReturnType(block.getDeclaredType());
+            }
+            return Optional.of(block.getReturnType());
+        }
+        block.setChecked(true);
+        block.getParameters().forEach(p -> {
+            scope.mark(p.getName());
+            scope.addCheck(p.getName(), p.getType());
+        });
         KeywordType returnDef = block.getInnerContext().findKeyword("return").orElseThrow(() -> new ShadowException("Could not find definition for return keyword."));
         List<Class<?>> types = new ArrayList<>();
         boolean hasValue = addTypes(block, types, returnDef, scope);
-        if (types.size() == 0 || !hasValue) return Optional.empty();
-        if (types.size() == 1) return Optional.of(types.get(0));
-        return types.stream().reduce((a, b) -> commonType(a, b, block));
+        Optional<Class<?>> output;
+        if (types.size() == 0 || !hasValue) {
+            block.setReturnType(Returnable.empty());
+            return Optional.empty();
+        }
+        if (types.size() == 1) {
+            output = Optional.of(types.get(0));
+        }
+        else {
+            output = types.stream().reduce((a, b) -> commonType(a, b, block));
+        }
+        block.setReturnType(output.get());
+        if (block.getDeclaredType() != null && !NumberType.isAssignableFrom(block.getDeclaredType(), block.getReturnType())) {
+            throw new ShadowParseError(block.getLine(), block.argumentIndex(2), "Inferred return type doesn't match declared type.");
+        }
+        return output;
     }
     
     private boolean addTypes(ShadowEntity entity, List<Class<?>> types, KeywordType def, CompileScope scope) {
         AtomicBoolean hasValue = new AtomicBoolean(true);
         if (entity instanceof Block) {
-            Block b = (Block) entity;
-            if (b.getDefinition().effectsScope()) {
-                b.getDefinition().getEffector().apply(b, scope);
-            }
             CompileScope compileScope = scope.newBlock();
-            b.getContents().forEach(e -> {
+            ((Block) entity).getContents().forEach(e -> {
                 if (!addTypes(e, types, def, compileScope)) hasValue.set(false);
             });
         }
         else if (entity instanceof Keyword) {
             Keyword keyword = (Keyword) entity;
-            KeywordType kt = keyword.getDefinition();
-            if (kt.effectsScope()) {
-                kt.getEffector().apply(keyword, scope);
-            }
-            if (kt == def) {
-                if (keyword.getArguments().size() == 0) return false;
-                types.add(def.getReturnable().getReturnType((Keyword) entity, scope));
+            keyword.findReturnType(scope);
+            if (keyword.getDefinition() == def) {
+                if (keyword.getArguments().size() == 0) hasValue.set(false);
+                types.add(keyword.getReturnType());
             }
         }
         return hasValue.get();
@@ -62,16 +90,8 @@ public class DefineBlock extends BlockType {
     
     private Class<?> commonType(Class<?> a, Class<?> b, Block block) {
         if (a == b) return a;
-        if (a.isAssignableFrom(b)) return a;
-        if (b.isAssignableFrom(a)) return b;
-        if (numberType(a) && numberType(b)) {
-            if (oneOf(a, b, Double.class)) return Double.class;
-            else if (oneOf(a, b, Float.class)) return Float.class;
-            else if (oneOf(a, b, Long.class)) return Long.class;
-            else if (oneOf(a, b, Integer.class)) return Integer.class;
-            else if (oneOf(a, b, Short.class)) return Short.class;
-            else return Byte.class;
-        }
+        if (NumberType.isAssignableFrom(a, b)) return a;
+        if (NumberType.isAssignableFrom(b, a)) return b;
         throw new ShadowParseError(block.getLine(), block.argumentIndex(-1), "Mismatched return types: " + a.getSimpleName() + ", " + b.getSimpleName());
     }
     

@@ -59,7 +59,9 @@ public class InlineKeyword extends ShadowSection {
     
     @Override
     public Class<?> getReturnType(CompileScope scope) {
-        return keyword.getDefinition().getReturnable().getReturnType(keyword, scope);
+        Class<?> returnType = keyword.getReturnType();
+        if (returnType == null) keyword.findReturnType(scope);
+        return keyword.getReturnType();
     }
     
     @Override

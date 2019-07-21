@@ -1,6 +1,7 @@
 package com.ssplugins.shadow3.util;
 
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.entity.Keyword;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,11 +14,12 @@ public class CompileScope {
     private Map<String, Class<?>> types = new HashMap<>();
     private Set<String> marks = new HashSet<>();
     private AtomicInteger globalTemp;
-    private int temp = 0;
+    private AtomicInteger temp;
     
     public CompileScope(ShadowContext context) {
         this.context = context;
         globalTemp = new AtomicInteger(0);
+        temp = new AtomicInteger(0);
     }
     
     private CompileScope(ShadowContext context, CompileScope parent) {
@@ -63,11 +65,18 @@ public class CompileScope {
         Optional<Class<?>> op = get(key);
         if (op.isPresent()) {
             Class<?> type = op.get();
-            if (type.isAssignableFrom(value)) return new Pair<>(true, type);
+            if (NumberType.isAssignableFrom(type, value)) return new Pair<>(true, type);
             return new Pair<>(false, type);
         }
         types.put(key, value);
         return new Pair<>(true, value);
+    }
+    
+    public void checkMark(String s, Keyword keyword) {
+        if (!isMarked(s)) {
+            mark(s);
+            keyword.setEffector((keyword1, scope) -> scope.mark(s));
+        }
     }
     
     public boolean isMarked(String s) {
@@ -79,7 +88,7 @@ public class CompileScope {
     }
     
     public String nextTemp() {
-        return "$" + temp++;
+        return "$" + temp.getAndIncrement();
     }
     
     public String nextGlobalTemp() {

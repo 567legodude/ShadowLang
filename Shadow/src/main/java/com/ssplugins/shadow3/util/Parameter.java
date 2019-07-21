@@ -28,4 +28,8 @@ public class Parameter {
         return type;
     }
     
+    public void setType(Class<?> type) {
+        this.type = type;
+    }
+    
 }
