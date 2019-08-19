@@ -18,10 +18,16 @@ public class ShadowNumber extends ShadowSection {
         setToken(reader.expect(TokenType.NUMBER));
         String raw = getPrimaryToken().getRaw();
         if (raw.indexOf('.') > -1) {
-            if (raw.endsWith("f")) value = Float.parseFloat(raw);
+            if (raw.endsWith("f")) {
+                raw = raw.substring(0, raw.length() - 1);
+                value = Float.parseFloat(raw);
+            }
             else value = Double.parseDouble(raw);
         }
-        else if (raw.endsWith("L")) value = Long.parseLong(raw);
+        else if (raw.endsWith("L")) {
+            raw = raw.substring(0, raw.length() - 1);
+            value = Long.parseLong(raw);
+        }
         else value = Integer.parseInt(raw);
     }
     

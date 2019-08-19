@@ -241,7 +241,8 @@ public class OperatorTree {
             String left = c[0] == null ? "null" : c[0].getGeneration(context, type, method);
             String right = c[1] == null ? "null" : c[1].getGeneration(context, type, method);
             String generate = def.getGenerator().generate(left, right, def.getLeftType(), def.getRightType(), type, method);
-            return "(" + generate + ")";
+//            return "(" + generate + ")";
+            return generate;
         }
         
     }
@@ -302,7 +303,8 @@ public class OperatorTree {
             Node[] c = getChildren();
             String right = c[0] == null ? "null" : c[0].getGeneration(context, type, method);
             String generate = def.getGenerator().generate(null, right, Void.class, def.getRightType(), type, method);
-            return "(" + generate + ")";
+//            return "(" + generate + ")";
+            return generate;
         }
         
     }

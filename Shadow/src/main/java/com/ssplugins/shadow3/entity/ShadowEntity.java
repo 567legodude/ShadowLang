@@ -8,6 +8,7 @@ import com.ssplugins.shadow3.execute.Stepper;
 import com.ssplugins.shadow3.parsing.TokenLine;
 import com.ssplugins.shadow3.section.Identifier;
 import com.ssplugins.shadow3.section.ShadowSection;
+import com.ssplugins.shadow3.section.ShadowString;
 import com.ssplugins.shadow3.util.NumberType;
 
 import java.util.LinkedList;
@@ -99,6 +100,10 @@ public abstract class ShadowEntity implements JavaComponent {
     
     public String getString(int index, Scope scope) {
         return getArgument(index, String.class, scope, "Argument must be a string.");
+    }
+    
+    public ShadowString getStringSection(int index) {
+        return getArgumentSection(index, ShadowString.class, "Argument must be a string literal.");
     }
     
     public int getInt(int index, Scope scope) {

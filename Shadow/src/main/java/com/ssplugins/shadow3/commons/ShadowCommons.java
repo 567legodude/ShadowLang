@@ -195,7 +195,7 @@ public class ShadowCommons extends ShadowAPI {
     
     @Entity
     void operatorComment() {
-        context.addOperator(new OperatorType<>("//", OpOrder.ASSIGNMENT, null, null, null, null));
+        context.addOperator(new OperatorType<>("#", OpOrder.ASSIGNMENT, null, null, null, null));
     }
     
     @Entity
@@ -304,7 +304,7 @@ public class ShadowCommons extends ShadowAPI {
         OperatorType<Number, Number, Double> div = new OperatorType<>("/", Number.class, Number.class, double.class, (a, b) -> a.doubleValue() / b.doubleValue());
         div.setGenerator(OperatorGen.between("/ (double)"));
         context.addOperator(div);
-        OperatorType<Number, Number, Integer> intDiv = new OperatorType<>("/.", OpOrder.MUL_DIV, Number.class, Number.class, int.class, (a, b) -> a.intValue() / b.intValue());
+        OperatorType<Number, Number, Integer> intDiv = new OperatorType<>("//", OpOrder.MUL_DIV, Number.class, Number.class, int.class, (a, b) -> a.intValue() / b.intValue());
         intDiv.setGenerator((leftGen, rightGen, left, right, type, method) -> {
             return CodeBlock.of("(int) $L / (int) $L", leftGen, rightGen).toString();
         });
@@ -323,9 +323,8 @@ public class ShadowCommons extends ShadowAPI {
     
     @Entity
     void operatorModulus() {
-        OperatorType<Number, Number, Double> modulus = new OperatorType<>("%", OpOrder.MUL_DIV, Number.class, Number.class, double.class, (a, b) -> a.doubleValue() % b.doubleValue());
-        modulus.setGenerator(OperatorGen.between("%"));
-        context.addOperator(modulus);
+        NumberOperatorType modulus = new NumberOperatorType("%", OpOrder.MUL_DIV, (a, b) -> a % b, (a, b) -> a % b, (a, b) -> a % b, (a, b) -> a % b);
+        modulus.addTo(context);
     }
     
     @Entity
@@ -415,7 +414,7 @@ public class ShadowCommons extends ShadowAPI {
             Identifier type = keyword.getIdentifier(2);
             Class<?> c = scope.getContext().getType(keyword, type.getName());
             Object o = keyword.argumentValue(3, scope);
-            if (!NumberType.isAssignableFrom(c, o.getClass())) {
+            if (o != null && !NumberType.isAssignableFrom(c, o.getClass())) {
                 throw new ShadowParseError(keyword.getLine(), keyword.argumentIndex(3), "Argument type doesn't match declared type.");
             }
             scope.set(name, o);
@@ -468,12 +467,23 @@ public class ShadowCommons extends ShadowAPI {
         KeywordType type = new KeywordType("type", new Range.Single(1));
         type.setAction((keyword, stepper, scope) -> {
             Object o = keyword.argumentValue(0, scope);
+            if (o == null) return "null";
             return o.getClass().getSimpleName();
         });
         type.setReturnable(Returnable.of(String.class));
         type.setGenerator((c, keyword, type1, method) -> {
+            String name = c.getComponentName("type");
+            c.checkName(name, s -> {
+                MethodSpec spec = MethodSpec.methodBuilder(s)
+                                            .returns(String.class)
+                                            .addParameter(Object.class, "o")
+                                            .addStatement("if (o == null) return \"null\"")
+                                            .addStatement("return o.getClass().getSimpleName()")
+                                            .build();
+                type1.addMethod(spec);
+            });
             String value = keyword.getArguments().get(0).getGeneration(c, type1, method);
-            return CodeBlock.of("(($T) $L).getClass().getSimpleName()", Object.class, value).toString();
+            return CodeBlock.of("$L($L)", name, value).toString();
         });
         context.addKeyword(type);
     }
@@ -551,7 +561,7 @@ public class ShadowCommons extends ShadowAPI {
                 MethodSpec spec = MethodSpec.methodBuilder(s)
                                             .returns(Character[].class)
                                             .addParameter(String.class, "s")
-                                            .addStatement(CodeBlock.of("return ((String) s).chars().mapToObj(i -> (char) i).toArray($T[]::new)", Character.class))
+                                            .addStatement(CodeBlock.of("return s.chars().mapToObj(i -> (char) i).toArray($T[]::new)", Character.class))
                                             .build();
                 type.addMethod(spec);
             });
@@ -572,12 +582,12 @@ public class ShadowCommons extends ShadowAPI {
             int step = keyword.getInt(2, scope);
             return new Iterator<Integer>() {
                 private int value = start;
-        
+                
                 @Override
                 public boolean hasNext() {
                     return value < stop;
                 }
-        
+                
                 @Override
                 public Integer next() {
                     int r = value;
@@ -604,23 +614,23 @@ public class ShadowCommons extends ShadowAPI {
             String name = c.getComponentName("count");
             c.checkName(name, s -> {
                 TypeSpec typeSpec = TypeSpec.anonymousClassBuilder("")
-                                         .addSuperinterface(ParameterizedTypeName.get(Iterator.class, Integer.class))
-                                         .addField(FieldSpec.builder(int.class, "value", Modifier.PRIVATE).initializer("start").build())
-                                         .addMethod(MethodSpec.methodBuilder("hasNext")
-                                                              .addAnnotation(Override.class)
-                                                              .addModifiers(Modifier.PUBLIC)
-                                                              .returns(boolean.class)
-                                                              .addStatement("return value < stop")
-                                                              .build())
-                                         .addMethod(MethodSpec.methodBuilder("next")
-                                                              .addAnnotation(Override.class)
-                                                              .addModifiers(Modifier.PUBLIC)
-                                                              .returns(Integer.class)
-                                                              .addStatement("int r = value")
-                                                              .addStatement("value += step")
-                                                              .addStatement("return r")
-                                                              .build())
-                                         .build();
+                                            .addSuperinterface(ParameterizedTypeName.get(Iterator.class, Integer.class))
+                                            .addField(FieldSpec.builder(int.class, "value", Modifier.PRIVATE).initializer("start").build())
+                                            .addMethod(MethodSpec.methodBuilder("hasNext")
+                                                                 .addAnnotation(Override.class)
+                                                                 .addModifiers(Modifier.PUBLIC)
+                                                                 .returns(boolean.class)
+                                                                 .addStatement("return value < stop")
+                                                                 .build())
+                                            .addMethod(MethodSpec.methodBuilder("next")
+                                                                 .addAnnotation(Override.class)
+                                                                 .addModifiers(Modifier.PUBLIC)
+                                                                 .returns(Integer.class)
+                                                                 .addStatement("int r = value")
+                                                                 .addStatement("value += step")
+                                                                 .addStatement("return r")
+                                                                 .build())
+                                            .build();
                 MethodSpec spec = MethodSpec.methodBuilder(s)
                                             .returns(Iterator.class)
                                             .addParameter(int.class, "start")
@@ -711,14 +721,14 @@ public class ShadowCommons extends ShadowAPI {
             c.checkName(name, s -> {
                 String tmp = c.getScope().nextTemp();
                 MethodSpec spec = MethodSpec.methodBuilder(s)
-                                             .returns(void.class)
-                                             .addParameter(Long.class, "time")
-                                             .beginControlFlow("try")
-                                             .addStatement("$T.sleep(time)", Thread.class)
-                                             .nextControlFlow("catch ($T $L)", InterruptedException.class, tmp)
-                                             .addStatement("throw new $T(\"Sleep interrupted.\", $L)", tmp)
-                                             .endControlFlow()
-                                             .build();
+                                            .returns(void.class)
+                                            .addParameter(Long.class, "time")
+                                            .beginControlFlow("try")
+                                            .addStatement("$T.sleep(time)", Thread.class)
+                                            .nextControlFlow("catch ($T $L)", InterruptedException.class, tmp)
+                                            .addStatement("throw new $T(\"Sleep interrupted.\", $L)", tmp)
+                                            .endControlFlow()
+                                            .build();
                 type.addMethod(spec);
             });
             ShadowSection section = keyword.getArguments().get(0);
@@ -835,7 +845,7 @@ public class ShadowCommons extends ShadowAPI {
             List<ShadowSection> args = keyword.getArguments();
             Class<?> a = args.get(0).getReturnType(scope);
             Class<?> b = args.get(2).getReturnType(scope);
-            if (a.isAssignableFrom(b)) return a;
+            if (a.isAssignableFrom(b) || b == Void.class) return a;
             return Object.class;
         });
         aTry.setGenerator((c, keyword, type, method) -> {
@@ -1195,10 +1205,20 @@ public class ShadowCommons extends ShadowAPI {
     
     @Entity
     void keywordNothing() {
-        KeywordType nothing = new KeywordType("nothing", new Range.Any());
-        nothing.setAction((keyword, stepper, scope) -> null);
-        nothing.setReturnable(Returnable.any());
-        nothing.setGenerator((c, keyword, type, method) -> "null");
+        KeywordType nothing = new KeywordType("nothing", new Range.MinMax(0, 1));
+        nothing.setAction((keyword, stepper, scope) -> {
+            if (keyword.getArguments().size() == 0) return null;
+            return keyword.argumentValue(0, scope) == null;
+        });
+        nothing.setReturnable((keyword, scope) -> {
+            if (keyword.getArguments().size() == 0) return Returnable.empty();
+            return Boolean.class;
+        });
+        nothing.setGenerator((c, keyword, type, method) -> {
+            List<ShadowSection> args = keyword.getArguments();
+            if (args.size() == 0) return "null";
+            return "(" + args.get(0).getGeneration(c, type, method) + " == null)";
+        });
         context.addKeyword(nothing);
     }
     
@@ -1302,6 +1322,9 @@ public class ShadowCommons extends ShadowAPI {
             stepper.breakBlock();
             return null;
         });
+        aBreak.setReturnable(Returnable.none());
+        aBreak.setGenerator((c, keyword, type, method) -> "break");
+        aBreak.setStatementMode(true);
         context.addKeyword(aBreak);
         
         KeywordType aContinue = new KeywordType("continue", new Range.None());
@@ -1310,6 +1333,9 @@ public class ShadowCommons extends ShadowAPI {
             stepper.continueToEnd();
             return null;
         });
+        aContinue.setReturnable(Returnable.none());
+        aContinue.setGenerator((c, keyword, type, method) -> "continue");
+        aContinue.setStatementMode(true);
         context.addKeyword(aContinue);
         
         return context;

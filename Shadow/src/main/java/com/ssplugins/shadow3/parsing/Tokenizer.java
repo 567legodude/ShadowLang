@@ -11,7 +11,7 @@ public class Tokenizer {
     public static final char ESCAPE_CHAR = '\\';
     public static final String GROUPS = "\"'";
     public static final String PAIRS = "(){}[]";
-    public static final String COMMENT = "//";
+    public static final String COMMENT = "#";
     
     public static final int TYPE_STD = 0;
     public static final int TYPE_OTHER = 1;

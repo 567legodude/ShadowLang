@@ -80,6 +80,7 @@ public class DefineBlock extends BlockType {
         AtomicBoolean hasValue = new AtomicBoolean(true);
         if (entity instanceof Block) {
             CompileScope compileScope = scope.newBlock();
+            ((Block) entity).findParameterTypes(compileScope);
             ((Block) entity).getContents().forEach(e -> {
                 if (!addTypes(e, types, def, compileScope)) hasValue.set(false);
             });

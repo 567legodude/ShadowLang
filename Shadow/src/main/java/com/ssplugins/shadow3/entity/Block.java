@@ -227,7 +227,10 @@ public class Block extends ShadowEntity {
                 p.setType(paramType);
             }
         }
-        getParameters().forEach(p -> scope.addCheck(p.getName(), p.getType()));
+        getParameters().forEach(p -> {
+            scope.mark(p.getName());
+            scope.addCheck(p.getName(), p.getType());
+        });
     }
     
     public void generateCode(TypeSpec.Builder type, MethodSpec.Builder method) {
