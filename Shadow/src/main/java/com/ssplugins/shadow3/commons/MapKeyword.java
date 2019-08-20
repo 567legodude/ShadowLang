@@ -1,9 +1,9 @@
 package com.ssplugins.shadow3.commons;
 
-import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.Code;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.compile.TypeChecker;
 import com.ssplugins.shadow3.def.Returnable;
@@ -42,7 +42,7 @@ public class MapKeyword extends CommandKeyword<Map, MapKeyword.MapTransformer> {
         aNew.setCommandGen((input, c, keyword, type, method) -> {
             String name = c.getScope().nextTemp();
             method.addStatement("$T $L = new $T<>()", Map.class, name, HashMap.class);
-            return name;
+            return Code.plain(name);
         });
         context.addKeyword(aNew);
     
@@ -58,8 +58,8 @@ public class MapKeyword extends CommandKeyword<Map, MapKeyword.MapTransformer> {
         put.setCommandGen((input, c, keyword, type, method) -> {
             requireValue(input, keyword);
             List<ShadowSection> args = keyword.getArguments();
-            String key = args.get(0).getGeneration(c, type, method);
-            String value = args.get(1).getGeneration(c, type, method);
+            Code key = args.get(0).getGeneration(c, type, method);
+            Code value = args.get(1).getGeneration(c, type, method);
             method.addStatement("$L.put($L, $L)", input, key, value);
             return input;
         });
@@ -99,7 +99,7 @@ public class MapKeyword extends CommandKeyword<Map, MapKeyword.MapTransformer> {
         contains.setCommandGen((input, c, keyword, type, method) -> {
             requireValue(input, keyword);
             ShadowSection key = keyword.getArguments().get(0);
-            return CodeBlock.of("$L.containsKey($L)", input, key.getGeneration(c, type, method)).toString();
+            return Code.format("$L.containsKey($L)", input, key.getGeneration(c, type, method));
         });
         context.addKeyword(contains);
     
@@ -111,7 +111,7 @@ public class MapKeyword extends CommandKeyword<Map, MapKeyword.MapTransformer> {
         hasValue.setCommandGen((input, c, keyword, type, method) -> {
             requireValue(input, keyword);
             ShadowSection key = keyword.getArguments().get(0);
-            return CodeBlock.of("$L.containsValue($L)", input, key.getGeneration(c, type, method)).toString();
+            return Code.format("$L.containsValue($L)", input, key.getGeneration(c, type, method));
         });
         context.addKeyword(hasValue);
     
@@ -122,7 +122,7 @@ public class MapKeyword extends CommandKeyword<Map, MapKeyword.MapTransformer> {
         size.setReturnable(Returnable.of(Integer.class));
         size.setCommandGen((input, c, keyword, type, method) -> {
             requireValue(input, keyword);
-            return CodeBlock.of("$L.size()", input).toString();
+            return Code.format("$L.size()", input);
         });
         context.addKeyword(size);
     
@@ -133,7 +133,7 @@ public class MapKeyword extends CommandKeyword<Map, MapKeyword.MapTransformer> {
         keyset.setReturnable(Returnable.of(Set.class));
         keyset.setCommandGen((input, c, keyword, type, method) -> {
             requireValue(input, keyword);
-            return CodeBlock.of("$L.keySet()", input).toString();
+            return Code.format("$L.keySet()", input);
         });
         context.addKeyword(keyset);
     
@@ -144,7 +144,7 @@ public class MapKeyword extends CommandKeyword<Map, MapKeyword.MapTransformer> {
         values.setReturnable(Returnable.of(Set.class));
         values.setCommandGen((input, c, keyword, type, method) -> {
             requireValue(input, keyword);
-            return CodeBlock.of("$L.values()", input).toString();
+            return Code.format("$L.values()", input);
         });
         context.addKeyword(values);
     
@@ -179,12 +179,12 @@ public class MapKeyword extends CommandKeyword<Map, MapKeyword.MapTransformer> {
     }
     
     @Override
-    protected String generateNoArgs(GenerateContext context, Keyword keyword, TypeSpec.Builder type, MethodSpec.Builder method) {
-        return CodeBlock.of("new $T<>()", HashMap.class).toString();
+    protected Code generateNoArgs(GenerateContext context, Keyword keyword, TypeSpec.Builder type, MethodSpec.Builder method) {
+        return Code.format("new $T<>()", HashMap.class);
     }
     
     @Override
-    protected String generateSingle(GenerateContext context, String value, ShadowSection section, TypeSpec.Builder type, MethodSpec.Builder method) {
+    protected Code generateSingle(GenerateContext context, Code value, ShadowSection section, TypeSpec.Builder type, MethodSpec.Builder method) {
         if (section instanceof Identifier) {
             TypeChecker.require(context.getScope(), section, Map.class);
             return section.getGeneration(context, type, method);

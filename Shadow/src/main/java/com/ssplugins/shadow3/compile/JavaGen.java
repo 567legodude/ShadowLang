@@ -1,5 +1,6 @@
 package com.ssplugins.shadow3.compile;
 
+import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
@@ -24,7 +25,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 // Helper methods for compiling Java
 public class JavaGen {
@@ -72,7 +72,7 @@ public class JavaGen {
     
     //region Helpers
     
-    public static String litArg(GenerateContext context, ShadowEntity entity, int arg, TypeSpec.Builder type, MethodSpec.Builder method) {
+    public static Code litArg(GenerateContext context, ShadowEntity entity, int arg, TypeSpec.Builder type, MethodSpec.Builder method) {
         return entity.getArguments().get(arg).getGeneration(context, type, method);
     }
     
@@ -110,10 +110,10 @@ public class JavaGen {
         return counter.get();
     }
     
-    public static String literalParameters(Compound compound, GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
-        StringBuilder builder = new StringBuilder();
-        getNodes(node -> builder.append(node.getGeneration(context, type, method)), () -> builder.append(", "), compound.getOpTree().getRoot());
-        return builder.toString();
+    public static Code literalParameters(Compound compound, GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        Code code = Code.empty();
+        getNodes(node -> code.append(node.getGeneration(context, type, method)), () -> code.append(", "), compound.getOpTree().getRoot());
+        return code;
     }
     
     private static void getNodes(Consumer<OperatorTree.Node> consumer, Runnable between, OperatorTree.Node node) {
@@ -131,8 +131,12 @@ public class JavaGen {
         consumer.accept(node);
     }
     
-    public static String toArgs(List<ShadowSection> list, GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
-        return list.stream().map(section -> section.getGeneration(context, type, method)).collect(Collectors.joining(", "));
+    public static Code toArgs(List<ShadowSection> list, GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        CodeBlock block = list.stream()
+                              .map(section -> section.getGeneration(context, type, method))
+                              .map(Code::toCodeBlock)
+                              .collect(CodeBlock.joining(", "));
+        return Code.wrap(block);
     }
     
     //endregion
@@ -147,11 +151,11 @@ public class JavaGen {
         builder.addStatement("$T.out.print($S)", System.class, content);
     }
     
-    public static void printlnValue(MethodSpec.Builder builder, String content) {
+    public static void printlnValue(MethodSpec.Builder builder, Code content) {
         builder.addStatement("$T.out.println($L)", System.class, content);
     }
     
-    public static void printValue(MethodSpec.Builder builder, String content) {
+    public static void printValue(MethodSpec.Builder builder, Code content) {
         builder.addStatement("$T.out.print($L)", System.class, content);
     }
     

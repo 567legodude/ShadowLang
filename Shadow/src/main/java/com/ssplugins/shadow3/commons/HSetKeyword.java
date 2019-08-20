@@ -1,9 +1,9 @@
 package com.ssplugins.shadow3.commons;
 
-import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.Code;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.compile.JavaGen;
 import com.ssplugins.shadow3.compile.TypeChecker;
@@ -43,7 +43,7 @@ public class HSetKeyword extends CommandKeyword<Set, HSetKeyword.SetTransformer>
         aNew.setCommandGen((input, c, keyword, type, method) -> {
             String name = c.getScope().nextTemp();
             method.addStatement("$T $L = new $T<>()", Set.class, name, HashSet.class);
-            return name;
+            return Code.plain(name);
         });
         context.addKeyword(aNew);
     
@@ -95,10 +95,10 @@ public class HSetKeyword extends CommandKeyword<Set, HSetKeyword.SetTransformer>
             requireValue(input, keyword);
             List<ShadowSection> args = keyword.getArguments();
             if (args.size() == 1) {
-                return CodeBlock.of("$L.contains($L)", input, args.get(0).getGeneration(c, type, method)).toString();
+                return Code.format("$L.contains($L)", input, args.get(0).getGeneration(c, type, method));
             }
             else {
-                return CodeBlock.of("$L.containsAll($T.asList($L))", input, Arrays.class, JavaGen.toArgs(args, c, type, method)).toString();
+                return Code.format("$L.containsAll($T.asList($L))", input, Arrays.class, JavaGen.toArgs(args, c, type, method));
             }
         });
         context.addKeyword(contains);
@@ -110,7 +110,7 @@ public class HSetKeyword extends CommandKeyword<Set, HSetKeyword.SetTransformer>
         size.setReturnable(Returnable.of(Integer.class));
         size.setCommandGen((input, c, keyword, type, method) -> {
             requireValue(input, keyword);
-            return CodeBlock.of("$L.size()", input).toString();
+            return Code.format("$L.size()", input);
         });
         context.addKeyword(size);
     
@@ -159,12 +159,12 @@ public class HSetKeyword extends CommandKeyword<Set, HSetKeyword.SetTransformer>
     }
     
     @Override
-    protected String generateNoArgs(GenerateContext context, Keyword keyword, TypeSpec.Builder type, MethodSpec.Builder method) {
-        return CodeBlock.of("new $T<>()", HashSet.class).toString();
+    protected Code generateNoArgs(GenerateContext context, Keyword keyword, TypeSpec.Builder type, MethodSpec.Builder method) {
+        return Code.format("new $T<>()", HashSet.class);
     }
     
     @Override
-    protected String generateSingle(GenerateContext context, String value, ShadowSection section, TypeSpec.Builder type, MethodSpec.Builder method) {
+    protected Code generateSingle(GenerateContext context, Code value, ShadowSection section, TypeSpec.Builder type, MethodSpec.Builder method) {
         if (section instanceof Identifier) {
             TypeChecker.require(context.getScope(), section, Set.class);
             return section.getGeneration(context, type, method);

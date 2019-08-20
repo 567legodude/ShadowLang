@@ -3,6 +3,7 @@ package com.ssplugins.shadow3.util;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.Code;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.compile.JavaComponent;
 import com.ssplugins.shadow3.def.OperatorType;
@@ -235,14 +236,12 @@ public class OperatorTree {
         }
         
         @Override
-        public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        public Code getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
             findType(context.getScope());
             Node[] c = getChildren();
-            String left = c[0] == null ? "null" : c[0].getGeneration(context, type, method);
-            String right = c[1] == null ? "null" : c[1].getGeneration(context, type, method);
-            String generate = def.getGenerator().generate(left, right, def.getLeftType(), def.getRightType(), type, method);
-//            return "(" + generate + ")";
-            return generate;
+            Code left = c[0] == null ? Code.plain("null") : c[0].getGeneration(context, type, method);
+            Code right = c[1] == null ? Code.plain("null") : c[1].getGeneration(context, type, method);
+            return def.getGenerator().generate(left, right, def.getLeftType(), def.getRightType(), type, method);
         }
         
     }
@@ -298,13 +297,11 @@ public class OperatorTree {
         }
         
         @Override
-        public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        public Code getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
             findType(context.getScope());
             Node[] c = getChildren();
-            String right = c[0] == null ? "null" : c[0].getGeneration(context, type, method);
-            String generate = def.getGenerator().generate(null, right, Void.class, def.getRightType(), type, method);
-//            return "(" + generate + ")";
-            return generate;
+            Code right = c[0] == null ? Code.plain("null") : c[0].getGeneration(context, type, method);
+            return def.getGenerator().generate(null, right, Void.class, def.getRightType(), type, method);
         }
         
     }
@@ -330,7 +327,7 @@ public class OperatorTree {
         }
         
         @Override
-        public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        public Code getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
             return null;
         }
         
@@ -364,7 +361,7 @@ public class OperatorTree {
         }
         
         @Override
-        public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        public Code getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
             return section.getGeneration(context, type, method);
         }
         

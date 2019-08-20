@@ -3,6 +3,7 @@ package com.ssplugins.shadow3.entity;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.Code;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.compile.KeywordEffector;
 import com.ssplugins.shadow3.def.KeywordAction;
@@ -124,11 +125,11 @@ public class Keyword extends ShadowEntity {
     }
     
     @Override
-    public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
-        String generate = getDefinition().getGenerator().generate(context, this, type, method);
+    public Code getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        Code code = getDefinition().getGenerator().generate(context, this, type, method);
         if (effector != null) effector.apply(this, context.getScope());
-        if (!isInline() && getDefinition().isStatementMode()) method.addStatement(generate);
-        return generate;
+        if (!isInline() && getDefinition().isStatementMode()) code.addTo(method);
+        return code;
     }
     
     public void findReturnType(CompileScope scope) {

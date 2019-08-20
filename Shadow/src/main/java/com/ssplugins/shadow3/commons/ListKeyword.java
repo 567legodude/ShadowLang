@@ -1,9 +1,9 @@
 package com.ssplugins.shadow3.commons;
 
-import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.Code;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.compile.JavaGen;
 import com.ssplugins.shadow3.compile.TypeChecker;
@@ -43,7 +43,7 @@ public class ListKeyword extends CommandKeyword<List, ListKeyword.ListTransforme
         arraylist.setCommandGen((input, c, keyword, type, method) -> {
             String name = c.getScope().nextTemp();
             method.addStatement("$T $L = new $T<>()", List.class, name, ArrayList.class);
-            return name;
+            return Code.plain(name);
         });
         context.addKeyword(arraylist);
     
@@ -55,7 +55,7 @@ public class ListKeyword extends CommandKeyword<List, ListKeyword.ListTransforme
         linkedlist.setCommandGen((input, c, keyword, type, method) -> {
             String name = c.getScope().nextTemp();
             method.addStatement("$T $L = new $T<>()", List.class, name, LinkedList.class);
-            return name;
+            return Code.plain(name);
         });
         context.addKeyword(linkedlist);
     
@@ -92,8 +92,8 @@ public class ListKeyword extends CommandKeyword<List, ListKeyword.ListTransforme
             requireValue(input, keyword);
             List<ShadowSection> args = keyword.getArguments();
             TypeChecker.require(c.getScope(), args.get(0), Integer.class);
-            String index = args.get(0).getGeneration(c, type, method);
-            String value = args.get(1).getGeneration(c, type, method);
+            Code index = args.get(0).getGeneration(c, type, method);
+            Code value = args.get(1).getGeneration(c, type, method);
             method.addStatement("$L.set($L, $L)", input, index, value);
             return input;
         });
@@ -132,7 +132,7 @@ public class ListKeyword extends CommandKeyword<List, ListKeyword.ListTransforme
             requireValue(input, keyword);
             ShadowSection index = keyword.getArguments().get(0);
             TypeChecker.require(c.getScope(), index, Integer.class);
-            return CodeBlock.of("$L.get($L)", input, index.getGeneration(c, type, method)).toString();
+            return Code.format("$L.get($L)", input, index.getGeneration(c, type, method));
         });
         context.addKeyword(get);
     
@@ -145,7 +145,7 @@ public class ListKeyword extends CommandKeyword<List, ListKeyword.ListTransforme
         contains.setReturnable(Returnable.of(Boolean.class));
         contains.setCommandGen((input, c, keyword, type, method) -> {
             requireValue(input, keyword);
-            return CodeBlock.of("$L.contains($L)", input, keyword.getArguments().get(0).getGeneration(c, type, method)).toString();
+            return Code.format("$L.contains($L)", input, keyword.getArguments().get(0).getGeneration(c, type, method));
         });
         context.addKeyword(contains);
     
@@ -156,7 +156,7 @@ public class ListKeyword extends CommandKeyword<List, ListKeyword.ListTransforme
         size.setReturnable(Returnable.of(Integer.class));
         size.setCommandGen((input, c, keyword, type, method) -> {
             requireValue(input, keyword);
-            return CodeBlock.of("$L.size()", input).toString();
+            return Code.format("$L.size()", input);
         });
         context.addKeyword(size);
     
@@ -205,12 +205,12 @@ public class ListKeyword extends CommandKeyword<List, ListKeyword.ListTransforme
     }
     
     @Override
-    protected String generateNoArgs(GenerateContext context, Keyword keyword, TypeSpec.Builder type, MethodSpec.Builder method) {
-        return CodeBlock.of("new $T<>()", ArrayList.class).toString();
+    protected Code generateNoArgs(GenerateContext context, Keyword keyword, TypeSpec.Builder type, MethodSpec.Builder method) {
+        return Code.format("new $T<>()", ArrayList.class);
     }
     
     @Override
-    protected String generateSingle(GenerateContext context, String value, ShadowSection section, TypeSpec.Builder type, MethodSpec.Builder method) {
+    protected Code generateSingle(GenerateContext context, Code value, ShadowSection section, TypeSpec.Builder type, MethodSpec.Builder method) {
         if (section instanceof Identifier) {
             TypeChecker.require(context.getScope(), section, List.class);
             return section.getGeneration(context, type, method);

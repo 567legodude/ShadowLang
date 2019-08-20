@@ -4,6 +4,7 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.api.OperatorMap;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.Code;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.entity.ShadowEntity;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
@@ -47,7 +48,7 @@ public class Operator extends ShadowSection {
     }
     
     @Override
-    public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+    public Code getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
         return null;
     }
     

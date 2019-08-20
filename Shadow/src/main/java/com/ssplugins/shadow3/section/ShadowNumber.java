@@ -1,8 +1,8 @@
 package com.ssplugins.shadow3.section;
 
-import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
+import com.ssplugins.shadow3.compile.Code;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.parsing.TokenReader;
@@ -42,8 +42,8 @@ public class ShadowNumber extends ShadowSection {
     }
     
     @Override
-    public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
-        return CodeBlock.of("$L", value).toString();
+    public Code getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        return Code.format("$L", value);
     }
     
     public Number getValue() {

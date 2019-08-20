@@ -2,6 +2,7 @@ package com.ssplugins.shadow3.def.custom;
 
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
+import com.ssplugins.shadow3.compile.Code;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.def.KeywordType;
 import com.ssplugins.shadow3.def.Returnable;
@@ -70,11 +71,11 @@ public abstract class CommandKeyword<I, T extends Transformer<I>> extends Keywor
         return args.get(args.size() - 1).getReturnType(scope);
     }
     
-    protected String generate(GenerateContext context, Keyword keyword, TypeSpec.Builder type, MethodSpec.Builder method) {
+    protected Code generate(GenerateContext context, Keyword keyword, TypeSpec.Builder type, MethodSpec.Builder method) {
         if (keyword.getArguments().size() == 0) {
             return generateNoArgs(context, keyword, type, method);
         }
-        String value = null;
+        Code value = null;
         for (ShadowSection section : keyword.getArguments()) {
             value = generateSingle(context, value, section, type, method);
         }
@@ -84,7 +85,7 @@ public abstract class CommandKeyword<I, T extends Transformer<I>> extends Keywor
         return value;
     }
     
-    protected String generateSingle(GenerateContext context, String value, ShadowSection section, TypeSpec.Builder type, MethodSpec.Builder method) {
+    protected Code generateSingle(GenerateContext context, Code value, ShadowSection section, TypeSpec.Builder type, MethodSpec.Builder method) {
         if (!(section instanceof InlineKeyword)) {
             throw new ShadowParseError(section.getLine(), section.index(), "Unsupported input type.");
         }
@@ -98,7 +99,7 @@ public abstract class CommandKeyword<I, T extends Transformer<I>> extends Keywor
         return ((SubKeyword) def).getCommandGen().generate(value, context, k, type, method);
     }
     
-    protected String generateNoArgs(GenerateContext context, Keyword keyword, TypeSpec.Builder type, MethodSpec.Builder method) {
+    protected Code generateNoArgs(GenerateContext context, Keyword keyword, TypeSpec.Builder type, MethodSpec.Builder method) {
         throw new ShadowParseError(keyword.getLine(), keyword.argumentIndex(-1), "Keyword action is undefined.");
     }
     
@@ -113,17 +114,17 @@ public abstract class CommandKeyword<I, T extends Transformer<I>> extends Keywor
         return value;
     }
     
-    private void requireValue(String input, Supplier<TokenLine> line, Supplier<Integer> index) {
+    private void requireValue(Code input, Supplier<TokenLine> line, Supplier<Integer> index) {
         if (input == null) {
             throw new ShadowParseError(line.get(), index.get(), "Argument received no input.");
         }
     }
     
-    protected void requireValue(String input, Keyword keyword) {
+    protected void requireValue(Code input, Keyword keyword) {
         requireValue(input, keyword::getLine, () -> keyword.argumentIndex(-1));
     }
     
-    protected void requireValue(String input, ShadowSection section) {
+    protected void requireValue(Code input, ShadowSection section) {
         requireValue(input, section::getLine, section::index);
     }
     

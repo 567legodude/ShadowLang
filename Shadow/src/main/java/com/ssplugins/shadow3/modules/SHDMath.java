@@ -1,8 +1,8 @@
 package com.ssplugins.shadow3.modules;
 
-import com.squareup.javapoet.CodeBlock;
 import com.ssplugins.shadow3.api.ShadowAPI;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.Code;
 import com.ssplugins.shadow3.compile.JavaGen;
 import com.ssplugins.shadow3.compile.KeywordGen;
 import com.ssplugins.shadow3.compile.TypeChecker;
@@ -106,7 +106,7 @@ public class SHDMath extends ShadowAPI {
             ShadowSection section = keyword.getArguments().get(0);
             Class<?> returnType = section.getReturnType(c.getScope());
             TypeChecker.require(section, t.validValue(returnType), "Incompatible number type.");
-            return CodeBlock.of("$T." + name + "($L)", Math.class, JavaGen.litArg(c, keyword, 0, type, method)).toString();
+            return Code.format("$T." + name + "($L)", Math.class, JavaGen.litArg(c, keyword, 0, type, method));
         };
     }
     
@@ -117,7 +117,7 @@ public class SHDMath extends ShadowAPI {
             Class<?> b = args.get(1).getReturnType(c.getScope());
             TypeChecker.require(args.get(0), NumberType.DOUBLE.validValue(a), "Incompatible number type.");
             TypeChecker.require(args.get(1), NumberType.DOUBLE.validValue(b), "Incompatible number type.");
-            return CodeBlock.of("$T." + name + "($L, $L)", Math.class, JavaGen.litArg(c, keyword, 0, type, method), JavaGen.litArg(c, keyword, 1, type, method)).toString();
+            return Code.format("$T." + name + "($L, $L)", Math.class, JavaGen.litArg(c, keyword, 0, type, method), JavaGen.litArg(c, keyword, 1, type, method));
         };
     }
     

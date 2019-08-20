@@ -4,6 +4,7 @@ import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.api.ShadowContext;
 import com.ssplugins.shadow3.compile.BlockEffector;
+import com.ssplugins.shadow3.compile.Code;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.def.*;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
@@ -208,7 +209,7 @@ public class Block extends ShadowEntity {
     }
     
     @Override
-    public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+    public Code getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
         context.newBlock();
         if (effector != null) effector.apply(this, context.getScope());
         getDefinition().getGenerator().generate(context, this, type, method);

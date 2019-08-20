@@ -1,9 +1,9 @@
 package com.ssplugins.shadow3.commons;
 
-import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
 import com.ssplugins.shadow3.api.ShadowContext;
+import com.ssplugins.shadow3.compile.Code;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.compile.TypeChecker;
 import com.ssplugins.shadow3.def.Returnable;
@@ -48,7 +48,7 @@ public class ArrayKeyword extends CommandKeyword<Object, ArrayKeyword.ArrayTrans
             TypeChecker.require(c.getScope(), section, Integer.class);
             String name = c.getScope().nextTemp();
             method.addStatement("$T[] $L = new $T[$L]", Object.class, name, Object.class, section.getGeneration(c, type, method));
-            return name;
+            return Code.plain(name);
         });
         context.addKeyword(aNew);
     
@@ -64,7 +64,7 @@ public class ArrayKeyword extends CommandKeyword<Object, ArrayKeyword.ArrayTrans
             requireValue(input, keyword);
             ShadowSection section = keyword.getArguments().get(0);
             TypeChecker.require(c.getScope(), section, Integer.class);
-            return CodeBlock.of("$L[$L]", input, section.getGeneration(c, type, method)).toString();
+            return Code.format("$L[$L]", input, section.getGeneration(c, type, method));
         });
         context.addKeyword(get);
     
@@ -87,8 +87,8 @@ public class ArrayKeyword extends CommandKeyword<Object, ArrayKeyword.ArrayTrans
             ShadowSection i2 = args.get(1);
             TypeChecker.require(c.getScope(), i1, Integer.class);
             TypeChecker.require(c.getScope(), i2, Integer.class);
-            String ind1 = i1.getGeneration(c, type, method);
-            String ind2 = i2.getGeneration(c, type, method);
+            Code ind1 = i1.getGeneration(c, type, method);
+            Code ind2 = i2.getGeneration(c, type, method);
             String tmp = c.getScope().nextTemp();
             method.addStatement("$T $L = $L[$L]", Object.class, tmp, input, ind1);
             method.addStatement("$L[$L] = $L[$L]", input, ind1, input, ind2);
@@ -104,7 +104,7 @@ public class ArrayKeyword extends CommandKeyword<Object, ArrayKeyword.ArrayTrans
         len.setReturnable(Returnable.of(Integer.class));
         len.setCommandGen((input, c, keyword, type, method) -> {
             requireValue(input, keyword);
-            return CodeBlock.of("$L.length", input).toString();
+            return Code.format("$L.length", input);
         });
         context.addKeyword(len);
     }
@@ -165,7 +165,7 @@ public class ArrayKeyword extends CommandKeyword<Object, ArrayKeyword.ArrayTrans
     }
     
     @Override
-    protected String generateSingle(GenerateContext context, String value, ShadowSection section, TypeSpec.Builder type, MethodSpec.Builder method) {
+    protected Code generateSingle(GenerateContext context, Code value, ShadowSection section, TypeSpec.Builder type, MethodSpec.Builder method) {
         if (section instanceof Identifier) {
             TypeChecker.check(context.getScope(), section).type(Object[].class).isArray().orError();
             return section.getGeneration(context, type, method);
@@ -174,7 +174,7 @@ public class ArrayKeyword extends CommandKeyword<Object, ArrayKeyword.ArrayTrans
             TypeChecker.require(context.getScope(), section, Integer.class);
             String name = context.getScope().nextTemp();
             method.addStatement("$T[] $L = new $T[$L]", Object.class, name, Object.class, section.getGeneration(context, type, method));
-            return name;
+            return Code.plain(name);
         }
         if (section instanceof Compound) {
             requireValue(value, section);

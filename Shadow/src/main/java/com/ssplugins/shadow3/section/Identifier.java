@@ -2,6 +2,7 @@ package com.ssplugins.shadow3.section;
 
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeSpec;
+import com.ssplugins.shadow3.compile.Code;
 import com.ssplugins.shadow3.compile.GenerateContext;
 import com.ssplugins.shadow3.exception.NamedShadowException;
 import com.ssplugins.shadow3.exception.ShadowCodeException;
@@ -35,8 +36,8 @@ public class Identifier extends ShadowSection {
     }
     
     @Override
-    public String getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder builder) {
-        return getName();
+    public Code getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder builder) {
+        return Code.plain(getName());
     }
     
     public String getName() {
