@@ -88,11 +88,11 @@ public class CompileScope {
     }
     
     public String nextTemp() {
-        return "$" + temp.getAndIncrement();
+        return "_" + temp.getAndIncrement();
     }
     
     public String nextGlobalTemp() {
-        return "$" + globalTemp.getAndIncrement();
+        return "_" + globalTemp.getAndIncrement();
     }
     
     public ShadowContext getContext() {

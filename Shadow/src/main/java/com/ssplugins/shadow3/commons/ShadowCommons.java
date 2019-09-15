@@ -16,7 +16,7 @@ import com.ssplugins.shadow3.exception.ShadowExecutionError;
 import com.ssplugins.shadow3.exception.ShadowParseError;
 import com.ssplugins.shadow3.execute.Scope;
 import com.ssplugins.shadow3.execute.Stepper;
-import com.ssplugins.shadow3.modules.IO;
+import com.ssplugins.shadow3.modules.SHDFiles;
 import com.ssplugins.shadow3.modules.SHDMath;
 import com.ssplugins.shadow3.parsing.ShadowParser;
 import com.ssplugins.shadow3.section.*;
@@ -169,7 +169,7 @@ public class ShadowCommons extends ShadowAPI {
     
     @Entity
     void moduleIO() {
-        context.addLazyModule("io", new IO());
+        context.addLazyModule("files", new SHDFiles());
     }
     
     //endregion
@@ -239,7 +239,9 @@ public class ShadowCommons extends ShadowAPI {
     @Entity
     void operatorEquals() {
         OperatorType<Object, Object, Boolean> equals = new OperatorType<>("==", OpOrder.EQUALITY, Object.class, Object.class, boolean.class, Objects::equals);
-        equals.setGenerator(OperatorGen.between("=="));
+        equals.setGenerator((leftGen, rightGen, left, right, type, method) -> {
+            return Code.format("$T.equals($L, $L)", Objects.class, leftGen, rightGen);
+        });
         context.addOperator(equals);
     }
     
@@ -385,13 +387,16 @@ public class ShadowCommons extends ShadowAPI {
             return null;
         });
         print.setGenerator((c, keyword, type, method) -> {
-            List<ShadowSection> arguments = keyword.getArguments();
+            List<Code> arguments = keyword.getArguments()
+                                          .stream()
+                                          .map(section -> section.getGeneration(c, type, method))
+                                          .collect(Collectors.toList());
             if (arguments.size() == 1) {
-                JavaGen.printlnValue(method, arguments.get(0).getGeneration(c, type, method));
+                JavaGen.printlnValue(method, arguments.get(0));
             }
             else {
-                arguments.forEach(section -> {
-                    JavaGen.printValue(method, section.getGeneration(c, type, method));
+                arguments.forEach(code -> {
+                    JavaGen.printValue(method, code);
                 });
                 JavaGen.println(method);
             }
@@ -440,23 +445,23 @@ public class ShadowCommons extends ShadowAPI {
             CompileScope scope = c.getScope();
             String name = keyword.getIdentifier(0).getName();
             Code value;
-            String cast = "";
+            Code cast = null;
             Class<?> returnType = keyword.getReturnType();
             if (keyword.getArguments().size() == 2) {
                 value = JavaGen.litArg(c, keyword, 1, type, method);
             }
             else {
                 value = JavaGen.litArg(c, keyword, 3, type, method);
-                cast = CodeBlock.of(" ($T)", returnType).toString();
+                cast = Code.format(" ($T)", returnType);
             }
             if (name.equals(value.toString())) return value;
-            CodeBlock.Builder code = CodeBlock.builder();
-            if (!scope.isMarked(name)) code.add("$T ", returnType);
-            code.add("$L = ", name);
-            if (!cast.isEmpty()) code.add("($T) ", returnType);
-            code.add("$L", value);
+            Code code = Code.empty();
+            if (!scope.isMarked(name)) code.append("$T ", returnType);
+            code.append("$L =", name);
+            if (cast != null) code.append(cast);
+            code.append(" $L", value);
             scope.addCheck(name, returnType);
-            method.addStatement(code.build());
+            code.addTo(method);
             return Code.plain(name);
         });
         context.addKeyword(set);
@@ -776,13 +781,16 @@ public class ShadowCommons extends ShadowAPI {
                                              .build();
                 type.addMethod(spec2);
             });
+            String tmp = c.getScope().nextTemp();
             Code code = Code.empty();
+            code.append("$T $L = ", String.class, tmp);
             code.append(name).append("(");
             if (keyword.getArguments().size() == 1) {
                code.append(JavaGen.litArg(c, keyword, 0, type, method));
             }
             code.append(")");
-            return code;
+            code.addTo(method);
+            return Code.plain(tmp);
         });
         input.setStatementMode(true);
         context.addKeyword(input);
@@ -1409,7 +1417,8 @@ public class ShadowCommons extends ShadowAPI {
             stepper.setSkipSchema(skipElse);
         });
         typeIf.setGenerator((c, block, type, method) -> {
-            method.beginControlFlow("if ($L)", block.getArguments().get(0).getGeneration(c, type, method));
+            Code code = block.getArguments().get(0).getGeneration(c, type, method);
+            method.beginControlFlow("if ($L)", code.toCodeBlock());
             block.addBody(c, type, method);
             method.endControlFlow();
         });

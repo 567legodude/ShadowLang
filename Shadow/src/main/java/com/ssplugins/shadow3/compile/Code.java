@@ -3,7 +3,12 @@ package com.ssplugins.shadow3.compile;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.MethodSpec;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class Code {
+    
+    private static final Pattern VAR_MATCHER = Pattern.compile("\\$([A-Z])");
     
     private CodeBlock.Builder builder;
     
@@ -20,7 +25,7 @@ public class Code {
     }
     
     public static Code format(String format, Object... args) {
-        return new Code(CodeBlock.builder().add(format, args));
+        return empty().append(format, args);
     }
     
     public static Code empty() {
@@ -40,8 +45,28 @@ public class Code {
         return this;
     }
     
+    // Similar to CodeBlock.Builder.add(String, Object...)
+    // but will convert Code args to CodeBlocks
     public Code append(String s, Object... args) {
-        builder.add(s, args);
+        Matcher m = VAR_MATCHER.matcher(s);
+        int index = 0;
+        int arg = 0;
+        while (m.find()) {
+            if (index < m.start()) {
+                builder.add(s.substring(index, m.start()));
+            }
+            if (args[arg] instanceof Code) {
+                this.append((Code) args[arg]);
+            }
+            else {
+                builder.add(m.group(), args[arg]);
+            }
+            index = m.end();
+            arg++;
+        }
+        if (index < s.length()) {
+            builder.add(s.substring(index));
+        }
         return this;
     }
     

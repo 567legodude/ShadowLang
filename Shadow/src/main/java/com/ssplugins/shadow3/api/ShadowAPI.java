@@ -13,7 +13,7 @@ public abstract class ShadowAPI {
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @Inherited
-    public @interface Entity {}
+    protected @interface Entity {}
     
     protected void callAnnotatedMethods() {
         try {

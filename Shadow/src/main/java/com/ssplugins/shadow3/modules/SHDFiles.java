@@ -17,18 +17,19 @@ import com.ssplugins.shadow3.util.Range;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class IO extends ShadowAPI {
+public class SHDFiles extends ShadowAPI {
     
     private ShadowContext context;
     
     @Override
     public void loadInto(ShadowContext context) {
         this.context = context;
-        context.setName("io");
+        context.setName("files");
         callAnnotatedMethods();
         this.context = null;
     }
@@ -328,6 +329,7 @@ public class IO extends ShadowAPI {
                                             .beginControlFlow("try")
                                             .addStatement("writer.write(content)")
                                             .nextControlFlow("catch ($T $L)", IOException.class, tmp)
+                                            .addStatement("throw new $T(\"Error while writing.\", $L)", IllegalStateException.class, tmp)
                                             .endControlFlow()
                                             .build();
                 type.addMethod(spec);
@@ -350,6 +352,29 @@ public class IO extends ShadowAPI {
             }
             return null;
         });
+        writeLine.setReturnable(Returnable.none());
+        writeLine.setGenerator((c, keyword, type, method) -> {
+            ShadowSection section = keyword.getArguments().get(0);
+            TypeChecker.require(c.getScope(), section, Writer.class);
+            ShadowSection content = keyword.getArguments().get(1);
+            TypeChecker.require(c.getScope(), content, String.class);
+            String name = c.getComponentName("write_line");
+            c.checkName(name, s -> {
+                String tmp = c.getScope().nextTemp();
+                MethodSpec spec = MethodSpec.methodBuilder(s)
+                                            .returns(void.class)
+                                            .addParameter(Writer.class, "writer")
+                                            .addParameter(String.class, "content")
+                                            .beginControlFlow("try")
+                                            .addStatement("writer.write(content + \"\\n\")")
+                                            .nextControlFlow("catch ($T $L)", IOException.class, tmp)
+                                            .addStatement("throw new $T(\"Error while writing.\", $L)", IllegalStateException.class, tmp)
+                                            .endControlFlow()
+                                            .build();
+                type.addMethod(spec);
+            });
+            return Code.format("$L($L)", name, section.getGeneration(c, type, method));
+        });
         context.addKeyword(writeLine);
     }
     
@@ -364,6 +389,26 @@ public class IO extends ShadowAPI {
                 throw new ShadowException(e);
             }
         });
+        lines.setReturnable(Returnable.of(Iterator.class));
+        lines.setGenerator((c, keyword, type, method) -> {
+            ShadowSection section = keyword.getArguments().get(0);
+            TypeChecker.require(c.getScope(), section, File.class);
+            String name = c.getComponentName("lines");
+            c.checkName(name, s -> {
+                String tmp = c.getScope().nextTemp();
+                MethodSpec spec = MethodSpec.methodBuilder(s)
+                                            .returns(Iterator.class)
+                                            .addParameter(File.class, "f")
+                                            .beginControlFlow("try")
+                                            .addStatement("return $T.lines(f.toPath())", Files.class)
+                                            .nextControlFlow("catch ($T $L)", IOException.class, tmp)
+                                            .addStatement("throw new $T(\"Error while writing.\", $L)", IllegalStateException.class, tmp)
+                                            .endControlFlow()
+                                            .build();
+                type.addMethod(spec);
+            });
+            return Code.format("$L($L)", name, section.getGeneration(c, type, method));
+        });
         context.addKeyword(lines);
     }
     
@@ -372,14 +417,31 @@ public class IO extends ShadowAPI {
         KeywordType lineList = new KeywordType("line_list", new Range.Single(1));
         lineList.setAction((keyword, stepper, scope) -> {
             File f = keyword.getArgument(0, File.class, scope, "Argument must be a file.");
-            try {
-                Stream<String> lines = Files.lines(f.toPath());
-                List<String> list = lines.collect(Collectors.toList());
-                lines.close();
-                return list;
+            try (Stream<String> lines = Files.lines(f.toPath())) {
+                return lines.collect(Collectors.toList());
             } catch (IOException e) {
                 throw new ShadowException(e);
             }
+        });
+        lineList.setReturnable(Returnable.of(List.class));
+        lineList.setGenerator((c, keyword, type, method) -> {
+            ShadowSection section = keyword.getArguments().get(0);
+            TypeChecker.require(c.getScope(), section, File.class);
+            String name = c.getComponentName("line_list");
+            c.checkName(name, s -> {
+                String tmp = c.getScope().nextTemp();
+                MethodSpec spec = MethodSpec.methodBuilder(s)
+                                            .returns(Iterator.class)
+                                            .addParameter(File.class, "f")
+                                            .beginControlFlow("try ($T<$T> lines = $T.lines(f.toPath()))", Stream.class, String.class, Files.class)
+                                            .addStatement("return lines.collect($T.toList())", Collectors.class)
+                                            .nextControlFlow("catch ($T $L)", IOException.class, tmp)
+                                            .addStatement("throw new $T(\"Error while reading file.\", $L)", IllegalStateException.class, tmp)
+                                            .endControlFlow()
+                                            .build();
+                type.addMethod(spec);
+            });
+            return Code.format("$L($L)", name, section.getGeneration(c, type, method));
         });
         context.addKeyword(lineList);
     }
@@ -389,14 +451,31 @@ public class IO extends ShadowAPI {
         KeywordType lineArray = new KeywordType("line_array", new Range.Single(1));
         lineArray.setAction((keyword, stepper, scope) -> {
             File f = keyword.getArgument(0, File.class, scope, "Argument must be a file.");
-            try {
-                Stream<String> lines = Files.lines(f.toPath());
-                String[] array = lines.toArray(String[]::new);
-                lines.close();
-                return array;
+            try (Stream<String> lines = Files.lines(f.toPath())) {
+                return lines.toArray(String[]::new);
             } catch (IOException e) {
                 throw new ShadowException(e);
             }
+        });
+        lineArray.setReturnable(Returnable.of(String[].class));
+        lineArray.setGenerator((c, keyword, type, method) -> {
+            ShadowSection section = keyword.getArguments().get(0);
+            TypeChecker.require(c.getScope(), section, File.class);
+            String name = c.getComponentName("line_array");
+            c.checkName(name, s -> {
+                String tmp = c.getScope().nextTemp();
+                MethodSpec spec = MethodSpec.methodBuilder(s)
+                                            .returns(Iterator.class)
+                                            .addParameter(File.class, "f")
+                                            .beginControlFlow("try ($T<$T> lines = $T.lines(f.toPath()))", Stream.class, String.class, Files.class)
+                                            .addStatement("return lines.toArray(String[]::new)", Collectors.class)
+                                            .nextControlFlow("catch ($T $L)", IOException.class, tmp)
+                                            .addStatement("throw new $T(\"Error while reading file.\", $L)", IllegalStateException.class, tmp)
+                                            .endControlFlow()
+                                            .build();
+                type.addMethod(spec);
+            });
+            return Code.format("$L($L)", name, section.getGeneration(c, type, method));
         });
         context.addKeyword(lineArray);
     }

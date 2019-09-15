@@ -69,6 +69,15 @@ public class Compound extends ShadowSection {
     
     @Override
     public Code getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
+        if (constant) {
+            try {
+                Object value = opTree.getValue(new Scope(context.getFullContext(), null));
+                if (value instanceof String) {
+                    value = "\"" + value + "\"";
+                }
+                return Code.format("$L", value);
+            } catch (Exception ignored) {} // fallback to original generation if constant generation fails
+        }
         return opTree.getRoot().getGeneration(context, type, method);
     }
     

@@ -49,7 +49,7 @@ public class Operator extends ShadowSection {
     
     @Override
     public Code getGeneration(GenerateContext context, TypeSpec.Builder type, MethodSpec.Builder method) {
-        return null;
+        return Code.format("$S", getSymbol());
     }
     
     public static String componentName(String token) {

@@ -192,6 +192,8 @@ public class SHDMath extends ShadowAPI {
     void constantE() {
         KeywordType e = new KeywordType("E", new Range.None());
         e.setAction((keyword, stepper, scope) -> Math.E);
+        e.setReturnable(Returnable.of(Double.class));
+        e.setGenerator((c, keyword, type, method) -> Code.format("$T.E", Math.class));
         context.addKeyword(e);
     }
     
@@ -199,6 +201,8 @@ public class SHDMath extends ShadowAPI {
     void constantPI() {
         KeywordType pi = new KeywordType("PI", new Range.None());
         pi.setAction((keyword, stepper, scope) -> Math.PI);
+        pi.setReturnable(Returnable.of(Double.class));
+        pi.setGenerator((c, keyword, type, method) -> Code.format("$T.PI", Math.class));
         context.addKeyword(pi);
     }
     
