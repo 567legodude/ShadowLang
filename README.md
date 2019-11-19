@@ -16,6 +16,8 @@ Info
 
 The language is made up of commands, which have return values and may be used as arguments to other commands, however the language is backed by Java.  
 
+The script files are able to be parsed and executed directly, but can also be compiled to equivalent Java code.
+
 There are two entities in the language: blocks, and keywords. The difference is that blocks have a body and local scope parameters.
 
 ##### Blocks
