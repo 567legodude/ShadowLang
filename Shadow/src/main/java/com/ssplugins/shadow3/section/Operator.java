@@ -30,7 +30,7 @@ public class Operator extends ShadowSection {
         setToken(reader.expect(TokenType.OPERATOR));
     }
     
-    public static void requireComma(ShadowEntity entity, int index) {
+    public static void requireColon(ShadowEntity entity, int index) {
         Operator op = entity.getArgumentSection(index, Operator.class, "Expecting \":\" here.");
         if (!op.getSymbol().equals(":")) {
             throw new ShadowParseError(op.getLine(), op.index(), "Expecting \":\" here.");

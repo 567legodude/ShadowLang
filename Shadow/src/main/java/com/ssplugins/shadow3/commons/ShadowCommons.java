@@ -415,7 +415,7 @@ public class ShadowCommons extends ShadowAPI {
                 scope.set(name, o);
                 return o;
             }
-            Operator.requireComma(keyword, 1);
+            Operator.requireColon(keyword, 1);
             Identifier type = keyword.getIdentifier(2);
             Class<?> c = scope.getContext().getType(keyword, type.getName());
             Object o = keyword.argumentValue(3, scope);
@@ -783,6 +783,11 @@ public class ShadowCommons extends ShadowAPI {
             });
             String tmp = c.getScope().nextTemp();
             Code code = Code.empty();
+            if (!keyword.isInline()) {
+                code.append(name).append("()");
+                code.addTo(method);
+                return Code.empty();
+            }
             code.append("$T $L = ", String.class, tmp);
             code.append(name).append("(");
             if (keyword.getArguments().size() == 1) {
@@ -792,7 +797,6 @@ public class ShadowCommons extends ShadowAPI {
             code.addTo(method);
             return Code.plain(tmp);
         });
-        input.setStatementMode(true);
         context.addKeyword(input);
     }
     
@@ -863,8 +867,8 @@ public class ShadowCommons extends ShadowAPI {
             method.addStatement("$T $L", returnType, tmp)
                   .beginControlFlow("try");
             Code value = args.get(0).getGeneration(c, type, method);
-            method.addStatement("$L = $L", tmp, value)
-                  .nextControlFlow("catch ($T $L)", Exception.class, c.getScope().nextTemp());
+            Code.format("$L = ", tmp).append(value).addTo(method);
+            method.nextControlFlow("catch ($T $L)", Exception.class, c.getScope().nextTemp());
             value = args.get(2).getGeneration(c, type, method);
             Class<?> errType = args.get(2).getReturnType(c.getScope());
             if (errType != Void.class) {
@@ -942,7 +946,7 @@ public class ShadowCommons extends ShadowAPI {
     void keywordCast() {
         KeywordType cast = new KeywordType("cast", new Range.Single(3));
         cast.setAction((keyword, stepper, scope) -> {
-            Operator.requireComma(keyword, 1);
+            Operator.requireColon(keyword, 1);
             return keyword.argumentValue(2, scope);
         });
         cast.setReturnable((keyword, scope) -> {
@@ -1435,7 +1439,7 @@ public class ShadowCommons extends ShadowAPI {
             stepper.setSkipSchema(skipElse);
         });
         elseif.setGenerator((c, block, type, method) -> {
-            method.beginControlFlow("elseif ($L)", block.getArguments().get(0).getGeneration(c, type, method));
+            method.beginControlFlow("else if ($L)", block.getArguments().get(0).getGeneration(c, type, method));
             block.addBody(c, type, method);
             method.endControlFlow();
         });

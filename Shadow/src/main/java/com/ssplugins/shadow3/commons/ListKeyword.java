@@ -111,14 +111,30 @@ public class ListKeyword extends CommandKeyword<List, ListKeyword.ListTransforme
             requireValue(input, keyword);
             List<ShadowSection> args = keyword.getArguments();
             if (args.size() == 1) {
-                method.addStatement("$L.remove($L)", input, args.get(0).getGeneration(c, type, method));
+                Code.format("$L.remove($L)", input, args.get(0).getGeneration(c, type, method)).addTo(method);
             }
             else {
-                method.addStatement("$L.removeAll($L.asList($L))", input, Arrays.class, JavaGen.toArgs(args, c, type, method));
+                Code.format("$L.removeAll($L.asList($L))", input, Arrays.class, JavaGen.toArgs(args, c, type, method)).addTo(method);
             }
             return input;
         });
         context.addKeyword(remove);
+    
+        SubKeyword removei = new SubKeyword("removei", new Range.Single(1));
+        removei.setAction((keyword, stepper, scope) -> {
+            return (ListTransformer) input -> {
+                input.remove(keyword.getInt(0, scope));
+                return input;
+            };
+        });
+        removei.setReturnable(listReturn);
+        removei.setCommandGen((input, c, keyword, type, method) -> {
+            requireValue(input, keyword);
+            ShadowSection arg = keyword.getArguments().get(0);
+            method.addStatement("$L.remove($L)", input, arg.getGeneration(c, type, method));
+            return input;
+        });
+        context.addKeyword(removei);
     
         SubKeyword get = new SubKeyword("get", new Range.Single(1));
         get.setAction((keyword, stepper, scope) -> {
