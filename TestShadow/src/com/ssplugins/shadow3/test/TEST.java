@@ -1,8 +1,5 @@
 package com.ssplugins.shadow3.test;
 
-import com.ssplugins.shadow3.Shadow;
-import com.ssplugins.shadow3.commons.ShadowCommons;
-import com.ssplugins.shadow3.parsing.ShadowParser;
 import com.ssplugins.shadow3.section.Compound;
 import com.ssplugins.shadow3.section.ShadowSection;
 import com.ssplugins.shadow3.util.OperatorTree;
@@ -12,26 +9,24 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.URL;
 
 public class TEST {
     
     public static void main(String[] args) throws IOException, URISyntaxException {
-    
-        URL url = TEST.class.getResource("/com/ssplugins/shadow3/test/testy.shd");
-        File file = new File(url.toURI());
-    
-        ShadowParser parser = new ShadowParser(ShadowCommons.create(file));
-        Shadow shadow = parser.parse(file);
         
-        shadow.firstBlock("main").ifPresent(block -> {
-            block.run();
-//            Compound compound = (Compound) block.getContents().getFirst().getArguments().get(0);
-//            displayState(compound);
-        });
+//        URL url = TEST.class.getResource("/com/ssplugins/shadow3/test/testy.shd");
+//        File file = new File(url.toURI());
+//
+//        ShadowParser parser = new ShadowParser(ShadowCommons.create(file));
+//        Shadow shadow = parser.parse(file);
+//
+//        shadow.firstBlock("main").ifPresent(block -> {
+//            block.run();
+////            Compound compound = (Compound) block.getContents().getFirst().getArguments().get(0);
+////            displayState(compound);
+//        });
         
     }
     
