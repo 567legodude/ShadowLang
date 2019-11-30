@@ -102,7 +102,7 @@ public class TokenBuilder {
     public void setSource(String source) {
         this.source = source;
         charIndex = 0;
-        tokens.clear();
+        tokens = new ArrayList<>();
         currentToken.setLength(0);
     }
     
