@@ -30,6 +30,13 @@ public enum GroupPair {
         }
     }
     
+    public static TokenType tokenType(char c) {
+        GroupPair pair = from(c);
+        if (pair == null) return TokenType.NONE;
+        if (c == pair.getOpenChar()) return TokenType.GROUP_OPEN;
+        return TokenType.GROUP_CLOSE;
+    }
+    
     public static boolean isPair(char c) {
         return from(c) != null;
     }

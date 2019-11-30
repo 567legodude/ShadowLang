@@ -3,7 +3,7 @@ package com.ssplugins.shadow4.entity;
 import com.ssplugins.shadow4.context.Context;
 import com.ssplugins.shadow4.tokens.Line;
 
-public abstract class Entity {
+public abstract class Entity<T> {
     
     private Context fromContext;
     
@@ -18,6 +18,6 @@ public abstract class Entity {
     // TODO entity body
     // TODO definition
     // TODO inner context mechanism (as child of fromContext)
-    // TODO interface that gets return type of entity
+    private Class<T> returnType;
     
 }
