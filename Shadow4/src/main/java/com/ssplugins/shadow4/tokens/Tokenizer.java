@@ -75,8 +75,7 @@ public class Tokenizer {
     
     public List<Token> tokenize(String line, int lineNumber, TokenBuilder builder) {
         builder.setSource(line);
-        Set<String> operators = context.operatorSymbols();
-        Set<String> possibleOps = new HashSet<>(operators);
+        Set<String> possibleOps = new HashSet<>(context.operatorSymbols());
         while (builder.hasNextChar()) {
             char c = builder.nextChar();
             if (c == COMMENT && builder.isEmptyToken()) {

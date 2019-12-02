@@ -1,6 +1,5 @@
 package com.ssplugins.shadow4.tokens;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class Line {
@@ -11,12 +10,6 @@ public class Line {
     
     private boolean isBlock;
     private int blockToken;
-    
-    public Line(String line, int lineNumber) {
-        this.line = line;
-        this.lineNumber = lineNumber;
-        tokens = new ArrayList<>();
-    }
     
     public Line(String line, int lineNumber, List<Token> tokens) {
         this.line = line;

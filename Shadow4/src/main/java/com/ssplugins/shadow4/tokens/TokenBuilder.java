@@ -11,14 +11,19 @@ public class TokenBuilder {
     private int charIndex;
     private TokenFilter tokenFilter;
     
-    private List<Token> tokens = new ArrayList<>();
+    private List<Token> tokens;
     private StringBuilder currentToken = new StringBuilder();
     private int tokenIndex = -1;
     private TokenType currentType = TokenType.NONE;
     
+    public TokenBuilder() {
+        tokenFilter = TokenFilter.standardTokenFilter();
+    }
+    
     public TokenBuilder(String source, TokenFilter tokenFilter) {
         this.source = source;
         this.tokenFilter = tokenFilter;
+        tokens = new ArrayList<>();
     }
     
     public void finishLine() {

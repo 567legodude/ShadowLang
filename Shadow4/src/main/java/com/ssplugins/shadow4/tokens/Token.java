@@ -20,6 +20,14 @@ public class Token {
         this.lineIndex = lineIndex;
     }
     
+    public boolean matches(TokenMatcher matcher) {
+        return matcher.test(this);
+    }
+    
+    public boolean matches(TokenType type, String content) {
+        return this.type == type && (content == null || this.content.equals(content));
+    }
+    
     public String getContent() {
         return content;
     }
