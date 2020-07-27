@@ -1,7 +1,7 @@
 # ShadowLang
-This is a side project that isn't developed very often.
+Development for this project has stopped.
 
-Shadow is a parsed scripting language I made as a challenge to myself to see if I could do it.
+Shadow is a parsed scripting language I made as a challenge to myself; Mostly to gain experience with tokenizing an input file and parsing those tokens.
 
 Every aspect of the language can be represented below:
 
@@ -14,9 +14,9 @@ Every aspect of the language can be represented below:
 Info
 ----
 
-The language is made up of commands, which have return values and may be used as arguments to other commands, however the language is backed by Java.  
+The language is made up of commands, which have return values and may be used as arguments to other commands. 
 
-The script files are able to be parsed and executed directly, but can also be compiled to equivalent Java code.
+The script files are able to be interpreted and executed directly, but can also be compiled to equivalent Java code.
 
 There are two entities in the language: blocks, and keywords. The difference is that blocks have a body and local scope parameters.
 
